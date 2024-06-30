@@ -1,1 +1,0 @@
-/usr/bin/g++  -fPIC -g CMakeFiles/main.dir/main.cc.o -o main   -L/home/syple/code/auto_engine/third_party/libs  -Wl,-rpath,/home/syple/code/auto_engine/third_party/libs op/libop.a base/libbase.a -lglog -lgtest 

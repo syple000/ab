@@ -22,7 +22,7 @@ public:
         if (index == 0) {
             return one<T>(arg1) / arg2;
         } else {
-            return zero<T>(arg2) - this->getOutput() / arg2;
+            return zero<T>(arg1) - this->getOutput() / arg2;
         }
     }
 
@@ -32,7 +32,7 @@ public:
         } else {
             auto item1 = std::make_shared<Mul<T>>(arg2, arg2);
             auto item2 = std::make_shared<Div<T>>(arg1, item1);
-            return std::make_shared<Sub<T>>(std::make_shared<DataOp<T>>(zero<T>(arg2->template getOutput())), item2);
+            return std::make_shared<Sub<T>>(std::make_shared<DataOp<T>>(zero<T>(arg1->template getOutput())), item2);
         }
     }
 };

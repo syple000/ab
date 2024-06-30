@@ -26,7 +26,7 @@ public:
     }
     std::shared_ptr<Op<T>> derivFunc(u32 index, std::shared_ptr<Op<T>> arg1, std::shared_ptr<Op<T>> arg2) {
         if (index == 0) {
-            auto item1 = std::make_shared<Sub<T>>(arg2, std::make_shared<DataOp<T>>(one<T>(arg2->template getOutput())));
+            auto item1 = std::make_shared<Sub<T>>(arg2, std::make_shared<DataOp<T>>(one<T>(arg1->template getOutput())));
             auto item2 = std::make_shared<Pow<T>>(arg1, item1);
             return std::make_shared<Mul<T>>(arg2, item2);
         } else {

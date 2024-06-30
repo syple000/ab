@@ -1,5 +1,0 @@
-Log file created at: 2024/06/30 21:31:16
-Running on machine: DESKTOP-KD5GLOA
-Running duration (h:mm:ss): 0:00:00
-Log line format: [IWEF]yyyymmdd hh:mm:ss.uuuuuu threadid file:line] msg
-E20240630 21:31:16.155039 82453120 tensor.h:95] shape count: 1 != data size: 2

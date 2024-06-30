@@ -20,7 +20,7 @@ public:
         if (index == 0) {
             return one<T>(arg1);
         } else {
-            return zero<T>(arg2)-one<T>(arg2);
+            return zero<T>(arg1)-one<T>(arg1);
         }
     }
 
@@ -28,7 +28,7 @@ public:
         if (index == 0) {
             return std::make_shared<DataOp<T>>(one<T>(arg1->template getOutput()));
         } else {
-            return std::make_shared<DataOp<T>>(zero<T>(arg2->template getOutput())-one<T>(arg2->template getOutput()));
+            return std::make_shared<DataOp<T>>(zero<T>(arg1->template getOutput())-one<T>(arg1->template getOutput()));
         }
     }
 };
