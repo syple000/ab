@@ -1,0 +1,26 @@
+Log file created at: 2024/06/30 21:24:33
+Running on machine: DESKTOP-KD5GLOA
+Running duration (h:mm:ss): 0:00:00
+Log line format: [IWEF]yyyymmdd hh:mm:ss.uuuuuu threadid file:line] msg
+E20240630 21:24:33.373263 82453120 tensor.h:95] shape count != data size
+E20240630 21:24:33.518592 82453120 tensor.h:95] shape count != data size
+E20240630 21:24:33.738065 82453120 tensor.h:95] shape count != data size
+E20240630 21:24:33.745153 82453120 tensor.h:183] mul diff shape tensor
+E20240630 21:24:33.759455 82453120 tensor.h:166] add diff shape tensor
+E20240630 21:24:33.823051 82453120 tensor.h:183] mul diff shape tensor
+E20240630 21:24:33.825179 82453120 tensor.h:95] shape count != data size
+E20240630 21:24:33.829127 82453120 tensor.h:95] shape count != data size
+E20240630 21:24:33.997403 82453120 tensor.h:95] shape count != data size
+E20240630 21:24:34.002628 82453120 tensor.h:166] add diff shape tensor
+E20240630 21:24:34.006689 82453120 tensor.h:183] mul diff shape tensor
+E20240630 21:24:34.008804 82453120 tensor.h:183] mul diff shape tensor
+E20240630 21:24:34.012679 82453120 tensor.h:95] shape count != data size
+E20240630 21:24:34.015883 82453120 tensor.h:166] add diff shape tensor
+E20240630 21:24:34.022287 82453120 tensor.h:183] mul diff shape tensor
+E20240630 21:24:34.027125 82453120 tensor.h:183] mul diff shape tensor
+E20240630 21:24:34.030738 82453120 tensor.h:183] mul diff shape tensor
+E20240630 21:24:34.045731 82453120 tensor.h:95] shape count != data size
+E20240630 21:24:34.049949 82453120 tensor.h:95] shape count != data size
+E20240630 21:24:34.061547 82453120 tensor.h:183] mul diff shape tensor
+E20240630 21:24:34.078457 82453120 tensor.h:95] shape count != data size
+E20240630 21:24:34.081815 82453120 tensor.h:95] shape count != data size

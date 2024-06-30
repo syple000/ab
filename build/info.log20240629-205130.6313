@@ -1,0 +1,22 @@
+Log file created at: 2024/06/29 20:51:30
+Running on machine: DESKTOP-KD5GLOA
+Running duration (h:mm:ss): 0:00:00
+Log line format: [IWEF]yyyymmdd hh:mm:ss.uuuuuu threadid file:line] msg
+E20240629 20:51:30.625761 140269751066176 op.h:60] [getGrad]touch unset grad:     @     0x55b0606f556a  op::Op<double>::getGrad() const
+    @     0x55b060704dc9  op::BOP<double>::backward()
+    @     0x55b0606f541a  calc::Calculator<double>::deriv()
+    @     0x55b0606f3213  Test_Test_Test::TestBody()
+    @     0x55b06075214f  void testing::internal::HandleSehExceptionsInMethodIfSupported<testing::Test, void>(testing::Test*, void (testing::Test::*)(), char const*)
+    @     0x55b060749839  void testing::internal::HandleExceptionsInMethodIfSupported<testing::Test, void>(testing::Test*, void (testing::Test::*)(), char const*)
+    @     0x55b0607204d2  testing::Test::Run()
+    @     0x55b0607210a3  testing::TestInfo::Run()
+    @     0x55b060721b0d  testing::TestSuite::Run()
+    @     0x55b060732bcf  testing::internal::UnitTestImpl::RunAllTests()
+    @     0x55b06075346e  bool testing::internal::HandleSehExceptionsInMethodIfSupported<testing::internal::UnitTestImpl, bool>(testing::internal::UnitTestImpl*, bool (testing::internal::UnitTestImpl::*)(), char const*)
+    @     0x55b06074ad95  bool testing::internal::HandleExceptionsInMethodIfSupported<testing::internal::UnitTestImpl, bool>(testing::internal::UnitTestImpl*, bool (testing::internal::UnitTestImpl::*)(), char const*)
+    @     0x55b06073103d  testing::UnitTest::Run()
+    @     0x55b0606f402a  RUN_ALL_TESTS()
+    @     0x55b0606f3682  main
+    @     0x7f9318b241ca  (unknown)
+    @     0x7f9318b2428b  __libc_start_main
+    @     0x55b0606f2e35  _start

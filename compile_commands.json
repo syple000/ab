@@ -1,0 +1,20 @@
+[
+{
+  "directory": "/home/syple/code/auto_engine/build",
+  "command": "/usr/bin/g++ -DGLOG_USE_GLOG_EXPORT=1 -I/home/syple/code/auto_engine/third_party/includes -I/home/syple/code/auto_engine/base -I/home/syple/code/auto_engine/utils -I/home/syple/code/auto_engine/op  -fPIC -g -Wno-unused-result -o CMakeFiles/main.dir/main.cc.o -c /home/syple/code/auto_engine/main.cc",
+  "file": "/home/syple/code/auto_engine/main.cc",
+  "output": "CMakeFiles/main.dir/main.cc.o"
+},
+{
+  "directory": "/home/syple/code/auto_engine/build/base",
+  "command": "/usr/bin/g++ -DGLOG_USE_GLOG_EXPORT=1 -I/home/syple/code/auto_engine/third_party/includes -I/home/syple/code/auto_engine/base -I/home/syple/code/auto_engine/utils -I/home/syple/code/auto_engine/op  -fPIC -g -Wno-unused-result -o CMakeFiles/base.dir/shape.cc.o -c /home/syple/code/auto_engine/base/shape.cc",
+  "file": "/home/syple/code/auto_engine/base/shape.cc",
+  "output": "base/CMakeFiles/base.dir/shape.cc.o"
+},
+{
+  "directory": "/home/syple/code/auto_engine/build/op",
+  "command": "/usr/bin/g++ -DGLOG_USE_GLOG_EXPORT=1 -I/home/syple/code/auto_engine/third_party/includes -I/home/syple/code/auto_engine/base -I/home/syple/code/auto_engine/utils -I/home/syple/code/auto_engine/op  -fPIC -g -Wno-unused-result -o CMakeFiles/op.dir/methods.cc.o -c /home/syple/code/auto_engine/op/methods.cc",
+  "file": "/home/syple/code/auto_engine/op/methods.cc",
+  "output": "op/CMakeFiles/op.dir/methods.cc.o"
+}
+]

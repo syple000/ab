@@ -1,0 +1,20 @@
+Log file created at: 2024/06/30 19:14:41
+Running on machine: DESKTOP-KD5GLOA
+Running duration (h:mm:ss): 0:00:00
+Log line format: [IWEF]yyyymmdd hh:mm:ss.uuuuuu threadid file:line] msg
+E20240630 19:14:41.190925 82453120 op.h:65] [getGradGraph]touch null grad graph:     @           0x11a23b  op::Op<double>::getGradGraph() const
+    @           0x1167c1  Test_Test_Test::TestBody()
+    @           0x176339  void testing::internal::HandleSehExceptionsInMethodIfSupported<testing::Test, void>(testing::Test*, void (testing::Test::*)(), char const*)
+    @           0x16dbb1  void testing::internal::HandleExceptionsInMethodIfSupported<testing::Test, void>(testing::Test*, void (testing::Test::*)(), char const*)
+    @           0x144ade  testing::Test::Run()
+    @           0x1456af  testing::TestInfo::Run()
+    @           0x146119  testing::TestSuite::Run()
+    @           0x1571db  testing::internal::UnitTestImpl::RunAllTests()
+    @           0x177658  bool testing::internal::HandleSehExceptionsInMethodIfSupported<testing::internal::UnitTestImpl, bool>(testing::internal::UnitTestImpl*, bool (testing::internal::UnitTestImpl::*)(), char const*)
+    @           0x16f10d  bool testing::internal::HandleExceptionsInMethodIfSupported<testing::internal::UnitTestImpl, bool>(testing::internal::UnitTestImpl*, bool (testing::internal::UnitTestImpl::*)(), char const*)
+    @           0x155649  testing::UnitTest::Run()
+    @           0x1184ba  RUN_ALL_TESTS()
+    @           0x117939  main
+    @          0x4cb21ca  (unknown)
+    @          0x4cb228b  __libc_start_main
+    @           0x115e35  _start

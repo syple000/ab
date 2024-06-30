@@ -1,0 +1,5 @@
+Log file created at: 2024/06/28 23:14:26
+Running on machine: DESKTOP-KD5GLOA
+Running duration (h:mm:ss): 0:00:00
+Log line format: [IWEF]yyyymmdd hh:mm:ss.uuuuuu threadid file:line] msg
+E20240628 23:14:26.131338 140528319352384 op.h:50] getOutputtouch unset output

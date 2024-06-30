@@ -1,0 +1,2 @@
+/usr/bin/ar qc libop.a CMakeFiles/op.dir/methods.cc.o
+/usr/bin/ranlib libop.a

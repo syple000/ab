@@ -1,0 +1,5 @@
+Log file created at: 2024/06/30 18:28:58
+Running on machine: DESKTOP-KD5GLOA
+Running duration (h:mm:ss): 0:00:00
+Log line format: [IWEF]yyyymmdd hh:mm:ss.uuuuuu threadid file:line] msg
+E20240630 18:28:58.321375 82453120 main.cc:21] a: 90860.1b: 90860.1 diff
