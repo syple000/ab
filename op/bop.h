@@ -71,6 +71,7 @@ public:
             return arg1;
         }
     }
+    std::string name() {return "Mul";}
 };
 
 template<typename T>
@@ -87,6 +88,7 @@ public:
     std::shared_ptr<Op<T>> derivFunc(u32 index, std::shared_ptr<Op<T>> arg1, std::shared_ptr<Op<T>> arg2) {
         return std::make_shared<DataOp<T>>(one<T>(arg1->template getOutput()));
     }
+    std::string name() {return "Add";}
 };
 
 // bop createGradGraph方法实现

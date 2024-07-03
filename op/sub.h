@@ -31,6 +31,8 @@ public:
             return std::make_shared<DataOp<T>>(zero<T>(arg1->template getOutput())-one<T>(arg1->template getOutput()));
         }
     }
+
+    std::string name() {return "Sub";}
 };
 
 }

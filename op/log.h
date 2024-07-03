@@ -25,6 +25,8 @@ public:
     std::shared_ptr<Op<T>> derivFunc(u32 _, std::shared_ptr<Op<T>> arg) override {
         return std::make_shared<Div<T>>(std::make_shared<DataOp<T>>(one<T>(arg->template getOutput())), arg);
     }
+
+    std::string name() {return "Log";}
 };
 
 

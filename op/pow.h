@@ -35,6 +35,8 @@ public:
             return std::make_shared<Mul<T>>(item1, item2); 
         }
     }
+
+    std::string name() {return "Pow";}
 }; 
 
 }

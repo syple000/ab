@@ -25,6 +25,8 @@ public:
     }
 
     std::shared_ptr<Op<T>> derivFunc(u32 _, std::shared_ptr<Op<T>> arg) override;
+
+    std::string name() {return "Sin";}
 };
 
 template<typename T>
@@ -41,6 +43,8 @@ public:
     }
 
     std::shared_ptr<Op<T>> derivFunc(u32 _, std::shared_ptr<Op<T>> arg) override;
+
+    std::string name() {return "Cos";}
 };
 
 template<typename T>

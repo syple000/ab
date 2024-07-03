@@ -35,6 +35,8 @@ public:
             return std::make_shared<Sub<T>>(std::make_shared<DataOp<T>>(zero<T>(arg1->template getOutput())), item2);
         }
     }
+
+    std::string name() {return "Div";}
 };
 
 }
