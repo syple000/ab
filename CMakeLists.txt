@@ -1,23 +1,20 @@
 cmake_minimum_required(VERSION 3.28.3)
 
-project(auto_engine CXX C)
-
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
+set(CMAKE_TOOLCHAIN_FILE "$ENV{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake")
+project(auto_engine CXX)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS on)
 add_compile_options(-Wno-unused-result)
 
-add_definitions(-DGLOG_USE_GLOG_EXPORT=1)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/third_party/includes)
-link_directories(${CMAKE_CURRENT_SOURCE_DIR}/third_party/libs)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/base)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/utils)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/op)
+find_package(GTest CONFIG REQUIRED)
+find_package(glog CONFIG REQUIRED)
+find_package(folly CONFIG REQUIRED)
 
-add_subdirectory(base)
-add_subdirectory(op)
+add_subdirectory(src)
 
 set(src_list main.cc)
 add_executable(main ${src_list})
-target_link_libraries(main op base glog gtest)
+
+target_link_libraries(main PRIVATE lop ltensor glog::glog Folly::folly Folly::folly_deps GTest::gtest)
