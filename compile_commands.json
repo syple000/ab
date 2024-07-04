@@ -1,7 +1,7 @@
 [
 {
   "directory": "/home/syple/code/auto_engine/build",
-  "command": "/usr/bin/c++ -DGFLAGS_IS_A_DLL=0 -I/home/syple/code/auto_engine/src -isystem /home/syple/code/auto_engine/build/vcpkg_installed/x64-linux/include -Wno-unused-result -o CMakeFiles/main.dir/main.cc.o -c /home/syple/code/auto_engine/main.cc",
+  "command": "/usr/bin/c++ -DGFLAGS_IS_A_DLL=0 -DGLOG_CUSTOM_PREFIX_SUPPORT -I/home/syple/code/auto_engine/src -isystem /home/syple/code/auto_engine/build/vcpkg_installed/x64-linux/include -Wno-unused-result -o CMakeFiles/main.dir/main.cc.o -c /home/syple/code/auto_engine/main.cc",
   "file": "/home/syple/code/auto_engine/main.cc",
   "output": "CMakeFiles/main.dir/main.cc.o"
 },
@@ -16,5 +16,17 @@
   "command": "/usr/bin/c++  -I/home/syple/code/auto_engine/src -I/home/syple/code/auto_engine/src/src -Wno-unused-result -o CMakeFiles/lop.dir/methods.cc.o -c /home/syple/code/auto_engine/src/op/methods.cc",
   "file": "/home/syple/code/auto_engine/src/op/methods.cc",
   "output": "src/op/CMakeFiles/lop.dir/methods.cc.o"
+},
+{
+  "directory": "/home/syple/code/auto_engine/build/src/utils",
+  "command": "/usr/bin/c++  -I/home/syple/code/auto_engine/src -I/home/syple/code/auto_engine/src/src -Wno-unused-result -o CMakeFiles/lutils.dir/maths.cc.o -c /home/syple/code/auto_engine/src/utils/maths.cc",
+  "file": "/home/syple/code/auto_engine/src/utils/maths.cc",
+  "output": "src/utils/CMakeFiles/lutils.dir/maths.cc.o"
+},
+{
+  "directory": "/home/syple/code/auto_engine/build/src/cuda",
+  "command": "/usr/local/cuda-12.3/bin/nvcc -forward-unknown-to-host-compiler  --options-file CMakeFiles/lcuda.dir/includes_CUDA.rsp  \"--generate-code=arch=compute_60,code=[compute_60,sm_60]\" \"--generate-code=arch=compute_61,code=[compute_61,sm_61]\" \"--generate-code=arch=compute_62,code=[compute_62,sm_62]\" \"--generate-code=arch=compute_70,code=[compute_70,sm_70]\" \"--generate-code=arch=compute_72,code=[compute_72,sm_72]\" \"--generate-code=arch=compute_75,code=[compute_75,sm_75]\" \"--generate-code=arch=compute_86,code=[compute_86,sm_86]\" -Wno-unused-result -x cu -c /home/syple/code/auto_engine/src/cuda/mem.cu -o CMakeFiles/lcuda.dir/mem.cu.o",
+  "file": "/home/syple/code/auto_engine/src/cuda/mem.cu",
+  "output": "src/cuda/CMakeFiles/lcuda.dir/mem.cu.o"
 }
 ]

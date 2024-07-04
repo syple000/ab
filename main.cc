@@ -11,6 +11,7 @@
 #include "op/sin_cos.h"
 #include "tensor/tensor.h"
 #include "gtest/gtest.h"
+#include "cuda/mem.h"
 #include <cstdlib>
 #include <ios>
 #include <iostream>
@@ -149,6 +150,8 @@ int main(int argc, char* argv[]) {
 
     ::testing::InitGoogleTest(&argc, argv);
     RUN_ALL_TESTS();
+
+    cuda::Mem::malloc(12);
 
     return 0;
 }

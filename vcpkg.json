@@ -1,10 +1,23 @@
 {
   "builtin-baseline": "c8696863d371ab7f46e213d8f5ca923c4aef2a00",
   "dependencies": [
+    "folly",
     "glog",
     "gtest",
-    "folly"
+    "cuda"
   ],
   "overrides": [
+    {
+      "name": "glog",
+      "version": "0.6.0"
+    },
+    {
+      "name": "gtest",
+      "version": "1.14.0"
+    },
+    {
+      "name": "folly",
+      "version": "2023.10.02.00"
+    }
   ]
 }
