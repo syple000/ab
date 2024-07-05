@@ -6,16 +6,15 @@ project(auto_engine CXX)
 set(CMAKE_EXPORT_COMPILE_COMMANDS on)
 add_compile_options(-Wno-unused-result)
 
+# clangd对cuda输出的commands.json支持不好，想要正确识别，请删除：/usr/share/cmake-3.28/Modules/Compiler/NVIDIA.cmake
+# 中RESPONSE_FILE & options-file相关内容
 enable_language(CUDA)
-message(STATUS "cuda include_dir: " ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
-message(STATUS "cude link_dir: " ${CMAKE_CUDA_IMPLICIT_LINK_DIRECTORIES})
-
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
 
 find_package(GTest CONFIG REQUIRED)
 find_package(glog CONFIG REQUIRED)
 find_package(folly CONFIG REQUIRED)
 
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
 add_subdirectory(src)
 
 set(src_list main.cc)

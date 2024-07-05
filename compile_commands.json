@@ -7,25 +7,25 @@
 },
 {
   "directory": "/home/syple/code/auto_engine/build/src/tensor",
-  "command": "/usr/bin/c++  -I/home/syple/code/auto_engine/src -I/home/syple/code/auto_engine/src/src -Wno-unused-result -o CMakeFiles/ltensor.dir/shape.cc.o -c /home/syple/code/auto_engine/src/tensor/shape.cc",
+  "command": "/usr/bin/c++  -I/home/syple/code/auto_engine/src -Wno-unused-result -o CMakeFiles/ltensor.dir/shape.cc.o -c /home/syple/code/auto_engine/src/tensor/shape.cc",
   "file": "/home/syple/code/auto_engine/src/tensor/shape.cc",
   "output": "src/tensor/CMakeFiles/ltensor.dir/shape.cc.o"
 },
 {
   "directory": "/home/syple/code/auto_engine/build/src/op",
-  "command": "/usr/bin/c++  -I/home/syple/code/auto_engine/src -I/home/syple/code/auto_engine/src/src -Wno-unused-result -o CMakeFiles/lop.dir/methods.cc.o -c /home/syple/code/auto_engine/src/op/methods.cc",
+  "command": "/usr/bin/c++  -I/home/syple/code/auto_engine/src -Wno-unused-result -o CMakeFiles/lop.dir/methods.cc.o -c /home/syple/code/auto_engine/src/op/methods.cc",
   "file": "/home/syple/code/auto_engine/src/op/methods.cc",
   "output": "src/op/CMakeFiles/lop.dir/methods.cc.o"
 },
 {
   "directory": "/home/syple/code/auto_engine/build/src/utils",
-  "command": "/usr/bin/c++  -I/home/syple/code/auto_engine/src -I/home/syple/code/auto_engine/src/src -Wno-unused-result -o CMakeFiles/lutils.dir/maths.cc.o -c /home/syple/code/auto_engine/src/utils/maths.cc",
+  "command": "/usr/bin/c++  -I/home/syple/code/auto_engine/src -Wno-unused-result -o CMakeFiles/lutils.dir/maths.cc.o -c /home/syple/code/auto_engine/src/utils/maths.cc",
   "file": "/home/syple/code/auto_engine/src/utils/maths.cc",
   "output": "src/utils/CMakeFiles/lutils.dir/maths.cc.o"
 },
 {
   "directory": "/home/syple/code/auto_engine/build/src/cuda",
-  "command": "/usr/local/cuda-12.3/bin/nvcc -forward-unknown-to-host-compiler  --options-file CMakeFiles/lcuda.dir/includes_CUDA.rsp  \"--generate-code=arch=compute_60,code=[compute_60,sm_60]\" \"--generate-code=arch=compute_61,code=[compute_61,sm_61]\" \"--generate-code=arch=compute_62,code=[compute_62,sm_62]\" \"--generate-code=arch=compute_70,code=[compute_70,sm_70]\" \"--generate-code=arch=compute_72,code=[compute_72,sm_72]\" \"--generate-code=arch=compute_75,code=[compute_75,sm_75]\" \"--generate-code=arch=compute_86,code=[compute_86,sm_86]\" -Wno-unused-result -x cu -c /home/syple/code/auto_engine/src/cuda/mem.cu -o CMakeFiles/lcuda.dir/mem.cu.o",
+  "command": "/usr/local/cuda-12.3/bin/nvcc -forward-unknown-to-host-compiler  -I/home/syple/code/auto_engine/src  \"--generate-code=arch=compute_52,code=[compute_52,sm_52]\" -Wno-unused-result -x cu -c /home/syple/code/auto_engine/src/cuda/mem.cu -o CMakeFiles/lcuda.dir/mem.cu.o",
   "file": "/home/syple/code/auto_engine/src/cuda/mem.cu",
   "output": "src/cuda/CMakeFiles/lcuda.dir/mem.cu.o"
 }
