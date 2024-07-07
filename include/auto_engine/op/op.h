@@ -2,9 +2,9 @@
 #define OP_OP_H
 
 #include "base/basic_types.h"
-#include "glog/logging.h"
 #include "base/exit_code.h"
 #include "utils/vec_utils.h"
+#include "glog/logging.h"
 #include <cstdlib>
 #include <memory>
 #include <vector>

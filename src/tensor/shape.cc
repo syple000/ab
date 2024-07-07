@@ -1,4 +1,4 @@
-#include "shape.h"
+#include "tensor/shape.h"
 #include "base/exit_code.h"
 #include "glog/logging.h"
 #include <cstdlib>

@@ -1,31 +1,31 @@
 [
 {
-  "directory": "/home/syple/code/auto_engine/build",
-  "command": "/usr/bin/c++ -DGFLAGS_IS_A_DLL=0 -DGLOG_CUSTOM_PREFIX_SUPPORT -I/home/syple/code/auto_engine/src -isystem /home/syple/code/auto_engine/build/vcpkg_installed/x64-linux/include -Wno-unused-result -o CMakeFiles/main.dir/main.cc.o -c /home/syple/code/auto_engine/main.cc",
-  "file": "/home/syple/code/auto_engine/main.cc",
-  "output": "CMakeFiles/main.dir/main.cc.o"
+  "directory": "/home/syple/code/auto_engine/build/src",
+  "command": "/usr/bin/c++ -DGFLAGS_IS_A_DLL=0 -DGLOG_CUSTOM_PREFIX_SUPPORT -I/home/syple/code/auto_engine/include -I/home/syple/code/auto_engine/include/auto_engine -isystem /home/syple/code/auto_engine/build/vcpkg_installed/x64-linux/include -Wno-unused-result -o CMakeFiles/main.dir/main.cc.o -c /home/syple/code/auto_engine/src/main.cc",
+  "file": "/home/syple/code/auto_engine/src/main.cc",
+  "output": "src/CMakeFiles/main.dir/main.cc.o"
 },
 {
   "directory": "/home/syple/code/auto_engine/build/src/tensor",
-  "command": "/usr/bin/c++  -I/home/syple/code/auto_engine/src -Wno-unused-result -o CMakeFiles/ltensor.dir/shape.cc.o -c /home/syple/code/auto_engine/src/tensor/shape.cc",
+  "command": "/usr/bin/c++  -I/home/syple/code/auto_engine/include/auto_engine -Wno-unused-result -o CMakeFiles/ltensor.dir/shape.cc.o -c /home/syple/code/auto_engine/src/tensor/shape.cc",
   "file": "/home/syple/code/auto_engine/src/tensor/shape.cc",
   "output": "src/tensor/CMakeFiles/ltensor.dir/shape.cc.o"
 },
 {
   "directory": "/home/syple/code/auto_engine/build/src/op",
-  "command": "/usr/bin/c++  -I/home/syple/code/auto_engine/src -Wno-unused-result -o CMakeFiles/lop.dir/methods.cc.o -c /home/syple/code/auto_engine/src/op/methods.cc",
+  "command": "/usr/bin/c++  -I/home/syple/code/auto_engine/include/auto_engine -I/home/syple/code/auto_engine/include -Wno-unused-result -o CMakeFiles/lop.dir/methods.cc.o -c /home/syple/code/auto_engine/src/op/methods.cc",
   "file": "/home/syple/code/auto_engine/src/op/methods.cc",
   "output": "src/op/CMakeFiles/lop.dir/methods.cc.o"
 },
 {
   "directory": "/home/syple/code/auto_engine/build/src/utils",
-  "command": "/usr/bin/c++  -I/home/syple/code/auto_engine/src -Wno-unused-result -o CMakeFiles/lutils.dir/maths.cc.o -c /home/syple/code/auto_engine/src/utils/maths.cc",
+  "command": "/usr/bin/c++  -I/home/syple/code/auto_engine/include/auto_engine -Wno-unused-result -o CMakeFiles/lutils.dir/maths.cc.o -c /home/syple/code/auto_engine/src/utils/maths.cc",
   "file": "/home/syple/code/auto_engine/src/utils/maths.cc",
   "output": "src/utils/CMakeFiles/lutils.dir/maths.cc.o"
 },
 {
   "directory": "/home/syple/code/auto_engine/build/src/cuda",
-  "command": "/usr/local/cuda-12.3/bin/nvcc -forward-unknown-to-host-compiler  -I/home/syple/code/auto_engine/src  \"--generate-code=arch=compute_52,code=[compute_52,sm_52]\" -Wno-unused-result -x cu -c /home/syple/code/auto_engine/src/cuda/mem.cu -o CMakeFiles/lcuda.dir/mem.cu.o",
+  "command": "/usr/local/cuda-12.3/bin/nvcc -forward-unknown-to-host-compiler  -I/home/syple/code/auto_engine/include/auto_engine  \"--generate-code=arch=compute_52,code=[compute_52,sm_52]\" -Wno-unused-result -x cu -c /home/syple/code/auto_engine/src/cuda/mem.cu -o CMakeFiles/lcuda.dir/mem.cu.o",
   "file": "/home/syple/code/auto_engine/src/cuda/mem.cu",
   "output": "src/cuda/CMakeFiles/lcuda.dir/mem.cu.o"
 }
