@@ -2,8 +2,6 @@
 #define CUDA_MEM_H
 
 #include "base/basic_types.h"
-// #include "folly/AtomicHashMap.h"
-// #include "folly/ProducerConsumerQueue.h"
 
 namespace cuda {
 
