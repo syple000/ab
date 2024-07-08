@@ -1,2 +1,2 @@
-add_library(lop methods.cc)
-target_include_directories(lop PRIVATE ${PROJECT_SOURCE_DIR}/include/auto_engine)
+add_library(op methods.cc)
+target_link_libraries(op PRIVATE include)

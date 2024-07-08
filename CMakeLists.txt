@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.28.3)
 
 set(CMAKE_TOOLCHAIN_FILE "$ENV{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake")
-project(auto_engine CXX)
+project(auto_engine VERSION 0.0.1)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS on)
 add_compile_options(-Wno-unused-result)
@@ -17,4 +17,5 @@ find_package(GTest CONFIG REQUIRED)
 find_package(glog CONFIG REQUIRED)
 find_package(folly CONFIG REQUIRED)
 
+add_subdirectory(include)
 add_subdirectory(src)
