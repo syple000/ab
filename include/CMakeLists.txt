@@ -4,5 +4,6 @@ target_include_directories(include
     INTERFACE 
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/auto_engine>
     $<INSTALL_INTERFACE:include/auto_engine>)
+target_link_libraries(include INTERFACE GTest::gtest glog::glog)
 
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/auto_engine DESTINATION include)

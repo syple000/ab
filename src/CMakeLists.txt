@@ -30,4 +30,4 @@ install(FILES "${PROJECT_BINARY_DIR}/AEConfig.cmake"
         DESTINATION lib/cmake/AE)
 
 add_executable(main main.cc)
-target_link_libraries(main include tensor op cuda utils GTest::gtest glog::glog)
+target_link_libraries(main include tensor op cuda utils)
