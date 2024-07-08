@@ -1,6 +1,13 @@
 {
   "builtin-baseline": "c8696863d371ab7f46e213d8f5ca923c4aef2a00",
+  "name": "auto-engine",
+  "version-string": "0.0.1",
+  "description": "auto engine",
   "dependencies": [
+    {
+      "name" : "vcpkg-cmake",
+      "host" : true
+    },
     "folly",
     "glog",
     "gtest"
