@@ -2,10 +2,33 @@
 #define CUDA_MEM_H
 
 #include "auto_engine/base/basic_types.h"
+#include "boost/circular_buffer.hpp"
+#include <memory>
+#include <mutex>
+#include <unordered_map>
 
 namespace cuda {
 
 #define MAX_CUDA_CACHE_MEM_SIZE 1024*1024
+
+struct MemConcurrentQueue {
+    boost::circular_buffer<void*> cb; 
+    std::shared_ptr<std::mutex> mutex;
+
+    MemConcurrentQueue(u32);
+    bool push(void* m);
+    void* pop();
+    void clearAll();
+};
+
+struct MemConcurrentMap {
+    std::unordered_map<void*, u32> m;
+    std::shared_ptr<std::mutex> mutex;
+
+    MemConcurrentMap();
+    bool insert(void*, u32);
+    u32 erase(void*);   
+};
 
 class Mem {
 public:
@@ -13,8 +36,8 @@ public:
     static void free(void* m);
     static void clearAll();
 private:
-    // static folly::AtomicHashMap<u32, folly::ProducerConsumerQueue<void*>*> _free_mem;
-    // static folly::AtomicHashMap<void*, u32> _alloc_mem;
+    static std::unordered_map<u32, MemConcurrentQueue> _free_mems;
+    static MemConcurrentMap _alloc_mems;
 
     static void* mallocFromSys(u32 size);
 };

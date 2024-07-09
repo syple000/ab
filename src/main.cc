@@ -15,6 +15,7 @@
 #include "auto_engine/cuda/mem.h"
 #include "gtest/gtest.h"
 #include <cstdlib>
+#include <glog/logging.h>
 #include <ios>
 #include <iostream>
 #include <memory>
@@ -153,7 +154,10 @@ int main(int argc, char* argv[]) {
     ::testing::InitGoogleTest(&argc, argv);
     RUN_ALL_TESTS();
 
-    cuda::Mem::malloc(12);
+    auto m = cuda::Mem::malloc(12);
+    cuda::Mem::free(m);
+    cuda::Mem::clearAll();
 
+    google::ShutdownGoogleLogging();
     return 0;
 }

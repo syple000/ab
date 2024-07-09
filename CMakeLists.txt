@@ -13,9 +13,12 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 # 中RESPONSE_FILE & options-file相关内容
 enable_language(CUDA)
 
+# 程序使用了cublas，请安装nvph工具包
+
 find_package(GTest CONFIG REQUIRED)
 find_package(glog CONFIG REQUIRED)
 find_package(folly CONFIG REQUIRED)
+find_package(Boost REQUIRED)
 
 add_subdirectory(include)
 add_subdirectory(src)

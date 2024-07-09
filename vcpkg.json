@@ -1,20 +1,21 @@
 {
-  "builtin-baseline": "a34c873a9717a888f58dc05268dea15592c2f0ff",
   "name": "auto-engine",
   "version-string": "0.0.1",
   "description": "auto engine",
+  "builtin-baseline": "a34c873a9717a888f58dc05268dea15592c2f0ff",
   "dependencies": [
-    {
-      "name" : "vcpkg-cmake",
-      "host" : true
-    },
-    {
-        "name": "vcpkg-cmake-config",
-        "host": true
-    },
     "folly",
     "glog",
-    "gtest"
+    "gtest",
+    {
+      "name": "vcpkg-cmake",
+      "host": true
+    },
+    {
+      "name": "vcpkg-cmake-config",
+      "host": true
+    },
+    "boost-circular-buffer"
   ],
   "overrides": [
     {
