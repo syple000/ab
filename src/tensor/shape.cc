@@ -1,5 +1,5 @@
-#include "tensor/shape.h"
-#include "base/exit_code.h"
+#include "auto_engine/tensor/shape.h"
+#include "auto_engine/base/exit_code.h"
 #include "glog/logging.h"
 #include <cstdlib>
 #include <sstream>

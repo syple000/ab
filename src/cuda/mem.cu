@@ -1,7 +1,7 @@
-#include "mem.h"
+#include "auto_engine/cuda/mem.h"
 #include "cuda_runtime_api.h"
 #include "glog/logging.h"
-#include "utils/maths.h"
+#include "auto_engine/utils/maths.h"
 #include <cstdlib>
 #include <cuda_runtime.h>
 

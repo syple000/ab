@@ -1,9 +1,9 @@
 #ifndef CALC_CALC_H
 #define CALC_CALC_H
 
-#include "op/data_op.h"
-#include "op/methods.h"
-#include "op/op.h"
+#include "auto_engine/op/data_op.h"
+#include "auto_engine/op/methods.h"
+#include "auto_engine/op/op.h"
 #include <functional>
 #include <memory>
 #include <unordered_map>

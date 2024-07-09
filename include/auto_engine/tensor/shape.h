@@ -1,7 +1,7 @@
 #ifndef BASE_SHAPE_H 
 #define BASE_SHAPE_H
 
-#include "base/basic_types.h"
+#include "auto_engine/base/basic_types.h"
 #include <string>
 #include <vector>
 

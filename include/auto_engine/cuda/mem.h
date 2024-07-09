@@ -1,7 +1,7 @@
 #ifndef CUDA_MEM_H
 #define CUDA_MEM_H
 
-#include "base/basic_types.h"
+#include "auto_engine/base/basic_types.h"
 
 namespace cuda {
 
