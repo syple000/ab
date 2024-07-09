@@ -12,19 +12,19 @@ install(TARGETS include tensor op utils cuda
 install(EXPORT auto_engine
     FILE AETargets.cmake
     NAMESPACE auto_engine::
-    DESTINATION lib/cmake/auto_engine)
+    DESTINATION share/auto_engine)
 
 include(CMakePackageConfigHelpers)
 
 configure_package_config_file(
   ${PROJECT_SOURCE_DIR}/cmake/auto_engine-config.cmake.in 
   ${PROJECT_BINARY_DIR}/auto_engine-config.cmake
-  INSTALL_DESTINATION lib/cmake/auto_engine)
+  INSTALL_DESTINATION share/auto_engine)
 
 install(FILES 
     "${PROJECT_BINARY_DIR}/auto_engine-config.cmake"
     DESTINATION
-    lib/cmake/auto_engine)
+    share/auto_engine)
 
 add_executable(main main.cc)
 target_link_libraries(main include tensor op cuda utils)
