@@ -4,30 +4,26 @@ add_subdirectory(utils)
 add_subdirectory(cuda)
 
 install(TARGETS include tensor op utils cuda 
-    EXPORT ae
+    EXPORT auto_engine
     RUNTIME DESTINATION bin
     LIBRARY DESTINATION lib
     ARCHIVE DESTINATION lib)
 
-install(EXPORT ae
+install(EXPORT auto_engine
     FILE AETargets.cmake
-    NAMESPACE AE::
-    DESTINATION lib/cmake/AE)
+    NAMESPACE auto_engine::
+    DESTINATION share/auto_engine)
 
 include(CMakePackageConfigHelpers)
 
 configure_package_config_file(
-  ${PROJECT_SOURCE_DIR}/cmake/AEConfig.cmake.in ${PROJECT_BINARY_DIR}/AEConfig.cmake
-  INSTALL_DESTINATION lib/cmake/AE)
+  ${PROJECT_SOURCE_DIR}/cmake/auto_engine-config.cmake.in 
+  ${PROJECT_BINARY_DIR}/auto_engine-config.cmake)
 
-write_basic_package_version_file(
-  ${PROJECT_BINARY_DIR}/AEConfigVersion.cmake
-  VERSION ${PACKAGE_VERSION}
-  COMPATIBILITY SameMajorVersion)
-
-install(FILES "${PROJECT_BINARY_DIR}/AEConfig.cmake"
-              "${PROJECT_BINARY_DIR}/AEConfigVersion.cmake"
-        DESTINATION lib/cmake/AE)
+install(FILES 
+    "${PROJECT_BINARY_DIR}/auto_engine-config.cmake"
+    DESTINATION
+    share/auto_engine)
 
 add_executable(main main.cc)
 target_link_libraries(main include tensor op cuda utils)
