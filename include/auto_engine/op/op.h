@@ -93,9 +93,9 @@ template<typename T, typename... Args>
 class OpFunc {
 public:
     virtual T call(const Args&...) = 0;
-    // 导数计算需要指定参数位置
-    virtual T deriv(u32, const Args&...) = 0;
-    virtual std::shared_ptr<Op<T>> derivFunc(u32, std::shared_ptr<Op<Args>>...) = 0;
+    // 导数计算需要指定参数位置，传入上层已计算梯度，和本次计算的参数
+    virtual T deriv(u32, const T&, const Args&...) = 0;
+    virtual std::shared_ptr<Op<T>> derivFunc(u32, std::shared_ptr<Op<T>>, std::shared_ptr<Op<Args>>...) = 0;
 };
 
 template<int N, typename T, typename... Args>

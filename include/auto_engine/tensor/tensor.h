@@ -32,6 +32,7 @@ public:
 
     Tensor<T> operator+(const Tensor<T>&) const;
     Tensor<T> operator-(const Tensor<T>&) const;
+    Tensor<T> operator-() const;
     Tensor<T> operator*(const Tensor<T>&) const;
     Tensor<T> operator/(const Tensor<T>&) const;
     Tensor<T> pow(const Tensor<T>&) const;
@@ -203,6 +204,19 @@ Tensor<T> Tensor<T>::operator-(const Tensor<T>& t) const {
     Tensor<T> res(*this);
     for (int i = 0; i < t._data.size(); i++) {
         res._data[i] -= t._data[i];
+    }
+    return std::move(res);
+}
+
+template<typename T>
+Tensor<T> Tensor<T>::operator-() const {
+    if (!this) {
+        LOG(ERROR) << "tensor is null";
+        return {};
+    }
+    Tensor<T> res(this->shape(), 0);
+    for (int i = 0; i < _data.size(); i++) {
+        res._data[i] = -_data[i];
     }
     return std::move(res);
 }

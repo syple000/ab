@@ -26,9 +26,9 @@ public:
         auto grad = this->getGrad();
         auto arg = this->arg()->template getOutput();
         if (!this->arg()->template hasGrad()) {
-            this->arg()->template setGrad(grad * this->deriv(0, arg));
+            this->arg()->template setGrad(std::move(this->deriv(0, grad, arg)));
         } else {
-            this->arg()->template setGrad(this->arg()->template getGrad() + grad * this->deriv(0, arg));
+            this->arg()->template setGrad(this->arg()->template getGrad() + this->deriv(0, grad, arg));
         }
     }
 
@@ -37,7 +37,7 @@ public:
             return;
         }
         auto grad_graph = this->getGradGraph();
-        auto item = std::make_shared<Mul<T>>(grad_graph, this->derivFunc(0, this->arg()));
+        auto item = this->derivFunc(0, grad_graph, this->arg());
         if (!this->arg()->template hasGradGraph()) {
             this->arg()->template setGradGraph(item);
         } else {

@@ -1,6 +1,8 @@
 
 #include "auto_engine/base/basic_types.h"
 #include "auto_engine/op/bop.h"
+#include "auto_engine/op/add.h"
+#include "auto_engine/op/mul.h"
 #include "auto_engine/calc/calc.h"
 #include "auto_engine/op/data_op.h"
 #include "auto_engine/op/div.h"
