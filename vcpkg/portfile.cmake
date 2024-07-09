@@ -3,7 +3,7 @@ vcpkg_check_linkage(ONLY_STATIC_LIBRARY)
 vcpkg_from_git(
     OUT_SOURCE_PATH SOURCE_PATH
     URL git@github.com:syple000/ab.git
-    REF dd881e9ffdb5c6397dd9af07e813e9f76c7d85e0
+    REF 0346f57e480b3900c9b61349b50141eec2cbda8c
 )
 
 vcpkg_cmake_configure(

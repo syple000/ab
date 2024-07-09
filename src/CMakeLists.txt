@@ -18,7 +18,8 @@ include(CMakePackageConfigHelpers)
 
 configure_package_config_file(
   ${PROJECT_SOURCE_DIR}/cmake/auto_engine-config.cmake.in 
-  ${PROJECT_BINARY_DIR}/auto_engine-config.cmake)
+  ${PROJECT_BINARY_DIR}/auto_engine-config.cmake
+  INSTALL_DESTINATION share/auto_engine)
 
 install(FILES 
     "${PROJECT_BINARY_DIR}/auto_engine-config.cmake"
