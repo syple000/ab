@@ -33,7 +33,7 @@ public:
         }
     }
 
-    std::string name() override {return "Sub";}
+    std::string name() const override {return "Sub";}
 };
 
 }

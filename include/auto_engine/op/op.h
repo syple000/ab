@@ -36,7 +36,7 @@ public:
     virtual void forward() = 0;
     virtual void backward() = 0;
     virtual void createGradGraph() = 0;
-    virtual std::string name() = 0;
+    virtual std::string name() const = 0;
 
     const T& getOutput() const {
         if (!_has_output) {

@@ -38,7 +38,7 @@ public:
         }
     }
 
-    std::string name() override {return "Div";}
+    std::string name() const override {return "Div";}
 };
 
 }

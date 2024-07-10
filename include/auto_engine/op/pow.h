@@ -38,7 +38,7 @@ public:
         }
     }
 
-    std::string name() override {return "Pow";}
+    std::string name() const override {return "Pow";}
 }; 
 
 }

@@ -25,7 +25,7 @@ public:
         return std::make_shared<Div<T>>(grad, arg);
     }
 
-    std::string name() override {return "Log";}
+    std::string name() const override {return "Log";}
 };
 
 

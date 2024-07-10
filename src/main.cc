@@ -1,5 +1,6 @@
 
 #include "auto_engine/base/basic_types.h"
+#include "auto_engine/base/slice.h"
 #include "auto_engine/op/bop.h"
 #include "auto_engine/op/add.h"
 #include "auto_engine/op/mul.h"
@@ -13,12 +14,14 @@
 #include "auto_engine/op/sin_cos.h"
 #include "auto_engine/tensor/tensor.h"
 #include "auto_engine/cuda/mem.h"
+#include "auto_engine/cuda/matrix_f64.h"
 #include "gtest/gtest.h"
 #include <cstdlib>
 #include <glog/logging.h>
 #include <ios>
 #include <iostream>
 #include <memory>
+#include <vector>
 
 bool isEq(f64 a, f64 b) {
     if (abs(a-b) < EPSILON) {
@@ -145,6 +148,15 @@ TEST(Test_tensor, Test){
     cx2.clearGrad();
 }
 
+TEST(Cuda, Cuda) {
+    std::vector<f64> vec{1, 2, 3, 4, 5, 6};
+    base::Slice<f64> slice(&vec, 0, 6);
+    cuda::MatrixF64 m1(2, 3, slice);
+    std::cout << m1.toString() << std::endl;
+    auto m2 = m1.transpose();
+    std::cout << m2.toString() << std::endl;
+}
+
 int main(int argc, char* argv[]) {
     google::InitGoogleLogging(argv[0]);
     google::SetLogDestination(google::INFO, "./info.log");
@@ -153,10 +165,6 @@ int main(int argc, char* argv[]) {
 
     ::testing::InitGoogleTest(&argc, argv);
     RUN_ALL_TESTS();
-
-    auto m = cuda::Mem::malloc(12);
-    cuda::Mem::free(m);
-    cuda::Mem::clearAll();
 
     google::ShutdownGoogleLogging();
     return 0;

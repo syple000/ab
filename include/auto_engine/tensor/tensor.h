@@ -49,13 +49,14 @@ public:
     bool reshapeInplace(const std::vector<u32>& dims);
 
     std::string toString(bool compact = false) const;
+    const std::vector<T>& getData() const;
 
 private:
     Shape _shape;
     std::vector<T> _data;
 
-    bool check_index(const std::vector<u32>& index) const;
-    u32 calc_offset(const std::vector<u32>& index) const;
+    bool checkIndex(const std::vector<u32>& index) const;
+    u32 calcOffset(const std::vector<u32>& index) const;
 
     static T _INVALID_NUM;
 };
@@ -282,30 +283,30 @@ bool Tensor<T>::applyInplace(std::function<T(const T&)> f) {
 
 template<typename T>
 const T& Tensor<T>::operator()(const std::vector<u32>& index) const {
-    if (!check_index(index)) {
+    if (!checkIndex(index)) {
         return Tensor<T>::_INVALID_NUM;
     }
-    u32 offset = calc_offset(index);
+    u32 offset = calcOffset(index);
     return _data[offset];
 }
 
 template<typename T>
 T& Tensor<T>::operator()(const std::vector<u32>& index) {
-    if (!check_index(index)) {
+    if (!checkIndex(index)) {
         return Tensor<T>::_INVALID_NUM;
     }
-    u32 offset = calc_offset(index);
+    u32 offset = calcOffset(index);
     return _data[offset];
 }
 
 template<typename T>
 bool Tensor<T>::assign(const std::vector<u32>& start_index, const std::vector<u32>& end_index, const T& e) {
-    if (!check_index(start_index) || !check_index(end_index)) {
+    if (!checkIndex(start_index) || !checkIndex(end_index)) {
         LOG(ERROR) << "index invalid";
         return false;
     }
-    u32 start_offset = calc_offset(start_index);
-    u32 end_offset = calc_offset(end_index);
+    u32 start_offset = calcOffset(start_index);
+    u32 end_offset = calcOffset(end_index);
     if (start_index > end_index) {
         LOG(ERROR) << "start index gt end index";
         return false;
@@ -355,7 +356,12 @@ std::string Tensor<T>::toString(bool compact) const {
 }
 
 template<typename T>
-bool Tensor<T>::check_index(const std::vector<u32>& index) const {
+const std::vector<T>& Tensor<T>::getData() const {
+    return _data;
+}
+
+template<typename T>
+bool Tensor<T>::checkIndex(const std::vector<u32>& index) const {
     if (index.size() != _shape.dimCnt()) {
         LOG(ERROR) << "index size != dim cnt";
         return false;
@@ -371,7 +377,7 @@ bool Tensor<T>::check_index(const std::vector<u32>& index) const {
 }
 
 template<typename T>
-u32 Tensor<T>::calc_offset(const std::vector<u32>& index) const {
+u32 Tensor<T>::calcOffset(const std::vector<u32>& index) const {
     u32 offset = 0;
     for (int i = 0; i < _shape.dimCnt(); i++) {
         if (i + 1 == _shape.dimCnt()) {

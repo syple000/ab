@@ -23,7 +23,7 @@ public:
         return grad;
     }
 
-    std::string name() override {return "Add";}
+    std::string name() const override {return "Add";}
 };
 
 }

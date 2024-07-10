@@ -122,6 +122,35 @@ void Mem::clearAll() { // 仅清空free列表
     }
 }
 
+
+void* Mem::host2Device(void* m, u32 size) {
+    auto dm = Mem::malloc(size);
+    if (!dm) {
+        LOG(ERROR) << "host2Device malloc err";
+        return nullptr;
+    }
+    auto succ = cudaMemcpy(dm, m, size, cudaMemcpyHostToDevice);
+    if (succ != cudaSuccess) {
+        LOG(ERROR) << "host2Device mem cpy err: " << succ;
+        return nullptr;
+    }
+    return dm;
+}
+
+void* Mem::device2Host(void* m, u32 size) {
+    auto hm = std::malloc(size);
+    if (!hm) {
+        LOG(ERROR) << "device2Host malloc err";
+        return nullptr;
+    }
+    auto succ = cudaMemcpy(hm, m, size, cudaMemcpyDeviceToHost);
+    if (succ != cudaSuccess) {
+        LOG(ERROR) << "device2Host mem cpy err: " << succ;
+        return nullptr;
+    }
+    return hm;
+}
+
 void* Mem::mallocFromSys(u32 size) {
     void *mem;
     auto err = cudaMalloc(&mem, size);

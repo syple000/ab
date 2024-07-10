@@ -35,6 +35,10 @@ public:
     static void* malloc(u32 size);
     static void free(void* m);
     static void clearAll();
+
+    // host-device数据内存转换
+    static void* host2Device(void* m, u32 size);
+    static void* device2Host(void* m, u32 size);
 private:
     static std::unordered_map<u32, MemConcurrentQueue> _free_mems;
     static MemConcurrentMap _alloc_mems;

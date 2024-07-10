@@ -24,9 +24,21 @@
   "output": "src/utils/CMakeFiles/utils.dir/maths.cc.o"
 },
 {
+  "directory": "/home/syple/code/auto_engine/build/src/utils",
+  "command": "/usr/bin/c++ -DGFLAGS_IS_A_DLL=0 -DGLOG_CUSTOM_PREFIX_SUPPORT -I/home/syple/code/auto_engine/include -isystem /home/syple/code/auto_engine/build/vcpkg_installed/x64-linux/include -Wno-unused-result -o CMakeFiles/utils.dir/defer.cc.o -c /home/syple/code/auto_engine/src/utils/defer.cc",
+  "file": "/home/syple/code/auto_engine/src/utils/defer.cc",
+  "output": "src/utils/CMakeFiles/utils.dir/defer.cc.o"
+},
+{
   "directory": "/home/syple/code/auto_engine/build/src/cuda",
-  "command": "/usr/local/cuda-12.3/bin/nvcc -forward-unknown-to-host-compiler -DGFLAGS_IS_A_DLL=0 -DGLOG_CUSTOM_PREFIX_SUPPORT -I/home/syple/code/auto_engine/include -isystem /home/syple/code/auto_engine/build/vcpkg_installed/x64-linux/include  \"--generate-code=arch=compute_52,code=[compute_52,sm_52]\" -Wno-unused-result -x cu -c /home/syple/code/auto_engine/src/cuda/mem.cu -o CMakeFiles/cuda.dir/mem.cu.o",
+  "command": "/opt/nvidia/hpc_sdk/Linux_x86_64/24.5/compilers/bin/nvcc -forward-unknown-to-host-compiler -DGFLAGS_IS_A_DLL=0 -DGLOG_CUSTOM_PREFIX_SUPPORT -I/home/syple/code/auto_engine/include -isystem /home/syple/code/auto_engine/build/vcpkg_installed/x64-linux/include  \"--generate-code=arch=compute_52,code=[compute_52,sm_52]\" -Wno-unused-result -x cu -c /home/syple/code/auto_engine/src/cuda/mem.cu -o CMakeFiles/cuda.dir/mem.cu.o",
   "file": "/home/syple/code/auto_engine/src/cuda/mem.cu",
   "output": "src/cuda/CMakeFiles/cuda.dir/mem.cu.o"
+},
+{
+  "directory": "/home/syple/code/auto_engine/build/src/cuda",
+  "command": "/opt/nvidia/hpc_sdk/Linux_x86_64/24.5/compilers/bin/nvcc -forward-unknown-to-host-compiler -DGFLAGS_IS_A_DLL=0 -DGLOG_CUSTOM_PREFIX_SUPPORT -I/home/syple/code/auto_engine/include -isystem /home/syple/code/auto_engine/build/vcpkg_installed/x64-linux/include  \"--generate-code=arch=compute_52,code=[compute_52,sm_52]\" -Wno-unused-result -x cu -c /home/syple/code/auto_engine/src/cuda/matrix_f64.cu -o CMakeFiles/cuda.dir/matrix_f64.cu.o",
+  "file": "/home/syple/code/auto_engine/src/cuda/matrix_f64.cu",
+  "output": "src/cuda/CMakeFiles/cuda.dir/matrix_f64.cu.o"
 }
 ]

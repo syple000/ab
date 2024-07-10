@@ -28,7 +28,7 @@ public:
             return std::make_shared<Mul<T>>(grad, arg1);
         }
     }
-    std::string name() override {return "Mul";}
+    std::string name() const override {return "Mul";}
 };
 
 }

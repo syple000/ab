@@ -12,7 +12,7 @@ public:
     virtual void forward() override {};
     virtual void backward() override {};
     virtual void createGradGraph() override {};
-    std::string name() override {return "Data";}
+    virtual std::string name() const override {return "Data";}
 };
 
 }
