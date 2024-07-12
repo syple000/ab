@@ -3,7 +3,7 @@
 
 #include "auto_engine/base/basic_types.h"
 #include "auto_engine/base/slice.h"
-#include <mutex>
+#include <vector>
 
 namespace cuda {
 
@@ -21,19 +21,28 @@ class MatrixF64 {
 public:
   MatrixF64();
   MatrixF64(u32 m, u32 n, const base::Slice<f64> &slice);
+  MatrixF64(u32 m, u32 n, std::vector<f64>&& vec); // 测试用方法
   MatrixF64(const MatrixF64&);
   MatrixF64& operator=(const MatrixF64&);
+  bool operator==(const MatrixF64&) const;
 
   ~MatrixF64();
-  const base::Slice<f64> &getSlice();
-  f64 *getCudaSlice();
+  const base::Slice<f64>& getSlice() const;
   std::string toString() const;
-  MatrixF64 transpose();
+  MatrixF64 transpose() const;
+  MatrixF64 mmul(MatrixF64&) const;
+  MatrixF64 inv() const;
+
+  MatrixF64 sin() const;
+  MatrixF64 cos() const;
+  MatrixF64 log() const;
+  MatrixF64 add(const MatrixF64&) const;
+  MatrixF64 sub(const MatrixF64&) const;
+  MatrixF64 mul(const MatrixF64&) const;
+  MatrixF64 div(const MatrixF64&) const;
 private:
   base::Slice<f64> _slice;
   u32 _m = 0, _n = 0;
-  std::mutex _cuda_slice_lock;
-  f64 *_cuda_slice = nullptr;
 };
 
 }

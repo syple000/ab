@@ -13,7 +13,6 @@
 #include "auto_engine/op/log.h"
 #include "auto_engine/op/sin_cos.h"
 #include "auto_engine/tensor/tensor.h"
-#include "auto_engine/cuda/mem.h"
 #include "auto_engine/cuda/matrix_f64.h"
 #include "gtest/gtest.h"
 #include <cstdlib>
@@ -152,9 +151,28 @@ TEST(Cuda, Cuda) {
     std::vector<f64> vec{1, 2, 3, 4, 5, 6};
     base::Slice<f64> slice(&vec, 0, 6);
     cuda::MatrixF64 m1(2, 3, slice);
-    std::cout << m1.toString() << std::endl;
+    ASSERT_TRUE(m1 == cuda::MatrixF64(2, 3, {1, 2, 3, 4, 5, 6}));
     auto m2 = m1.transpose();
-    std::cout << m2.toString() << std::endl;
+    ASSERT_TRUE(m2 == cuda::MatrixF64(3, 2, {1, 4, 2, 5, 3, 6}));
+    cuda::MatrixF64 m3(3, 2, slice);
+    ASSERT_TRUE(m3 == cuda::MatrixF64(3, 2, {1, 2, 3, 4, 5, 6}));
+    auto m4 = m1.mmul(m3);
+    ASSERT_TRUE(m4 == cuda::MatrixF64(2, 2, {22, 28, 49, 64}));
+    auto m5 = m3.mmul(m1);
+    ASSERT_TRUE(m5 == cuda::MatrixF64(3, 3, {9, 12, 15, 19, 26, 33, 29, 40, 51}));
+    auto m6 = cuda::MatrixF64(3, 3, {1, 2, 3, 4, 5, 6, 7, 2, 9});
+    auto m7 = m6.inv();
+    ASSERT_TRUE(m7 == cuda::MatrixF64(3, 3, {-11.0/12, 1.0/3, 1.0/12, -1.0/6, 1.0/3, -1.0/6, 3.0/4, -1.0/3, 1.0/12}));
+    auto m8 = cuda::MatrixF64(3, 3, {0, 2, 3, 4, 5, 6, 7, 2, 9});
+    auto m9 = m8.inv();
+    ASSERT_TRUE(m9 == cuda::MatrixF64(3, 3, {-11.0/23, 4.0/23, 1.0/23, -2.0/23, 7.0/23, -4.0/23, 9.0/23, -14.0/69, 8.0/69}));
+    auto m10 = cuda::MatrixF64(2, 3, {1, 2, 3, 4, 5, 6});
+    auto m11 = m10.sin();
+    ASSERT_TRUE(m11 == cuda::MatrixF64(2, 3, {sin(1), sin(2), sin(3), sin(4), sin(5), sin(6)}));
+    auto m12 = m10.add(m10);
+    ASSERT_TRUE(m12 == cuda::MatrixF64(2, 3, {2, 4, 6, 8, 10, 12}));
+    auto m13 = m10.add(m12);
+    ASSERT_TRUE(m13 == cuda::MatrixF64(2, 3, {3, 6, 9, 12, 15, 18}));
 }
 
 int main(int argc, char* argv[]) {

@@ -30,6 +30,21 @@ public:
     }
     Slice(const Slice<T>&) = default;
     Slice<T>& operator=(const Slice<T>&) = default;
+    
+    bool operator==(const Slice<T>& s) const {
+        if (this == &s) {
+            return true;
+        }
+        if (_len != s._len) {
+            return false;
+        }
+        for (int i = 0; i < _len; i++) {
+            if (std::abs(this->operator[](i) - s[i]) > EPSILON) {
+                return false;
+            }
+        }
+        return true;
+    }
 
     const T& operator[](u32 index) const { // 先判断区间再调用
         if (index >= _begin_index + _len) {
