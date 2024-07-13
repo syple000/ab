@@ -17,6 +17,7 @@
 #include <functional>
 #include <iostream>
 #include <limits>
+#include <sstream>
 #include <string>
 #include <type_traits>
 #include <utility>
@@ -199,7 +200,7 @@ Tensor<T> Tensor<T>::operator+(const Tensor<T>& t) const {
         memcpy(res._data.data(), rm.getSlice().data(), rm.getSlice().size() * sizeof(T));
     } else {
         for (int i = 0; i < t._data.size(); i++) {
-            res._data[i] += t._data[i];
+            res._data[i] += _data[i] + t._data[i];
         }
     }
     return std::move(res);
@@ -223,7 +224,7 @@ Tensor<T> Tensor<T>::operator*(const Tensor<T>& t) const {
         memcpy(res._data.data(), rm.getSlice().data(), rm.getSlice().size() * sizeof(T));
     } else {
         for (int i = 0; i < t._data.size(); i++) {
-            res._data[i] *= t._data[i];
+            res._data[i] = _data[i] * t._data[i];
         }
     }
     return std::move(res);
@@ -248,7 +249,7 @@ Tensor<T> Tensor<T>::operator-(const Tensor<T>& t) const {
         memcpy(res._data.data(), rm.getSlice().data(), rm.getSlice().size() * sizeof(T));
     } else {
         for (int i = 0; i < t._data.size(); i++) {
-            res._data[i] -= t._data[i];
+            res._data[i] = _data[i] - t._data[i];
         }
     }
     return std::move(res);
@@ -348,7 +349,7 @@ Tensor<T> Tensor<T>::operator/(const Tensor<T>& t) const {
         memcpy(res._data.data(), rm.getSlice().data(), rm.getSlice().size() * sizeof(T));
     } else {
         for (int i = 0; i < t._data.size(); i++) {
-            res._data[i] /= t._data[i];
+            res._data[i] = _data[i] / t._data[i];
         }
     }
     return std::move(res);
@@ -401,7 +402,7 @@ Tensor<T> Tensor<T>::transpose() const {
         } else {
             auto m = Eigen::Map<const Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>(_data.data() + index * matrix_size, row_cnt, col_cnt);
             auto tm = m.transpose();
-            memcpy(rm._data.data() + index * matrix_size, tm.data(), matrix_size * sizeof(T));
+            Eigen::Map<Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>(rm._data.data() + index * matrix_size, col_cnt, row_cnt) = tm;
         }
         index += 1;
     }
@@ -439,7 +440,7 @@ Tensor<T> Tensor<T>::mmul(const Tensor<T>& t) const {
                 auto m1 = Eigen::Map<const Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>(_data.data(), row_cnt, col_cnt);
                 auto m2 = Eigen::Map<const Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>(t._data.data() + index * m_matrix_size, m_row_cnt, m_col_cnt);
                 Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> m3 = m1 * m2;
-                memcpy(rm._data.data() + index * r_matrix_size, m3.data(), r_matrix_size * sizeof(T));
+                Eigen::Map<Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>(rm._data.data() + index * r_matrix_size, row_cnt, m_col_cnt) = m3;
             }
             index += 1;
         }
@@ -454,7 +455,7 @@ Tensor<T> Tensor<T>::mmul(const Tensor<T>& t) const {
                 auto m1 = Eigen::Map<const Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>(_data.data() + index * matrix_size, row_cnt, col_cnt);
                 auto m2 = Eigen::Map<const Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>(t._data.data(), m_row_cnt, m_col_cnt);
                 Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> m3 = m1 * m2;
-                memcpy(rm._data.data() + index * r_matrix_size, m3.data(), r_matrix_size * sizeof(T));
+                Eigen::Map<Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>(rm._data.data() + index * r_matrix_size, row_cnt, m_col_cnt) = m3;
             }
             index += 1;
         }
@@ -485,7 +486,7 @@ Tensor<T> Tensor<T>::inv() const {
         } else {
             auto m = Eigen::Map<const Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>(_data.data() + index * matrix_size, row_cnt, col_cnt);
             Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> tm = m.inverse();
-            memcpy(rm._data.data() + index * matrix_size, tm.data(), matrix_size * sizeof(T));
+            Eigen::Map<Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>(rm._data.data() + index * matrix_size, row_cnt, col_cnt) = tm;
         }
         index += 1;
     }

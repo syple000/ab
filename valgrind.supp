@@ -1,0 +1,57 @@
+{
+   <libcuda_suppression>
+   Memcheck:Leak
+   ...
+   obj:*libcuda.so*
+   ...
+}
+{
+   <libcuda_suppression>
+   Memcheck:Addr4
+   ...
+   obj:*libcuda.so*
+   ...
+}
+{
+   <libcuda_suppression>
+   Memcheck:Addr8
+   ...
+   obj:*libcuda.so*
+   ...
+}
+{
+   <libcuda_suppression>
+   Memcheck:Cond
+   ...
+   obj:*libcuda.so*
+   ...
+}
+{
+   <libcuda_suppression>
+   Memcheck:Value8
+   ...
+   obj:*libcuda.so*
+   ...
+}
+{
+   <libcuda_suppression>
+   Memcheck:Addr4
+   ...
+   fun:*_ZN4cuda*
+   ...
+}
+{
+   <libcuda_suppression>
+   Memcheck:Cond
+   ...
+   fun:_dl_open
+   ...
+}
+{
+   <libcuda_suppression>
+   Memcheck:Param
+   openat(filename)
+   ...
+   fun:_dl_open
+   ...
+}
