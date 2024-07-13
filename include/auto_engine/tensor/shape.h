@@ -26,6 +26,9 @@ public:
     const std::vector<u32>& getDims() {return _dims;}
     u32 getDim(u32 index) const {return index < _dims.size() ? _dims[index] : 0;}
     u32 dimCnt() const {return _dims.size();}
+
+    Shape transpose() const;
+    Shape mmul(const Shape&) const;
 private:
     std::vector<u32> _dims;
     std::vector<u32> _counts;

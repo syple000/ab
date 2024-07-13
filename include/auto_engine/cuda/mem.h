@@ -39,6 +39,7 @@ public:
     // host-device数据内存转换
     static void* host2Device(const void* m, u32 size);
     static void* device2Host(const void* m, u32 size);
+    static bool device2Host(void* dst, const void* src, u32 size); // 拷贝到目标内存（请务必注意内存分配）
 private:
     static std::unordered_map<u32, MemConcurrentQueue> _free_mems;
     static MemConcurrentMap _alloc_mems;

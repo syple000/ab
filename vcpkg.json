@@ -8,6 +8,7 @@
     "glog",
     "gtest",
     "eigen3",
+    "boost-stacktrace",
     {
       "name": "vcpkg-cmake",
       "host": true

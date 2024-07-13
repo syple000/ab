@@ -134,12 +134,12 @@ MatrixF64 MatrixF64::transpose() const {
     utils::Defer free_cuda_slice([&cuda_slice] {Mem::free(reinterpret_cast<void*>(cuda_slice));});
     CHECK_CUBLAS_CALL(cublasDgeam(handle, CUBLAS_OP_T, CUBLAS_OP_N, _m, _n, &alpha, cuda_slice, _n,  
         &beta, cuda_slice, _m, cuda_ret, _m), "geam"); 
-    auto ret = reinterpret_cast<f64*>(Mem::device2Host(cuda_ret, _slice.size() * sizeof(f64))); 
-    if (!ret) {
+    auto rv = std::make_shared<std::vector<f64>>(_slice.size());
+    if (!Mem::device2Host(rv->data(), cuda_ret, _slice.size() * sizeof(f64))) {
         LOG(ERROR) << __FUNCTION__ << "device 2 host err";
         return MatrixF64();
     }
-    return MatrixF64(_n, _m, base::Slice<f64>(std::make_shared<std::vector<f64>>(ret, ret+_slice.size())));  
+    return MatrixF64(_n, _m, base::Slice<f64>(rv));  
 }
 
 MatrixF64 MatrixF64::mmul(MatrixF64& m) const {
@@ -166,12 +166,12 @@ MatrixF64 MatrixF64::mmul(MatrixF64& m) const {
     utils::Defer free_cuda_slice([&cuda_slice] {Mem::free(reinterpret_cast<void*>(cuda_slice));});
     CHECK_CUBLAS_CALL(cublasDgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, m._n, _m, _n, 
         &alpha, cuda_slice, m._n, cuda_slice, _n, &beta, cuda_ret, m._n), "gemm");
-    auto ret = reinterpret_cast<f64*>(Mem::device2Host(cuda_ret, size * sizeof(f64)));
-    if (!ret) {
+    auto rv = std::make_shared<std::vector<f64>>(size);
+    if (!Mem::device2Host(rv->data(), cuda_ret, size * sizeof(f64))) {
         LOG(ERROR) << __FUNCTION__ << "device 2 host err";
         return MatrixF64();
     }
-    return MatrixF64(_m, m._n, base::Slice<f64>(std::make_shared<std::vector<f64>>(ret, ret+size)));  
+    return MatrixF64(_m, m._n, base::Slice<f64>(rv));  
 }
 
 MatrixF64 MatrixF64::inv() const {
@@ -234,12 +234,12 @@ MatrixF64 MatrixF64::inv() const {
     CHECK_CUBLAS_CALL(cublasDgetriBatched(handle, _m, cuda_matrix_array, _m, pivot_array, cuda_carry_array, _m, info_array, BATCH_COUNT), "getri_batched");
     CHECK_INFOS(info_array, "getri_batched");
 
-    auto ret = reinterpret_cast<f64*>(Mem::device2Host(cuda_carry, _slice.size() * sizeof(f64)));
-    if (!ret) {
+    auto rv = std::make_shared<std::vector<f64>>(_slice.size());
+    if (!Mem::device2Host(rv->data(), cuda_carry, _slice.size() * sizeof(f64))) {
         LOG(ERROR) << __FUNCTION__ << "device 2 host err";
         return MatrixF64();
     }
-    return MatrixF64(_m, _n, base::Slice<f64>(std::make_shared<std::vector<f64>>(ret, ret+_slice.size())));  
+    return MatrixF64(_m, _n, base::Slice<f64>(rv));  
 }
 
 #define APPLY_1E(apply_func) \
@@ -253,12 +253,12 @@ MatrixF64 MatrixF64::inv() const {
     utils::Defer free_cuda_slice([&cuda_slice] {Mem::free(reinterpret_cast<void*>(cuda_slice));}); \
     apply_func<f64><<<std::get<0>(dims), std::get<1>(dims)>>>(cuda_slice, _m*_n, 1); \
     CHECK_CUDA_CALL(cudaPeekAtLastError(), "apply"); \
-    auto ret = reinterpret_cast<f64*>(Mem::device2Host(reinterpret_cast<void*>(cuda_slice), _slice.size() * sizeof(f64))); \
-    if (!ret) { \
+    auto rv = std::make_shared<std::vector<f64>>(_slice.size()); \
+    if (!Mem::device2Host(rv->data(), cuda_slice, _slice.size() * sizeof(f64))) { \
         LOG(ERROR) << __FUNCTION__ << "device 2 host err"; \
         return MatrixF64(); \
     } \
-    return MatrixF64(_m, _n, base::Slice<f64>(std::make_shared<std::vector<f64>>(ret, ret+_slice.size())));   \
+    return MatrixF64(_m, _n, base::Slice<f64>(rv));   \
 } \
 
 
@@ -283,12 +283,12 @@ MatrixF64 MatrixF64::inv() const {
     utils::Defer free_cuda_slice2([&cuda_slice2] {Mem::free(reinterpret_cast<void*>(cuda_slice2));}); \
     apply_func<f64><<<std::get<0>(dims), std::get<1>(dims)>>>(cuda_slice1, cuda_slice2, _m*_n, 1); \
     CHECK_CUDA_CALL(cudaPeekAtLastError(), "apply"); \
-    auto ret = reinterpret_cast<f64*>(Mem::device2Host(reinterpret_cast<void*>(cuda_slice1), _slice.size() * sizeof(f64))); \
-    if (!ret) { \
+    auto rv = std::make_shared<std::vector<f64>>(_slice.size()); \
+    if (!Mem::device2Host(rv->data(), cuda_slice1, _slice.size() * sizeof(f64))) { \
         LOG(ERROR) << __FUNCTION__ << "device 2 host err"; \
         return MatrixF64(); \
     } \
-    return MatrixF64(_m, _n, base::Slice<f64>(std::make_shared<std::vector<f64>>(ret, ret+_slice.size())));   \
+    return MatrixF64(_m, _n, base::Slice<f64>(rv));   \
 } \
 
 MatrixF64 MatrixF64::sin() const {APPLY_1E(cuda_matrix_kernel::apply_sin);}

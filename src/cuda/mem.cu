@@ -151,6 +151,15 @@ void* Mem::device2Host(const void* m, u32 size) {
     return hm;
 }
 
+bool Mem::device2Host(void* dst, const void* src, u32 size) { // 拷贝到目标内存（请务必注意内存分配）
+    auto succ = cudaMemcpy(dst, src, size, cudaMemcpyDeviceToHost);
+    if (succ != cudaSuccess) {
+        LOG(ERROR) << "device2Host mem cpy err: " << succ;
+        return false;
+    }
+    return true;
+}
+
 void* Mem::mallocFromSys(u32 size) {
     void *mem;
     auto err = cudaMalloc(&mem, size);

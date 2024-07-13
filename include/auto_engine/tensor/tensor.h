@@ -7,6 +7,10 @@
 #include "auto_engine/cuda/matrix_f64.h"
 #include "shape.h"
 #include "glog/logging.h"
+#include "Eigen/Dense"
+#include <Eigen/src/Core/Map.h>
+#include <Eigen/src/Core/Matrix.h>
+#include <Eigen/src/Core/util/Constants.h>
 #include <cmath>
 #include <cstdlib>
 #include <cstring>
@@ -25,6 +29,7 @@ struct Tensor {
 public:
     static_assert(std::is_arithmetic<T>::value, "T should be number");
     Tensor() {}
+    Tensor(const Shape&);
     Tensor(const Shape&, const std::function<T()>&);
     Tensor(const Shape&, const T&);
     Tensor(const Shape&, const std::vector<T>&);
@@ -46,6 +51,7 @@ public:
     Tensor<T> operator/(const Tensor<T>&) const;
     Tensor<T> pow(const Tensor<T>&) const;
 
+    // 对齐pytorch语义
     Tensor<T> transpose() const;
     Tensor<T> mmul(const Tensor<T>&) const;
     Tensor<T> inv() const;
@@ -75,9 +81,15 @@ private:
 template<typename T>
 T Tensor<T>::_INVALID_NUM = std::numeric_limits<T>::quiet_NaN();
 
+
+template<typename T>
+Tensor<T>::Tensor(const Shape& shape) {
+    _shape = shape;
+    _data = std::vector<T>(shape.tensorSize());
+}
+
 template<typename T>
 Tensor<T>::Tensor(const Shape& shape, const std::function<T()>& f) {
-    std::numeric_limits<double>::quiet_NaN();
     _shape = shape;
     _data = std::vector<T>(shape.tensorSize());
     for (auto& t : _data) {
@@ -179,15 +191,13 @@ Tensor<T> Tensor<T>::operator+(const Tensor<T>& t) const {
         return {};
     }
 
-    Tensor<T> res;
+    Tensor<T> res(_shape);
     if (std::is_same<T, f64>::value && ENABLE_CUDA) {
         cuda::MatrixF64 sm(_data.size(), 1, base::Slice<T>(&_data));
         cuda::MatrixF64 m(t._data.size(), 1, base::Slice<T>(&t._data));
         auto rm = sm.add(m);
-        res._shape = _shape;
-        res._data = std::vector<T>(rm.getSlice().data(), rm.getSlice().data() + rm.getSlice().size());
+        memcpy(res._data.data(), rm.getSlice().data(), rm.getSlice().size() * sizeof(T));
     } else {
-        res = *this;
         for (int i = 0; i < t._data.size(); i++) {
             res._data[i] += t._data[i];
         }
@@ -205,15 +215,13 @@ Tensor<T> Tensor<T>::operator*(const Tensor<T>& t) const {
         LOG(ERROR) << "mul diff shape tensor";
         return {};
     }
-    Tensor<T> res;
+    Tensor<T> res(_shape);
     if (std::is_same<T, f64>::value && ENABLE_CUDA) {
         cuda::MatrixF64 sm(_data.size(), 1, base::Slice<T>(&_data));
         cuda::MatrixF64 m(t._data.size(), 1, base::Slice<T>(&t._data));
         auto rm = sm.mul(m);
-        res._shape = _shape;
-        res._data = std::vector<T>(rm.getSlice().data(), rm.getSlice().data() + rm.getSlice().size());
+        memcpy(res._data.data(), rm.getSlice().data(), rm.getSlice().size() * sizeof(T));
     } else {
-        res = *this;
         for (int i = 0; i < t._data.size(); i++) {
             res._data[i] *= t._data[i];
         }
@@ -232,15 +240,13 @@ Tensor<T> Tensor<T>::operator-(const Tensor<T>& t) const {
         LOG(ERROR) << "sub diff shape tensor";
         return {};
     }
-    Tensor<T> res;
+    Tensor<T> res(_shape);
     if (std::is_same<T, f64>::value && ENABLE_CUDA) {
         cuda::MatrixF64 sm(_data.size(), 1, base::Slice<T>(&_data));
         cuda::MatrixF64 m(t._data.size(), 1, base::Slice<T>(&t._data));
         auto rm = sm.sub(m);
-        res._shape = _shape;
-        res._data = std::vector<T>(rm.getSlice().data(), rm.getSlice().data() + rm.getSlice().size());
+        memcpy(res._data.data(), rm.getSlice().data(), rm.getSlice().size() * sizeof(T));
     } else {
-        res = *this;
         for (int i = 0; i < t._data.size(); i++) {
             res._data[i] -= t._data[i];
         }
@@ -254,14 +260,12 @@ Tensor<T> Tensor<T>::log() const {
         LOG(ERROR) << "tensor is null";
         return {};
     }
-    Tensor<T> res;
+    Tensor<T> res(_shape);
     if (std::is_same<T, f64>::value && ENABLE_CUDA) {
         cuda::MatrixF64 sm(_data.size(), 1, base::Slice<T>(&_data));
         auto rm = sm.log();
-        res._shape = _shape;
-        res._data = std::vector<T>(rm.getSlice().data(), rm.getSlice().data() + rm.getSlice().size());
+        memcpy(res._data.data(), rm.getSlice().data(), rm.getSlice().size() * sizeof(T));
     } else {
-        res = Tensor<T>(this->shape(), 0);
         for (int i = 0; i < _data.size(); i++) {
             res._data[i] = ::log(_data[i]);
         }
@@ -275,14 +279,12 @@ Tensor<T> Tensor<T>::cos() const {
         LOG(ERROR) << "tensor is null";
         return {};
     }
-    Tensor<T> res;
+    Tensor<T> res(_shape);
     if (std::is_same<T, f64>::value && ENABLE_CUDA) {
         cuda::MatrixF64 sm(_data.size(), 1, base::Slice<T>(&_data));
         auto rm = sm.cos();
-        res._shape = _shape;
-        res._data = std::vector<T>(rm.getSlice().data(), rm.getSlice().data() + rm.getSlice().size());
+        memcpy(res._data.data(), rm.getSlice().data(), rm.getSlice().size() * sizeof(T));
     } else {
-        res = Tensor<T>(this->shape(), 0);
         for (int i = 0; i < _data.size(); i++) {
             res._data[i] = ::cos(_data[i]);
         }
@@ -296,14 +298,12 @@ Tensor<T> Tensor<T>::sin() const {
         LOG(ERROR) << "tensor is null";
         return {};
     }
-    Tensor<T> res;
+    Tensor<T> res(_shape);
     if (std::is_same<T, f64>::value && ENABLE_CUDA) {
         cuda::MatrixF64 sm(_data.size(), 1, base::Slice<T>(&_data));
         auto rm = sm.sin();
-        res._shape = _shape;
-        res._data = std::vector<T>(rm.getSlice().data(), rm.getSlice().data() + rm.getSlice().size());
+        memcpy(res._data.data(), rm.getSlice().data(), rm.getSlice().size() * sizeof(T));
     } else {
-        res = Tensor<T>(this->shape(), 0);
         for (int i = 0; i < _data.size(); i++) {
             res._data[i] = ::sin(_data[i]);
         }
@@ -317,14 +317,12 @@ Tensor<T> Tensor<T>::operator-() const {
         LOG(ERROR) << "tensor is null";
         return {};
     }
-    Tensor<T> res;
+    Tensor<T> res(_shape);
     if (std::is_same<T, f64>::value && ENABLE_CUDA) {
         cuda::MatrixF64 sm(_data.size(), 1, base::Slice<T>(&_data));
         auto rm = sm.neg();
-        res._shape = _shape;
-        res._data = std::vector<T>(rm.getSlice().data(), rm.getSlice().data() + rm.getSlice().size());
+        memcpy(res._data.data(), rm.getSlice().data(), rm.getSlice().size() * sizeof(T));
     } else {
-        res = Tensor<T>(this->shape(), 0);
         for (int i = 0; i < _data.size(); i++) {
             res._data[i] = -_data[i];
         }
@@ -342,15 +340,13 @@ Tensor<T> Tensor<T>::operator/(const Tensor<T>& t) const {
         LOG(ERROR) << "div diff shape tensor";
         return {};
     }
-    Tensor<T> res;
+    Tensor<T> res(_shape);
     if (std::is_same<T, f64>::value && ENABLE_CUDA) {
         cuda::MatrixF64 sm(_data.size(), 1, base::Slice<T>(&_data));
         cuda::MatrixF64 m(t._data.size(), 1, base::Slice<T>(&t._data));
         auto rm = sm.div(m);
-        res._shape = _shape;
-        res._data = std::vector<T>(rm.getSlice().data(), rm.getSlice().data() + rm.getSlice().size());
+        memcpy(res._data.data(), rm.getSlice().data(), rm.getSlice().size() * sizeof(T));
     } else {
-        res = *this;
         for (int i = 0; i < t._data.size(); i++) {
             res._data[i] /= t._data[i];
         }
@@ -368,20 +364,132 @@ Tensor<T> Tensor<T>::pow(const Tensor<T>& t) const {
         LOG(ERROR) << "div diff shape tensor";
         return {};
     }
-    Tensor<T> res;
+    Tensor<T> res(_shape);
     if (std::is_same<T, f64>::value && ENABLE_CUDA) {
         cuda::MatrixF64 sm(_data.size(), 1, base::Slice<T>(&_data));
         cuda::MatrixF64 m(t._data.size(), 1, base::Slice<T>(&t._data));
         auto rm = sm.pow(m);
-        res._shape = _shape;
-        res._data = std::vector<T>(rm.getSlice().data(), rm.getSlice().data() + rm.getSlice().size());
+        memcpy(res._data.data(), rm.getSlice().data(), rm.getSlice().size() * sizeof(T));
     } else {
-        res = Tensor<T>(this->shape(), 0);
         for (int i = 0; i < t._data.size(); i++) {
             res._data[i] = ::pow(_data[i], t._data[i]);
         }
     }
     return std::move(res);
+}
+
+template<typename T>
+Tensor<T> Tensor<T>::transpose() const {
+    if (!this) {
+        LOG(ERROR) << "tensor is null";
+        return {};
+    }
+    auto shape = _shape.transpose();
+    if (shape.tensorSize() <= 0) {
+        return {};
+    }
+    Tensor<T> rm(shape);
+    auto matrix_size = _shape.subTensorSize(_shape.dimCnt()-2);
+    auto row_cnt = _shape.getDim(_shape.dimCnt() - 2);
+    auto col_cnt = _shape.getDim(_shape.dimCnt() - 1);
+    u32 index = 0;
+    while (index * matrix_size < _data.size()) {
+        if (std::is_same<T, f64>::value && ENABLE_CUDA) {
+            cuda::MatrixF64 m(row_cnt, col_cnt, base::Slice<T>(&_data, index * matrix_size, matrix_size));
+            auto tm = m.transpose();
+            memcpy(rm._data.data() + index * matrix_size, tm.getSlice().data(), matrix_size * sizeof(T));
+        } else {
+            auto m = Eigen::Map<const Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>(_data.data() + index * matrix_size, row_cnt, col_cnt);
+            auto tm = m.transpose();
+            memcpy(rm._data.data() + index * matrix_size, tm.data(), matrix_size * sizeof(T));
+        }
+        index += 1;
+    }
+    return std::move(rm);
+}
+
+template<typename T>
+Tensor<T> Tensor<T>::mmul(const Tensor<T>& t) const {
+    if (!this) {
+        LOG(ERROR) << "tensor is null";
+        return {};
+    }
+    auto shape = _shape.mmul(t._shape);
+    if (shape.tensorSize() <= 0) {
+        return {};
+    }
+    Tensor<T> rm(shape);
+
+    auto row_cnt = _shape.getDim(_shape.dimCnt() - 2);
+    auto col_cnt = _shape.getDim(_shape.dimCnt() - 1);
+    auto matrix_size = _shape.subTensorSize(_shape.dimCnt() - 2);
+    auto m_row_cnt = t._shape.getDim(t._shape.dimCnt() - 2);
+    auto m_col_cnt = t._shape.getDim(t._shape.dimCnt() - 1);
+    auto m_matrix_size = t._shape.subTensorSize(t._shape.dimCnt() - 2);
+    auto r_matrix_size = rm._shape.subTensorSize(rm._shape.dimCnt() - 2);
+    u32 index = 0;
+    if (_shape.dimCnt() == 2) {
+        while (index * m_matrix_size < t._data.size()) {
+            if (std::is_same<T, f64>::value && ENABLE_CUDA) {
+                cuda::MatrixF64 m1(row_cnt, col_cnt, base::Slice<T>(&_data, 0, matrix_size));
+                cuda::MatrixF64 m2(m_row_cnt, m_col_cnt, base::Slice<T>(&t._data, index * m_matrix_size, m_matrix_size)); 
+                auto m3 = m1.mmul(m2);
+                memcpy(rm._data.data() + index * r_matrix_size, m3.getSlice().data(), r_matrix_size * sizeof(T));
+            } else {
+                auto m1 = Eigen::Map<const Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>(_data.data(), row_cnt, col_cnt);
+                auto m2 = Eigen::Map<const Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>(t._data.data() + index * m_matrix_size, m_row_cnt, m_col_cnt);
+                Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> m3 = m1 * m2;
+                memcpy(rm._data.data() + index * r_matrix_size, m3.data(), r_matrix_size * sizeof(T));
+            }
+            index += 1;
+        }
+    } else {
+        while (index * matrix_size < _data.size()) {
+            if (std::is_same<T, f64>::value && ENABLE_CUDA) {
+                cuda::MatrixF64 m1(row_cnt, col_cnt, base::Slice<T>(&_data, index * matrix_size, matrix_size));
+                cuda::MatrixF64 m2(m_row_cnt, m_col_cnt, base::Slice<T>(&t._data, 0, m_matrix_size));
+                auto m3 = m1.mmul(m2);
+                memcpy(rm._data.data() + index * r_matrix_size, m3.getSlice().data(), r_matrix_size * sizeof(T));
+            } else {
+                auto m1 = Eigen::Map<const Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>(_data.data() + index * matrix_size, row_cnt, col_cnt);
+                auto m2 = Eigen::Map<const Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>(t._data.data(), m_row_cnt, m_col_cnt);
+                Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> m3 = m1 * m2;
+                memcpy(rm._data.data() + index * r_matrix_size, m3.data(), r_matrix_size * sizeof(T));
+            }
+            index += 1;
+        }
+    }
+    return std::move(rm);
+}
+
+template<typename T>
+Tensor<T> Tensor<T>::inv() const {
+    if (!this) {
+        LOG(ERROR) << "tensor is null";
+        return {};
+    }
+    if (_shape.dimCnt() < 2 || _shape.getDim(_shape.dimCnt() - 1) != _shape.getDim(_shape.dimCnt() - 2)) {
+        LOG(ERROR) << "not square matrix";
+        return {};
+    }
+    Tensor<T> rm(_shape);
+    auto matrix_size = _shape.subTensorSize(_shape.dimCnt()-2);
+    auto row_cnt = _shape.getDim(_shape.dimCnt() - 2);
+    auto col_cnt = _shape.getDim(_shape.dimCnt() - 1);
+    u32 index = 0;
+    while (index * matrix_size < _data.size()) {
+        if (std::is_same<T, f64>::value && ENABLE_CUDA) {
+            cuda::MatrixF64 m(row_cnt, col_cnt, base::Slice<T>(&_data, index * matrix_size, matrix_size));
+            auto tm = m.inv();
+            memcpy(rm._data.data() + index * matrix_size, tm.getSlice().data(), matrix_size * sizeof(T));
+        } else {
+            auto m = Eigen::Map<const Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>(_data.data() + index * matrix_size, row_cnt, col_cnt);
+            Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> tm = m.inverse();
+            memcpy(rm._data.data() + index * matrix_size, tm.data(), matrix_size * sizeof(T));
+        }
+        index += 1;
+    }
+    return std::move(rm);
 }
 
 template<typename T>

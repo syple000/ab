@@ -15,6 +15,7 @@
 #include "auto_engine/tensor/tensor.h"
 #include "auto_engine/cuda/matrix_f64.h"
 #include "gtest/gtest.h"
+#include <Eigen/src/Core/Matrix.h>
 #include <cstdlib>
 #include <glog/logging.h>
 #include <ios>
@@ -34,7 +35,7 @@ bool isEq(const base::Tensor<f64>& a, const base::Tensor<f64>& b) {
     return a == b;
 }
 
-TEST(Test_f64, Test){
+TEST(Test_grad_f64, Test){
     std::cout.precision(8);
     std::cout << std::fixed;
     // 测试函数f(x1, x2) = (2 * x1 + x2) * (x1 - x2) + x2/x1 + x2^(x2 + x1 + 1) + log(x2 + x1) + sin(x2-x1)/cos(x2+x1)
@@ -93,7 +94,7 @@ TEST(Test_f64, Test){
     cx2.clearGrad();
 }
 
-TEST(Test_tensor, Test){
+TEST(Test_grad_tensor, Test){
     std::cout.precision(8);
     std::cout << std::fixed;
     // 测试函数f(x1, x2) = (2 * x1 + x2) * (x1 - x2) + x2/x1 + x2^(x2 + x1 + 1) + log(x2 + x1) + sin(x2-x1)/cos(x2+x1)
@@ -145,6 +146,23 @@ TEST(Test_tensor, Test){
     ASSERT_TRUE(isEq(x1->getGrad(), base::Tensor<f64>(base::Shape({2}), {324039.04543274, 34.02235037})));
     ASSERT_TRUE(isEq(x2->getGrad(), base::Tensor<f64>(base::Shape({2}), {751501.54782524, 114.05860797})));
     cx2.clearGrad();
+}
+
+TEST(Test_tensor, test) {
+    base::Tensor<f64> t1(base::Shape({2, 3}), {1, 2, 3, 4, 5, 6});
+    ASSERT_TRUE(t1.transpose() == base::Tensor<f64>(base::Shape({3, 2}), {1, 4, 2, 5, 3, 6}));
+    base::Tensor<f64> t2(base::Shape({2, 2, 3}), {1, 2, 3, 4, 5, 6, 1, 2, 3, 4, 5, 6});
+    ASSERT_TRUE(t2.transpose() == base::Tensor<f64>(base::Shape({2, 3, 2}), {1, 4, 2, 5, 3, 6, 1, 4, 2, 5, 3, 6}));
+    base::Tensor<f64> t3(base::Shape({3, 2}), {1, 2, 3, 4, 5, 6});
+    ASSERT_TRUE(t1.mmul(t3) == base::Tensor<f64>(base::Shape({2, 2}), {22, 28, 49, 64}));
+    base::Tensor<f64> t4(base::Shape({2, 3, 2}), {1, 2, 3, 4, 5, 6, 1, 2, 3, 4, 5, 6});
+    ASSERT_TRUE(t1.mmul(t4) == base::Tensor<f64>(base::Shape({2, 2, 2}), {22, 28, 49, 64, 22, 28, 49, 64}));
+    base::Tensor<f64> t5(base::Shape({2, 3}), {1, 2, 3, 4, 5, 6});
+    ASSERT_TRUE(t4.mmul(t5) == base::Tensor<f64>(base::Shape({2, 3, 3}), {9, 12, 15, 19, 26, 33, 29, 40, 51, 9, 12, 15, 19, 26, 33, 29, 40, 51}));
+    base::Tensor<f64> t6(base::Shape({3, 3}), {1, 2, 3, 4, 5, 6, 7, 2, 9});
+    ASSERT_TRUE(t6.inv() == base::Tensor<f64>(base::Shape({3, 3}), {-11.0/12, 1.0/3, 1.0/12, -1.0/6, 1.0/3, -1.0/6, 3.0/4, -1.0/3, 1.0/12}));
+    base::Tensor<f64> t7(base::Shape({2, 3, 3}), {1, 2, 3, 4, 5, 6, 7, 2, 9, 0, 2, 3, 4, 5, 6, 7, 2, 9});
+    ASSERT_TRUE(t7.inv() == base::Tensor<f64>(base::Shape({2, 3, 3}), {-11.0/12, 1.0/3, 1.0/12, -1.0/6, 1.0/3, -1.0/6, 3.0/4, -1.0/3, 1.0/12, -11.0/23, 4.0/23, 1.0/23, -2.0/23, 7.0/23, -4.0/23, 9.0/23, -14.0/69, 8.0/69}));
 }
 
 TEST(Cuda, Cuda) {

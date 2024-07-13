@@ -107,4 +107,41 @@ std::string Shape::toString() const {
     return stream.str();
 }
 
+Shape Shape::transpose() const {
+    if (_dims.size() < 2) {
+        LOG(ERROR) << "transpose non-matrix";
+        return Shape();
+    }
+    auto row_cnt = _dims[_dims.size() - 2];
+    auto col_cnt = _dims[_dims.size() - 1];
+    auto dims = _dims;
+    dims[_dims.size() - 2] = col_cnt;
+    dims[_dims.size() - 1] = row_cnt;
+    return Shape(dims);
+}
+
+Shape Shape::mmul(const Shape& s) const {
+    if (_dims.size() < 2 || s._dims.size() < 2) {
+        LOG(ERROR) << "dim cnt lt 2";
+        return Shape();
+    }
+    if (_dims.size() != 2 && s._dims.size() != 2) {
+        LOG(ERROR) << "no matrix available";
+        return Shape();
+    }
+    if (_dims[_dims.size() - 1] != s._dims[s._dims.size() - 2]) {
+        LOG(ERROR) << "can not mul, col cnt != row cnt";
+        return Shape();
+    }
+    if (_dims.size() == 2) {
+        auto dims = s._dims;
+        dims[s._dims.size() - 2] = _dims[_dims.size() - 2];
+        return Shape(dims);
+    } else {
+        auto dims = _dims;
+        dims[_dims.size() - 1] = s._dims[s._dims.size() - 1];
+        return Shape(dims);
+    }
+}
+
 }
