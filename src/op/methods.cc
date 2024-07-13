@@ -29,7 +29,7 @@ f64 sin<f64>(const f64& n) {
 }
 template<>
 base::Tensor<f64> sin<base::Tensor<f64>>(const base::Tensor<f64>& t) {
-    return t.apply([](f64 x) -> f64 {return sin(x);});
+    return t.sin();
 }
 
 template<>
@@ -38,7 +38,7 @@ f64 cos<f64>(const f64& n) {
 }
 template<>
 base::Tensor<f64> cos<base::Tensor<f64>>(const base::Tensor<f64>& t) {
-    return t.apply([](f64 x) -> f64 {return cos(x);});
+    return t.cos();
 }
 
 template<>
@@ -56,7 +56,7 @@ f64 log<f64>(const f64& n) {
 }
 template<>
 base::Tensor<f64> log<base::Tensor<f64>>(const base::Tensor<f64>& t) {
-    return t.apply([](f64 x) -> f64 {return log(x);});
+    return t.log();
 }
 
 }

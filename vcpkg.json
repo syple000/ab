@@ -4,9 +4,10 @@
   "description": "auto engine",
   "builtin-baseline": "a34c873a9717a888f58dc05268dea15592c2f0ff",
   "dependencies": [
-    "folly",
+    "boost-circular-buffer",
     "glog",
     "gtest",
+    "eigen3",
     {
       "name": "vcpkg-cmake",
       "host": true
@@ -14,8 +15,7 @@
     {
       "name": "vcpkg-cmake-config",
       "host": true
-    },
-    "boost-circular-buffer"
+    }
   ],
   "overrides": [
     {
@@ -25,10 +25,6 @@
     {
       "name": "gtest",
       "version": "1.14.0"
-    },
-    {
-      "name": "folly",
-      "version": "2023.10.02.00"
     }
   ]
 }

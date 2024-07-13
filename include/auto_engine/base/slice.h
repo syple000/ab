@@ -14,8 +14,8 @@ template<typename T>
 class Slice {
 public:
     Slice() {}
-    Slice(std::vector<T>* data): _ref_data(data), _begin_index(0), _len(data->size()) {}
-    Slice(std::vector<T>* data, u32 bindex, u32 len): _ref_data(data), _begin_index(bindex), _len(len) {
+    Slice(const std::vector<T>* data): _ref_data(data), _begin_index(0), _len(data->size()) {}
+    Slice(const std::vector<T>* data, u32 bindex, u32 len): _ref_data(data), _begin_index(bindex), _len(len) {
         if (len + bindex > data->size()) {
             LOG(ERROR) << "slice index out of vec range";
             exit(SLICE_INDEX_INVALID);
@@ -59,19 +59,26 @@ public:
         return _len;
     }
 
-    T* data() const {
+    const T* data() const {
         auto vec = getVec();
         if (!vec) {return nullptr;}
         auto d = vec->data();
         return d + _begin_index;
     }
 
+    T* mutData() const {
+        if (!_own_data) {
+            return nullptr;
+        }
+        return _own_data->data() + _begin_index;
+    }
+
 private:
-    std::vector<T>* _ref_data = nullptr; // 引用，不允许delete
+    const std::vector<T>* _ref_data = nullptr; // 引用，不允许delete
     std::shared_ptr<std::vector<T>> _own_data;
     u32 _begin_index = 0, _len = 0; 
 
-    std::vector<T>* getVec() const {
+    const std::vector<T>* getVec() const {
         if (_ref_data) {
             return _ref_data;
         } else if (_own_data) {

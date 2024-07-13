@@ -190,7 +190,7 @@ MatrixF64 MatrixF64::inv() const {
     }
     utils::Defer free_cuda_matrix_array([&cuda_matrix_array] {Mem::free(reinterpret_cast<void*>(cuda_matrix_array));}); 
 
-    auto cuda_matrix = reinterpret_cast<f64*>(Mem::host2Device(reinterpret_cast<void*>(_slice.data()), _slice.size() * sizeof(f64)));
+    auto cuda_matrix = reinterpret_cast<f64*>(Mem::host2Device(_slice.data(), _slice.size() * sizeof(f64)));
     if (!cuda_matrix) {
         LOG(ERROR) << __FUNCTION__ << "host 2 device err";
         return MatrixF64();
@@ -244,14 +244,14 @@ MatrixF64 MatrixF64::inv() const {
 
 #define APPLY_1E(apply_func) \
 { \
-    auto dims = cuda_matrix_kernel::MatrixKernelHelper::getDims(_m, _n); \
+    auto dims = cuda_matrix_kernel::MatrixKernelHelper::getDims(_m*_n, 1, 1, 256); \
     auto cuda_slice = reinterpret_cast<f64*>(Mem::host2Device(_slice.data(), _slice.size() * sizeof(f64))); \
     if (!cuda_slice) { \
         LOG(ERROR) << __FUNCTION__ << "host 2 device err"; \
         return MatrixF64(); \
     } \
     utils::Defer free_cuda_slice([&cuda_slice] {Mem::free(reinterpret_cast<void*>(cuda_slice));}); \
-    apply_func<f64><<<std::get<0>(dims), std::get<1>(dims)>>>(cuda_slice, _m, _n); \
+    apply_func<f64><<<std::get<0>(dims), std::get<1>(dims)>>>(cuda_slice, _m*_n, 1); \
     CHECK_CUDA_CALL(cudaPeekAtLastError(), "apply"); \
     auto ret = reinterpret_cast<f64*>(Mem::device2Host(reinterpret_cast<void*>(cuda_slice), _slice.size() * sizeof(f64))); \
     if (!ret) { \
@@ -268,7 +268,7 @@ MatrixF64 MatrixF64::inv() const {
         LOG(ERROR) << __FUNCTION__ << "apply to diff matrixs"; \
         return MatrixF64(); \
     } \
-    auto dims = cuda_matrix_kernel::MatrixKernelHelper::getDims(_m, _n); \
+    auto dims = cuda_matrix_kernel::MatrixKernelHelper::getDims(_m*_n, 1, 1, 256); \
     auto cuda_slice1 = reinterpret_cast<f64*>(Mem::host2Device(_slice.data(), _slice.size() * sizeof(f64))); \
     if (!cuda_slice1) { \
         LOG(ERROR) << __FUNCTION__ << "host 2 device err"; \
@@ -281,7 +281,7 @@ MatrixF64 MatrixF64::inv() const {
         return MatrixF64(); \
     } \
     utils::Defer free_cuda_slice2([&cuda_slice2] {Mem::free(reinterpret_cast<void*>(cuda_slice2));}); \
-    apply_func<f64><<<std::get<0>(dims), std::get<1>(dims)>>>(cuda_slice1, cuda_slice2, _m, _n); \
+    apply_func<f64><<<std::get<0>(dims), std::get<1>(dims)>>>(cuda_slice1, cuda_slice2, _m*_n, 1); \
     CHECK_CUDA_CALL(cudaPeekAtLastError(), "apply"); \
     auto ret = reinterpret_cast<f64*>(Mem::device2Host(reinterpret_cast<void*>(cuda_slice1), _slice.size() * sizeof(f64))); \
     if (!ret) { \
@@ -294,10 +294,12 @@ MatrixF64 MatrixF64::inv() const {
 MatrixF64 MatrixF64::sin() const {APPLY_1E(cuda_matrix_kernel::apply_sin);}
 MatrixF64 MatrixF64::cos() const {APPLY_1E(cuda_matrix_kernel::apply_cos);}
 MatrixF64 MatrixF64::log() const {APPLY_1E(cuda_matrix_kernel::apply_log);}
+MatrixF64 MatrixF64::neg() const {APPLY_1E(cuda_matrix_kernel::apply_neg);}
 MatrixF64 MatrixF64::add(const MatrixF64& m) const {APPLY_2E(cuda_matrix_kernel::apply_add, m);}
 MatrixF64 MatrixF64::sub(const MatrixF64& m) const {APPLY_2E(cuda_matrix_kernel::apply_sub, m);}
 MatrixF64 MatrixF64::mul(const MatrixF64& m) const {APPLY_2E(cuda_matrix_kernel::apply_mul, m);}
 MatrixF64 MatrixF64::div(const MatrixF64& m) const {APPLY_2E(cuda_matrix_kernel::apply_div, m);}
+MatrixF64 MatrixF64::pow(const MatrixF64& m) const {APPLY_2E(cuda_matrix_kernel::apply_pow, m);}
 
 #undef CHECK_CUBLAS_CALL
 #undef CHECK_CUDA_CALL

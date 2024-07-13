@@ -17,7 +17,7 @@ enable_language(CUDA)
 
 find_package(GTest CONFIG REQUIRED)
 find_package(glog CONFIG REQUIRED)
-find_package(folly CONFIG REQUIRED)
+find_package(Eigen3 CONFIG REQUIRED)
 find_package(Boost REQUIRED)
 
 add_subdirectory(include)

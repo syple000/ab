@@ -123,7 +123,7 @@ void Mem::clearAll() { // 仅清空free列表
 }
 
 
-void* Mem::host2Device(void* m, u32 size) {
+void* Mem::host2Device(const void* m, u32 size) {
     auto dm = Mem::malloc(size);
     if (!dm) {
         LOG(ERROR) << "host2Device malloc err";
@@ -137,7 +137,7 @@ void* Mem::host2Device(void* m, u32 size) {
     return dm;
 }
 
-void* Mem::device2Host(void* m, u32 size) {
+void* Mem::device2Host(const void* m, u32 size) {
     auto hm = std::malloc(size);
     if (!hm) {
         LOG(ERROR) << "device2Host malloc err";

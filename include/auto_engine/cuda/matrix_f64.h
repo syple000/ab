@@ -36,10 +36,12 @@ public:
   MatrixF64 sin() const;
   MatrixF64 cos() const;
   MatrixF64 log() const;
+  MatrixF64 neg() const;
   MatrixF64 add(const MatrixF64&) const;
   MatrixF64 sub(const MatrixF64&) const;
   MatrixF64 mul(const MatrixF64&) const;
   MatrixF64 div(const MatrixF64&) const;
+  MatrixF64 pow(const MatrixF64&) const;
 private:
   base::Slice<f64> _slice;
   u32 _m = 0, _n = 0;

@@ -42,6 +42,11 @@ inline __device__ T log(const T& n) {
 }
 
 template<typename T>
+inline __device__ T neg(const T& n) {
+    return -n;
+}
+
+template<typename T>
 inline __device__ T add(const T& n1, const T& n2) {
     return n1 + n2;
 }
@@ -59,6 +64,11 @@ inline __device__ T mul(const T& n1, const T& n2) {
 template<typename T>
 inline __device__ T div(const T& n1, const T& n2) {
     return n1 / n2;
+}
+
+template<typename T>
+inline __device__ T pow(const T& n1, const T& n2) {
+    return ::pow(n1, n2);
 }
 }
 
@@ -94,6 +104,12 @@ __global__ void apply_mul(T* data1, T* data2, int row_cnt, int col_cnt) {return 
 
 template<typename T>
 __global__ void apply_div(T* data1, T* data2, int row_cnt, int col_cnt) {return cuda_device_kernel::apply<T>(data1, data2, row_cnt, col_cnt, cuda_device_kernel::div);}
+
+template<typename T>
+__global__ void apply_neg(T* data, int row_cnt, int col_cnt) {return cuda_device_kernel::apply<T>(data, row_cnt, col_cnt, cuda_device_kernel::neg);}
+
+template<typename T>
+__global__ void apply_pow(T* data1, T* data2, int row_cnt, int col_cnt) {return cuda_device_kernel::apply<T>(data1, data2, row_cnt, col_cnt, cuda_device_kernel::pow);}
 }
 
 #endif 

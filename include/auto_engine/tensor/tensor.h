@@ -1,11 +1,17 @@
 #ifndef BASE_TENSOR_H 
 #define BASE_TENSOR_H
 
+#include "auto_engine/base/basic_types.h"
+#include "auto_engine/base/slice.h"
+#include "auto_engine/config/config.h"
+#include "auto_engine/cuda/matrix_f64.h"
 #include "shape.h"
 #include "glog/logging.h"
 #include <cmath>
 #include <cstdlib>
+#include <cstring>
 #include <functional>
+#include <iostream>
 #include <limits>
 #include <string>
 #include <type_traits>
@@ -33,11 +39,16 @@ public:
     Tensor<T> operator+(const Tensor<T>&) const;
     Tensor<T> operator-(const Tensor<T>&) const;
     Tensor<T> operator-() const;
+    Tensor<T> log() const;
+    Tensor<T> sin() const;
+    Tensor<T> cos() const;
     Tensor<T> operator*(const Tensor<T>&) const;
     Tensor<T> operator/(const Tensor<T>&) const;
     Tensor<T> pow(const Tensor<T>&) const;
-    Tensor<T> apply(std::function<T(const T&)>) const;
-    bool applyInplace(std::function<T(const T&)>);
+
+    Tensor<T> transpose() const;
+    Tensor<T> mmul(const Tensor<T>&) const;
+    Tensor<T> inv() const;
 
     const T& operator()(const std::vector<u32>& index) const;
     T& operator()(const std::vector<u32>& index);
@@ -167,9 +178,19 @@ Tensor<T> Tensor<T>::operator+(const Tensor<T>& t) const {
         LOG(ERROR) << "add diff shape tensor";
         return {};
     }
-    Tensor<T> res(*this);
-    for (int i = 0; i < t._data.size(); i++) {
-        res._data[i] += t._data[i];
+
+    Tensor<T> res;
+    if (std::is_same<T, f64>::value && ENABLE_CUDA) {
+        cuda::MatrixF64 sm(_data.size(), 1, base::Slice<T>(&_data));
+        cuda::MatrixF64 m(t._data.size(), 1, base::Slice<T>(&t._data));
+        auto rm = sm.add(m);
+        res._shape = _shape;
+        res._data = std::vector<T>(rm.getSlice().data(), rm.getSlice().data() + rm.getSlice().size());
+    } else {
+        res = *this;
+        for (int i = 0; i < t._data.size(); i++) {
+            res._data[i] += t._data[i];
+        }
     }
     return std::move(res);
 }
@@ -184,9 +205,18 @@ Tensor<T> Tensor<T>::operator*(const Tensor<T>& t) const {
         LOG(ERROR) << "mul diff shape tensor";
         return {};
     }
-    Tensor<T> res(*this);
-    for (int i = 0; i < t._data.size(); i++) {
-        res._data[i] *= t._data[i];
+    Tensor<T> res;
+    if (std::is_same<T, f64>::value && ENABLE_CUDA) {
+        cuda::MatrixF64 sm(_data.size(), 1, base::Slice<T>(&_data));
+        cuda::MatrixF64 m(t._data.size(), 1, base::Slice<T>(&t._data));
+        auto rm = sm.mul(m);
+        res._shape = _shape;
+        res._data = std::vector<T>(rm.getSlice().data(), rm.getSlice().data() + rm.getSlice().size());
+    } else {
+        res = *this;
+        for (int i = 0; i < t._data.size(); i++) {
+            res._data[i] *= t._data[i];
+        }
     }
     return std::move(res);
 }
@@ -202,9 +232,81 @@ Tensor<T> Tensor<T>::operator-(const Tensor<T>& t) const {
         LOG(ERROR) << "sub diff shape tensor";
         return {};
     }
-    Tensor<T> res(*this);
-    for (int i = 0; i < t._data.size(); i++) {
-        res._data[i] -= t._data[i];
+    Tensor<T> res;
+    if (std::is_same<T, f64>::value && ENABLE_CUDA) {
+        cuda::MatrixF64 sm(_data.size(), 1, base::Slice<T>(&_data));
+        cuda::MatrixF64 m(t._data.size(), 1, base::Slice<T>(&t._data));
+        auto rm = sm.sub(m);
+        res._shape = _shape;
+        res._data = std::vector<T>(rm.getSlice().data(), rm.getSlice().data() + rm.getSlice().size());
+    } else {
+        res = *this;
+        for (int i = 0; i < t._data.size(); i++) {
+            res._data[i] -= t._data[i];
+        }
+    }
+    return std::move(res);
+}
+
+template<typename T>
+Tensor<T> Tensor<T>::log() const {
+    if (!this) {
+        LOG(ERROR) << "tensor is null";
+        return {};
+    }
+    Tensor<T> res;
+    if (std::is_same<T, f64>::value && ENABLE_CUDA) {
+        cuda::MatrixF64 sm(_data.size(), 1, base::Slice<T>(&_data));
+        auto rm = sm.log();
+        res._shape = _shape;
+        res._data = std::vector<T>(rm.getSlice().data(), rm.getSlice().data() + rm.getSlice().size());
+    } else {
+        res = Tensor<T>(this->shape(), 0);
+        for (int i = 0; i < _data.size(); i++) {
+            res._data[i] = ::log(_data[i]);
+        }
+    }
+    return std::move(res);
+}
+
+template<typename T>
+Tensor<T> Tensor<T>::cos() const {
+    if (!this) {
+        LOG(ERROR) << "tensor is null";
+        return {};
+    }
+    Tensor<T> res;
+    if (std::is_same<T, f64>::value && ENABLE_CUDA) {
+        cuda::MatrixF64 sm(_data.size(), 1, base::Slice<T>(&_data));
+        auto rm = sm.cos();
+        res._shape = _shape;
+        res._data = std::vector<T>(rm.getSlice().data(), rm.getSlice().data() + rm.getSlice().size());
+    } else {
+        res = Tensor<T>(this->shape(), 0);
+        for (int i = 0; i < _data.size(); i++) {
+            res._data[i] = ::cos(_data[i]);
+        }
+    }
+    return std::move(res);
+}
+
+template<typename T>
+Tensor<T> Tensor<T>::sin() const {
+    if (!this) {
+        LOG(ERROR) << "tensor is null";
+        return {};
+    }
+    Tensor<T> res;
+    if (std::is_same<T, f64>::value && ENABLE_CUDA) {
+        cuda::MatrixF64 sm(_data.size(), 1, base::Slice<T>(&_data));
+        auto rm = sm.sin();
+        res._shape = _shape;
+        res._data = std::vector<T>(rm.getSlice().data(), rm.getSlice().data() + rm.getSlice().size());
+    } else {
+        res = Tensor<T>(this->shape(), 0);
+        for (int i = 0; i < _data.size(); i++) {
+            res._data[i] = ::sin(_data[i]);
+        }
     }
     return std::move(res);
 }
@@ -215,9 +317,17 @@ Tensor<T> Tensor<T>::operator-() const {
         LOG(ERROR) << "tensor is null";
         return {};
     }
-    Tensor<T> res(this->shape(), 0);
-    for (int i = 0; i < _data.size(); i++) {
-        res._data[i] = -_data[i];
+    Tensor<T> res;
+    if (std::is_same<T, f64>::value && ENABLE_CUDA) {
+        cuda::MatrixF64 sm(_data.size(), 1, base::Slice<T>(&_data));
+        auto rm = sm.neg();
+        res._shape = _shape;
+        res._data = std::vector<T>(rm.getSlice().data(), rm.getSlice().data() + rm.getSlice().size());
+    } else {
+        res = Tensor<T>(this->shape(), 0);
+        for (int i = 0; i < _data.size(); i++) {
+            res._data[i] = -_data[i];
+        }
     }
     return std::move(res);
 }
@@ -232,9 +342,18 @@ Tensor<T> Tensor<T>::operator/(const Tensor<T>& t) const {
         LOG(ERROR) << "div diff shape tensor";
         return {};
     }
-    Tensor<T> res(*this);
-    for (int i = 0; i < t._data.size(); i++) {
-        res._data[i] /= t._data[i];
+    Tensor<T> res;
+    if (std::is_same<T, f64>::value && ENABLE_CUDA) {
+        cuda::MatrixF64 sm(_data.size(), 1, base::Slice<T>(&_data));
+        cuda::MatrixF64 m(t._data.size(), 1, base::Slice<T>(&t._data));
+        auto rm = sm.div(m);
+        res._shape = _shape;
+        res._data = std::vector<T>(rm.getSlice().data(), rm.getSlice().data() + rm.getSlice().size());
+    } else {
+        res = *this;
+        for (int i = 0; i < t._data.size(); i++) {
+            res._data[i] /= t._data[i];
+        }
     }
     return std::move(res);
 }
@@ -249,36 +368,20 @@ Tensor<T> Tensor<T>::pow(const Tensor<T>& t) const {
         LOG(ERROR) << "div diff shape tensor";
         return {};
     }
-    Tensor<T> res(*this);
-    for (int i = 0; i < t._data.size(); i++) {
-        res._data[i] = ::pow(res._data[i], t._data[i]);
+    Tensor<T> res;
+    if (std::is_same<T, f64>::value && ENABLE_CUDA) {
+        cuda::MatrixF64 sm(_data.size(), 1, base::Slice<T>(&_data));
+        cuda::MatrixF64 m(t._data.size(), 1, base::Slice<T>(&t._data));
+        auto rm = sm.pow(m);
+        res._shape = _shape;
+        res._data = std::vector<T>(rm.getSlice().data(), rm.getSlice().data() + rm.getSlice().size());
+    } else {
+        res = Tensor<T>(this->shape(), 0);
+        for (int i = 0; i < t._data.size(); i++) {
+            res._data[i] = ::pow(_data[i], t._data[i]);
+        }
     }
     return std::move(res);
-}
-
-template<typename T>
-Tensor<T> Tensor<T>::apply(std::function<T(const T&)> f) const {
-    if (!this) {
-        LOG(ERROR) << "tensor is null";
-        return {};
-    }
-    Tensor<T> res(*this);
-    for (int i = 0; i < _data.size(); i++) {
-        res._data[i] = f(_data[i]);
-    }
-    return std::move(res);
-}
-
-template<typename T>
-bool Tensor<T>::applyInplace(std::function<T(const T&)> f) {
-    if (!this) {
-        LOG(ERROR) << "tensor is null";
-        return false;
-    }
-    for (int i = 0; i < _data.size(); i++) {
-        _data[i] = f(_data[i]);
-    }
-    return true;
 }
 
 template<typename T>
