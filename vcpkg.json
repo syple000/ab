@@ -26,6 +26,10 @@
     {
       "name": "gtest",
       "version": "1.14.0"
+    },
+    {
+      "name": "eigen",
+      "version": "3.4.0"
     }
   ]
 }
