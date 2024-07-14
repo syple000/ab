@@ -21,14 +21,5 @@ T pow(const T&, const T&);
 template<typename T>
 T log(const T&);
 
-template<typename T>
-T transpose(const T&);
-
-template<typename T>
-T mmul(const T&, const T&);
-
-template<typename T>
-T inv(const T&);
-
 }
 #endif
