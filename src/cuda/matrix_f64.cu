@@ -59,15 +59,6 @@ MatrixF64::MatrixF64(u32 m, u32 n, const base::Slice<f64>& slice): _m(m), _n(n),
         return; 
     } 
 } 
-MatrixF64::MatrixF64(u32 m, u32 n, std::vector<f64>&& vec): _m(m), _n(n) {
-    if (m * n != vec.size()) {
-        LOG(ERROR) << __FUNCTION__ << "matrix size invalid";
-        _m = 0;
-        _n = 0;
-        return;
-    }
-    _slice = base::Slice<f64>(std::make_shared<std::vector<f64>>(std::move(vec)));
-}
 MatrixF64::MatrixF64(const MatrixF64& m) {
     _m = m._m;
     _n = m._n;

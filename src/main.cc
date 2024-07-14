@@ -166,8 +166,7 @@ TEST(Test_tensor, test) {
 }
 
 TEST(Cuda, Cuda) {
-    std::vector<f64> vec{1, 2, 3, 4, 5, 6};
-    base::Slice<f64> slice(&vec, 0, 6);
+    base::Slice<f64> slice{1, 2, 3, 4, 5, 6};
     cuda::MatrixF64 m1(2, 3, slice);
     ASSERT_TRUE(m1 == cuda::MatrixF64(2, 3, {1, 2, 3, 4, 5, 6}));
     auto m2 = m1.transpose();

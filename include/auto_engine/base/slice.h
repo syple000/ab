@@ -5,6 +5,7 @@
 #include "basic_types.h"
 #include "glog/logging.h"
 #include <cstdlib>
+#include <initializer_list>
 #include <memory>
 #include <vector>
 
@@ -14,79 +15,83 @@ template<typename T>
 class Slice {
 public:
     Slice() {}
-    Slice(const std::vector<T>* data): _ref_data(data), _begin_index(0), _len(data->size()) {}
-    Slice(const std::vector<T>* data, u32 bindex, u32 len): _ref_data(data), _begin_index(bindex), _len(len) {
-        if (len + bindex > data->size()) {
+    Slice(std::initializer_list<T> l): _own_data(std::make_shared<std::vector<T>>(l)), _begin_index(0), _end_index(l.size()) {}
+    Slice(u32 size): _own_data(std::make_shared<std::vector<T>>(size)), _begin_index(0), _end_index(size) {}
+    Slice(u32 size, const T& t): _own_data(std::make_shared<std::vector<T>>(size, t)), _begin_index(0), _end_index(size) {}
+    Slice(std::shared_ptr<std::vector<T>> data): _own_data(data), _begin_index(0), _end_index(data->size()) {}
+    Slice(std::shared_ptr<std::vector<T>> data, u32 bindex, u32 eindex): _own_data(data), _begin_index(bindex), _end_index(eindex) {
+        if (eindex > data->size()) {
             LOG(ERROR) << "slice index out of vec range";
             exit(SLICE_INDEX_INVALID);
         }
-    }
-    Slice(std::shared_ptr<std::vector<T>> data): _own_data(data), _begin_index(0), _len(data->size()) {}
-    Slice(std::shared_ptr<std::vector<T>> data, u32 bindex, u32 len): _own_data(data), _begin_index(bindex), _len(len) {
-        if (len + bindex > data->size()) {
-            LOG(ERROR) << "slice index out of vec range";
+        if (bindex > eindex) {
+            LOG(ERROR) << "slice start > end";
             exit(SLICE_INDEX_INVALID);
         }
     }
     Slice(const Slice<T>&) = default;
+    Slice(Slice<T>&&) = default;
     Slice<T>& operator=(const Slice<T>&) = default;
+    Slice<T>& operator=(Slice<T>&&) = default;
     
     bool operator==(const Slice<T>& s) const {
         if (this == &s) {
             return true;
         }
-        if (_len != s._len) {
+        if (_end_index - _begin_index != s._end_index - s._begin_index) {
             return false;
         }
-        for (int i = 0; i < _len; i++) {
-            if (std::abs(this->operator[](i) - s[i]) > EPSILON) {
+        for (int i = 0; i < _end_index - _begin_index; i++) {
+            if (std::abs(_own_data->operator[](i+_begin_index) - s._own_data->operator[](i+s._begin_index)) > EPSILON) {
                 return false;
             }
         }
         return true;
     }
 
-    const T& operator[](u32 index) const { // 先判断区间再调用
-        if (index >= _begin_index + _len) {
+    Slice<T> sub(u32 start, u32 end) const { // [start, end)在slice的基础上截取
+        if (start > end) {
+            LOG(ERROR) << "sub slice start > end";
+            exit(SLICE_INDEX_INVALID);
+        }
+        if (end + _begin_index > _end_index) {
+            LOG(ERROR) << "sub slice end out of range";
+            exit(SLICE_INDEX_INVALID);
+        }
+        return Slice<T>(_own_data, _begin_index + start, _begin_index + end);
+    }
+
+    T& operator[](u32 index) {
+        if (index >= _end_index - _begin_index) {
             LOG(ERROR) << "index out of range";
             exit(SLICE_INDEX_INVALID);
         }
         index = _begin_index + index;
-        return getVec()->operator[](index);
+        return _own_data->operator[](index);
+    }
+
+    const T& operator[](u32 index) const {
+        if (index >= _end_index - _begin_index) {
+            LOG(ERROR) << "index out of range";
+            exit(SLICE_INDEX_INVALID);
+        }
+        index = _begin_index + index;
+        return _own_data->operator[](index);
     }
 
     u32 size() const {
-        return _len;
+        return _end_index - _begin_index;
     }
 
     const T* data() const {
-        auto vec = getVec();
-        if (!vec) {return nullptr;}
-        auto d = vec->data();
-        return d + _begin_index;
-    }
-
-    T* mutData() const {
-        if (!_own_data) {
-            return nullptr;
-        }
         return _own_data->data() + _begin_index;
     }
-
-private:
-    const std::vector<T>* _ref_data = nullptr; // 引用，不允许delete
-    std::shared_ptr<std::vector<T>> _own_data;
-    u32 _begin_index = 0, _len = 0; 
-
-    const std::vector<T>* getVec() const {
-        if (_ref_data) {
-            return _ref_data;
-        } else if (_own_data) {
-            return _own_data.get();
-        } else {
-            return nullptr;
-        }
+    T* data() {
+        return _own_data->data() + _begin_index;
     }
+private:
+    std::shared_ptr<std::vector<T>> _own_data;
+    u32 _begin_index = 0, _end_index = 0; 
 };
 
 }

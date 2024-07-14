@@ -3,7 +3,6 @@
 
 #include "auto_engine/base/basic_types.h"
 #include "auto_engine/base/slice.h"
-#include <vector>
 
 namespace cuda {
 
@@ -21,7 +20,6 @@ class MatrixF64 {
 public:
   MatrixF64();
   MatrixF64(u32 m, u32 n, const base::Slice<f64> &slice);
-  MatrixF64(u32 m, u32 n, std::vector<f64>&& vec); // 测试用方法
   MatrixF64(const MatrixF64&);
   MatrixF64& operator=(const MatrixF64&);
   bool operator==(const MatrixF64&) const;
