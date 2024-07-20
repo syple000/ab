@@ -5,3 +5,4 @@ CompileFlags:
     - -forward-unknown-to-host-compiler
     # - --options-file
     - --generate-code=*
+    - --expt-relaxed-constexpr

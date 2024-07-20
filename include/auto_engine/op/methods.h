@@ -21,5 +21,20 @@ T pow(const T&, const T&);
 template<typename T>
 T log(const T&);
 
+template<typename T>
+T transpose(const T&);
+
+template<typename T>
+T mmul(const T&, const T&);
+
+template<typename T>
+T inv(const T&);
+
+template<typename T, typename SHAPE>
+T reshape(const T&, const SHAPE& shape);
+
+template<typename T, typename SHAPE>
+const SHAPE& shape(const T&);
+
 }
 #endif

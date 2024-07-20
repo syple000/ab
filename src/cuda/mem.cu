@@ -69,10 +69,10 @@ std::unordered_map<u32, MemConcurrentQueue> Mem::_free_mems = std::unordered_map
 #undef INIT_FREE_MEM
 MemConcurrentMap Mem::_alloc_mems = MemConcurrentMap();
 
-void* Mem::malloc(u32 size) {
+bool Mem::malloc(void** dst, u32 size) {
     if (size == 0) {
         LOG(ERROR) << "malloc zero byte.";
-        return nullptr;
+        return false;
     }
     size = utils::nextPowerOfTwo(size);
 
@@ -81,20 +81,22 @@ void* Mem::malloc(u32 size) {
         auto m = l->second.pop();
         if (m) {
             _alloc_mems.insert(m, size);
-            return m;
+            *dst = m;
+            return true;
         }
     }
 
     auto m = mallocFromSys(size);
     if (!m) {
         LOG(ERROR) << "malloc size: " << size << " fail";
-        return nullptr;
+        return false;
     }
 
     if (size <= MAX_CUDA_CACHE_MEM_SIZE) {
         _alloc_mems.insert(m, size);
     }
-    return m;
+    *dst = m;
+    return true;
 }
 
 void Mem::free(void* m) {
@@ -120,44 +122,6 @@ void Mem::clearAll() { // 仅清空free列表
     for (auto iter : _free_mems) {
         iter.second.clearAll();
     }
-}
-
-
-void* Mem::host2Device(const void* m, u32 size) {
-    auto dm = Mem::malloc(size);
-    if (!dm) {
-        LOG(ERROR) << "host2Device malloc err";
-        return nullptr;
-    }
-    auto succ = cudaMemcpy(dm, m, size, cudaMemcpyHostToDevice);
-    if (succ != cudaSuccess) {
-        LOG(ERROR) << "host2Device mem cpy err: " << succ;
-        return nullptr;
-    }
-    return dm;
-}
-
-void* Mem::device2Host(const void* m, u32 size) {
-    auto hm = std::malloc(size);
-    if (!hm) {
-        LOG(ERROR) << "device2Host malloc err";
-        return nullptr;
-    }
-    auto succ = cudaMemcpy(hm, m, size, cudaMemcpyDeviceToHost);
-    if (succ != cudaSuccess) {
-        LOG(ERROR) << "device2Host mem cpy err: " << succ;
-        return nullptr;
-    }
-    return hm;
-}
-
-bool Mem::device2Host(void* dst, const void* src, u32 size) { // 拷贝到目标内存（请务必注意内存分配）
-    auto succ = cudaMemcpy(dst, src, size, cudaMemcpyDeviceToHost);
-    if (succ != cudaSuccess) {
-        LOG(ERROR) << "device2Host mem cpy err: " << succ;
-        return false;
-    }
-    return true;
 }
 
 void* Mem::mallocFromSys(u32 size) {

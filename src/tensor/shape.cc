@@ -125,23 +125,20 @@ Shape Shape::mmul(const Shape& s) const {
         LOG(ERROR) << "dim cnt lt 2";
         return Shape();
     }
-    if (_dims.size() != 2 && s._dims.size() != 2) {
-        LOG(ERROR) << "no matrix available";
-        return Shape();
-    }
     if (_dims[_dims.size() - 1] != s._dims[s._dims.size() - 2]) {
         LOG(ERROR) << "can not mul, col cnt != row cnt";
         return Shape();
     }
-    if (_dims.size() == 2) {
-        auto dims = s._dims;
-        dims[s._dims.size() - 2] = _dims[_dims.size() - 2];
-        return Shape(dims);
-    } else {
-        auto dims = _dims;
-        dims[_dims.size() - 1] = s._dims[s._dims.size() - 1];
-        return Shape(dims);
+    std::vector<u32> dims1(_dims.begin(), _dims.end() - 2);
+    std::vector<u32> dims2(s._dims.begin(), s._dims.end() - 2);
+    if (dims1 != dims2) {
+        LOG(ERROR) << "matrix not equal";
+        return Shape();
     }
+
+    dims1.push_back(_dims[_dims.size() - 2]);
+    dims1.push_back(s._dims[s._dims.size() - 1]);
+    return Shape(dims1);
 }
 
 }

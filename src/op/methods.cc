@@ -1,5 +1,6 @@
 #include "auto_engine/op/methods.h"
 #include "auto_engine/base/basic_types.h"
+#include "auto_engine/tensor/shape.h"
 #include "auto_engine/tensor/tensor.h"
 #include <cmath>
 
@@ -57,6 +58,31 @@ f64 log<f64>(const f64& n) {
 template<>
 base::Tensor<f64> log<base::Tensor<f64>>(const base::Tensor<f64>& t) {
     return t.log();
+}
+
+template<>
+base::Tensor<f64> transpose(const base::Tensor<f64>& t) {
+    return t.transpose();
+}
+
+template<>
+base::Tensor<f64> mmul(const base::Tensor<f64>& t1, const base::Tensor<f64>& t2) {
+    return t1.mmul(t2);
+}
+
+template<>
+base::Tensor<f64> inv(const base::Tensor<f64>& t) {
+    return t.inv();
+}
+
+template<>
+base::Tensor<f64> reshape(const base::Tensor<f64>& t, const base::Shape& shape) {
+    return t.reshape(shape);
+}
+
+template<>
+const base::Shape& shape(const base::Tensor<f64>& t) {
+    return t.shape();
 }
 
 }

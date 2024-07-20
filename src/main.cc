@@ -1,19 +1,21 @@
 
 #include "auto_engine/base/basic_types.h"
-#include "auto_engine/base/slice.h"
+#include "auto_engine/cuda/info.h"
 #include "auto_engine/op/bop.h"
 #include "auto_engine/op/add.h"
+#include "auto_engine/op/inv.h"
+#include "auto_engine/op/mmul.h"
 #include "auto_engine/op/mul.h"
 #include "auto_engine/calc/calc.h"
 #include "auto_engine/op/data_op.h"
 #include "auto_engine/op/div.h"
+#include "auto_engine/op/transpose.h"
 #include "auto_engine/tensor/shape.h"
 #include "auto_engine/op/sub.h"
 #include "auto_engine/op/pow.h"
 #include "auto_engine/op/log.h"
 #include "auto_engine/op/sin_cos.h"
 #include "auto_engine/tensor/tensor.h"
-#include "auto_engine/cuda/matrix_f64.h"
 #include "gtest/gtest.h"
 #include <Eigen/src/Core/Matrix.h>
 #include <cstdlib>
@@ -148,6 +150,28 @@ TEST(Test_grad_tensor, Test){
     cx2.clearGrad();
 }
 
+TEST(Test_grad_tensor2, test) {
+    // 测试：m1 = [[1, 2], [3, 4]], m2 = [[2, 3, 4], [5, 6, 7]]
+    // f(m1, m2) = Transpose(inv(Transpose(m1*m2) * m2) * Transpose([1,1,1])) * Transpose([1, 1, 1])
+    auto t1 = base::Tensor<f64>(base::Shape({2, 2, 2}), {2, 3, 5, 4, 1, 2, 3, 7});
+    auto t2 = base::Tensor<f64>(base::Shape({2, 2, 3}), {2, 3, 4, 5, 6, 7, 3, 4, 5, 6, 7, 8});
+    auto t3 = base::Tensor<f64>(base::Shape({2, 3}), {1, 1, 1, 1, 1, 1});
+    auto x1 = std::make_shared<op::DataOp<base::Tensor<f64>>>(t1, true);
+    auto x2 = std::make_shared<op::DataOp<base::Tensor<f64>>>(t2, true);
+    auto ct = std::make_shared<op::DataOp<base::Tensor<f64>>>(t3);
+    auto item1 = std::make_shared<op::Mmul<base::Tensor<f64>>>(x1, x2);
+    auto item2 = std::make_shared<op::Transpose<base::Tensor<f64>>>(item1);
+    auto item3 = std::make_shared<op::Mmul<base::Tensor<f64>>>(item2, x2);
+    std::cout << calc::Calculator<base::Tensor<f64>>(item3).call().toString() << std::endl;
+    auto item4 = std::make_shared<op::Inv<base::Tensor<f64>>>(item3);
+    std::cout << calc::Calculator<base::Tensor<f64>>(item4).call().toString() << std::endl;
+    auto item5 = std::make_shared<op::Mmul<base::Tensor<f64>>>(item4, std::make_shared<op::Transpose<base::Tensor<f64>>>(ct));
+    auto item6 = std::make_shared<op::Transpose<base::Tensor<f64>>>(item5);
+    auto item = std::make_shared<op::Mmul<base::Tensor<f64>>>(item6, std::make_shared<op::Transpose<base::Tensor<f64>>>(ct));
+    auto c = calc::Calculator<base::Tensor<f64>>(item);
+    std::cout << c.call().toString() << std::endl;
+}
+
 TEST(Test_tensor, test) {
     base::Tensor<f64> t1(base::Shape({2, 3}), {1, 2, 3, 4, 5, 6});
     ASSERT_TRUE(t1.transpose() == base::Tensor<f64>(base::Shape({3, 2}), {1, 4, 2, 5, 3, 6}));
@@ -156,40 +180,14 @@ TEST(Test_tensor, test) {
     base::Tensor<f64> t3(base::Shape({3, 2}), {1, 2, 3, 4, 5, 6});
     ASSERT_TRUE(t1.mmul(t3) == base::Tensor<f64>(base::Shape({2, 2}), {22, 28, 49, 64}));
     base::Tensor<f64> t4(base::Shape({2, 3, 2}), {1, 2, 3, 4, 5, 6, 1, 2, 3, 4, 5, 6});
-    ASSERT_TRUE(t1.mmul(t4) == base::Tensor<f64>(base::Shape({2, 2, 2}), {22, 28, 49, 64, 22, 28, 49, 64}));
-    base::Tensor<f64> t5(base::Shape({2, 3}), {1, 2, 3, 4, 5, 6});
+    ASSERT_TRUE(t2.mmul(t4) == base::Tensor<f64>(base::Shape({2, 2, 2}), {22, 28, 49, 64, 22, 28, 49, 64}));
+    base::Tensor<f64> t5(base::Shape({2, 2, 3}), {1, 2, 3, 4, 5, 6, 1, 2, 3, 4, 5, 6});
     ASSERT_TRUE(t4.mmul(t5) == base::Tensor<f64>(base::Shape({2, 3, 3}), {9, 12, 15, 19, 26, 33, 29, 40, 51, 9, 12, 15, 19, 26, 33, 29, 40, 51}));
     base::Tensor<f64> t6(base::Shape({3, 3}), {1, 2, 3, 4, 5, 6, 7, 2, 9});
     ASSERT_TRUE(t6.inv() == base::Tensor<f64>(base::Shape({3, 3}), {-11.0/12, 1.0/3, 1.0/12, -1.0/6, 1.0/3, -1.0/6, 3.0/4, -1.0/3, 1.0/12}));
     base::Tensor<f64> t7(base::Shape({2, 3, 3}), {1, 2, 3, 4, 5, 6, 7, 2, 9, 0, 2, 3, 4, 5, 6, 7, 2, 9});
     ASSERT_TRUE(t7.inv() == base::Tensor<f64>(base::Shape({2, 3, 3}), {-11.0/12, 1.0/3, 1.0/12, -1.0/6, 1.0/3, -1.0/6, 3.0/4, -1.0/3, 1.0/12, -11.0/23, 4.0/23, 1.0/23, -2.0/23, 7.0/23, -4.0/23, 9.0/23, -14.0/69, 8.0/69}));
-}
-
-TEST(Cuda, Cuda) {
-    base::Slice<f64> slice{1, 2, 3, 4, 5, 6};
-    cuda::MatrixF64 m1(2, 3, slice);
-    ASSERT_TRUE(m1 == cuda::MatrixF64(2, 3, {1, 2, 3, 4, 5, 6}));
-    auto m2 = m1.transpose();
-    ASSERT_TRUE(m2 == cuda::MatrixF64(3, 2, {1, 4, 2, 5, 3, 6}));
-    cuda::MatrixF64 m3(3, 2, slice);
-    ASSERT_TRUE(m3 == cuda::MatrixF64(3, 2, {1, 2, 3, 4, 5, 6}));
-    auto m4 = m1.mmul(m3);
-    ASSERT_TRUE(m4 == cuda::MatrixF64(2, 2, {22, 28, 49, 64}));
-    auto m5 = m3.mmul(m1);
-    ASSERT_TRUE(m5 == cuda::MatrixF64(3, 3, {9, 12, 15, 19, 26, 33, 29, 40, 51}));
-    auto m6 = cuda::MatrixF64(3, 3, {1, 2, 3, 4, 5, 6, 7, 2, 9});
-    auto m7 = m6.inv();
-    ASSERT_TRUE(m7 == cuda::MatrixF64(3, 3, {-11.0/12, 1.0/3, 1.0/12, -1.0/6, 1.0/3, -1.0/6, 3.0/4, -1.0/3, 1.0/12}));
-    auto m8 = cuda::MatrixF64(3, 3, {0, 2, 3, 4, 5, 6, 7, 2, 9});
-    auto m9 = m8.inv();
-    ASSERT_TRUE(m9 == cuda::MatrixF64(3, 3, {-11.0/23, 4.0/23, 1.0/23, -2.0/23, 7.0/23, -4.0/23, 9.0/23, -14.0/69, 8.0/69}));
-    auto m10 = cuda::MatrixF64(2, 3, {1, 2, 3, 4, 5, 6});
-    auto m11 = m10.sin();
-    ASSERT_TRUE(m11 == cuda::MatrixF64(2, 3, {sin(1), sin(2), sin(3), sin(4), sin(5), sin(6)}));
-    auto m12 = m10.add(m10);
-    ASSERT_TRUE(m12 == cuda::MatrixF64(2, 3, {2, 4, 6, 8, 10, 12}));
-    auto m13 = m10.add(m12);
-    ASSERT_TRUE(m13 == cuda::MatrixF64(2, 3, {3, 6, 9, 12, 15, 18}));
+    ASSERT_TRUE(t2.sum({0}) == base::Tensor<f64>(base::Shape({2, 3}), {2, 4, 6, 8, 10, 12}));
 }
 
 int main(int argc, char* argv[]) {
@@ -197,6 +195,8 @@ int main(int argc, char* argv[]) {
     google::SetLogDestination(google::INFO, "./info.log");
     google::SetLogDestination(google::ERROR, "./error.log");
     google::SetLogDestination(google::WARNING, "./warning.log");
+
+    cuda::init();
 
     ::testing::InitGoogleTest(&argc, argv);
     RUN_ALL_TESTS();

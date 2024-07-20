@@ -24,7 +24,7 @@ public:
         auto item1 = transpose(this->getOutput());
         auto item2 = mmul(item1, grad);
         auto item3 = mmul(item2, item1);
-        return zero(item3) - item3; 
+        return zero(arg) - item3; 
     }
 
     std::shared_ptr<Op<T>> derivFunc(u32 _, std::shared_ptr<Op<T>> grad, std::shared_ptr<Op<T>> arg) override {
