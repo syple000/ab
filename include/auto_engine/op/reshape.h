@@ -16,11 +16,11 @@ public:
     }
 
     T deriv(u32 _, const T& grad, const T& arg) override {
-        return reshape(grad, shape(arg));
+        return reshape(grad, shape<T, SHAPE>(arg));
     }
 
     std::shared_ptr<Op<T>> derivFunc(u32 _, std::shared_ptr<Op<T>> grad, std::shared_ptr<Op<T>> arg) override {
-        return std::make_shared<Reshape<T, SHAPE>>(grad, shape(arg->template getOutput()));
+        return std::make_shared<Reshape<T, SHAPE>>(grad, shape<T, SHAPE>(arg->template getOutput()));
     }
 
     std::string name() const override {return "Reshape";}

@@ -15,6 +15,7 @@
 #include "auto_engine/op/pow.h"
 #include "auto_engine/op/log.h"
 #include "auto_engine/op/sin_cos.h"
+#include "auto_engine/op/reshape.h"
 #include "auto_engine/tensor/tensor.h"
 #include "gtest/gtest.h"
 #include <Eigen/src/Core/Matrix.h>
@@ -153,23 +154,32 @@ TEST(Test_grad_tensor, Test){
 TEST(Test_grad_tensor2, test) {
     // 测试：m1 = [[1, 2], [3, 4]], m2 = [[2, 3, 4], [5, 6, 7]]
     // f(m1, m2) = Transpose(inv(Transpose(m1*m2) * m2) * Transpose([1,1,1])) * Transpose([1, 1, 1])
-    auto t1 = base::Tensor<f64>(base::Shape({2, 2, 2}), {2, 3, 5, 4, 1, 2, 3, 7});
-    auto t2 = base::Tensor<f64>(base::Shape({2, 2, 3}), {2, 3, 4, 5, 6, 7, 3, 4, 5, 6, 7, 8});
-    auto t3 = base::Tensor<f64>(base::Shape({2, 3}), {1, 1, 1, 1, 1, 1});
-    auto x1 = std::make_shared<op::DataOp<base::Tensor<f64>>>(t1, true);
-    auto x2 = std::make_shared<op::DataOp<base::Tensor<f64>>>(t2, true);
+    auto t1 = base::Tensor<f64>(base::Shape({2, 2, 2}), {1, 2, 3, 4, 1, 2, 2, 1});
+    auto t2 = base::Tensor<f64>(base::Shape({2, 3, 2}), {1, 2, 3, 4, 5, 6, 6, 5, 4, 3, 2, 1});
+    auto t3 = base::Tensor<f64>(base::Shape({2, 1, 3}), {1, 1, 1, 1, 1, 1});
+    auto x1_ = std::make_shared<op::DataOp<base::Tensor<f64>>>(t1, true);
+    auto x1 = std::make_shared<op::Inv<base::Tensor<f64>>>(x1_);
+    auto x2_ = std::make_shared<op::DataOp<base::Tensor<f64>>>(t2, true);
+    auto x2 = std::make_shared<op::Reshape<base::Tensor<f64>, base::Shape>>(x2_, base::Shape({2, 2, 3}));
     auto ct = std::make_shared<op::DataOp<base::Tensor<f64>>>(t3);
     auto item1 = std::make_shared<op::Mmul<base::Tensor<f64>>>(x1, x2);
     auto item2 = std::make_shared<op::Transpose<base::Tensor<f64>>>(item1);
     auto item3 = std::make_shared<op::Mmul<base::Tensor<f64>>>(item2, x2);
-    std::cout << calc::Calculator<base::Tensor<f64>>(item3).call().toString() << std::endl;
-    auto item4 = std::make_shared<op::Inv<base::Tensor<f64>>>(item3);
-    std::cout << calc::Calculator<base::Tensor<f64>>(item4).call().toString() << std::endl;
-    auto item5 = std::make_shared<op::Mmul<base::Tensor<f64>>>(item4, std::make_shared<op::Transpose<base::Tensor<f64>>>(ct));
-    auto item6 = std::make_shared<op::Transpose<base::Tensor<f64>>>(item5);
-    auto item = std::make_shared<op::Mmul<base::Tensor<f64>>>(item6, std::make_shared<op::Transpose<base::Tensor<f64>>>(ct));
+    auto item4 = std::make_shared<op::Mmul<base::Tensor<f64>>>(item3, std::make_shared<op::Transpose<base::Tensor<f64>>>(ct));
+    auto item5 = std::make_shared<op::Transpose<base::Tensor<f64>>>(item4);
+    auto item = std::make_shared<op::Mmul<base::Tensor<f64>>>(item5, std::make_shared<op::Transpose<base::Tensor<f64>>>(ct));
     auto c = calc::Calculator<base::Tensor<f64>>(item);
-    std::cout << c.call().toString() << std::endl;
+    ASSERT_TRUE(c.call() == base::Tensor<f64>(base::Shape({2, 1, 1}), {40.5, 33}));
+    c.deriv();
+    ASSERT_TRUE(x1_->getGrad() == base::Tensor<f64>(base::Shape({2, 2, 2}), {-31.5, -15.75, 4.5, 2.25, -1, 8, 8, -64}));
+    ASSERT_TRUE(x2_->getGrad() == base::Tensor<f64>(base::Shape({2, 3, 2}), {13.5, 13.5, 13.5, 0, 0, 0, -2, -2, -2, 16, 16, 16}));
+    c.clearGrad();
+    c.createGradGraph();
+    auto cx1 = calc::Calculator<base::Tensor<f64>>(x1_->getGradGraph());
+    auto cx2 = calc::Calculator<base::Tensor<f64>>(x2_->getGradGraph());
+    c.clearGradGraph();
+    std::cout << "x1 grad: " << cx1.call().toString() << std::endl;
+    std::cout << "x2 grad: " << cx2.call().toString() << std::endl;
 }
 
 TEST(Test_tensor, test) {
