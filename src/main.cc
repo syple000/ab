@@ -178,8 +178,16 @@ TEST(Test_grad_tensor2, test) {
     auto cx1 = calc::Calculator<base::Tensor<f64>>(x1_->getGradGraph());
     auto cx2 = calc::Calculator<base::Tensor<f64>>(x2_->getGradGraph());
     c.clearGradGraph();
-    std::cout << "x1 grad: " << cx1.call().toString() << std::endl;
-    std::cout << "x2 grad: " << cx2.call().toString() << std::endl;
+    ASSERT_TRUE(cx1.call() == base::Tensor<f64>(base::Shape({2, 2, 2}), {-31.5, -15.75, 4.5, 2.25, -1, 8, 8, -64}));
+    ASSERT_TRUE(cx2.call() == base::Tensor<f64>(base::Shape({2, 3, 2}), {13.5, 13.5, 13.5, 0, 0, 0, -2, -2, -2, 16, 16, 16}));
+    cx1.deriv();
+    ASSERT_TRUE(x1_->getGrad() == base::Tensor<f64>(base::Shape({2, 2, 2}), {-60.75, 40.5, 20.25, 0, -4-2.0/3, 16+1.0/3, 16+1.0/3, 37+1.0/3}));
+    ASSERT_TRUE(x2_->getGrad() == base::Tensor<f64>(base::Shape({2, 3, 2}), {9, 9, 9, -9, -9, -9, -4-2.0/3, -4-2.0/3, -4-2.0/3, -4-2.0/3, -4-2.0/3, -4-2.0/3}));
+    cx1.clearGrad();
+    cx2.deriv();
+    ASSERT_TRUE(x1_->getGrad() == base::Tensor<f64>(base::Shape({2, 2, 2}), {36, -29.25, -9, 2.25, 2, -7, -7, -16}));
+    ASSERT_TRUE(x2_->getGrad() == base::Tensor<f64>(base::Shape({2, 3, 2}), {-4.5, -4.5, -4.5, 4.5, 4.5, 4.5, 2, 2, 2, 2, 2, 2}));
+    cx2.clearGrad();
 }
 
 TEST(Test_tensor, test) {

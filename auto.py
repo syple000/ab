@@ -45,11 +45,12 @@ def ft(x1, x2):
     item5 = item4.transpose(1, 2)
     item = item5.matmul(ct.transpose(1, 2))
     print("item: {}".format(item))
-    item.reshape(2).sum().backward()
-    print("x1 grad: {}".format(x1_.grad))
-    print("x2 grad: {}".format(x2_.grad))
-    torch.autograd.backward(x1_.grad, grad_tensors=)
-
+    xgrad = torch.autograd.grad(outputs=item.sum(), inputs=[x1_, x2_], create_graph=True)
+    print("xgrad: {}".format(xgrad))
+    xgrad_x1_2rd = torch.autograd.grad(outputs=xgrad[0].sum(), inputs=[x1_, x2_], create_graph=True)
+    xgrad_x2_2rd = torch.autograd.grad(outputs=xgrad[1].sum(), inputs=[x1_, x2_], create_graph=True)
+    print("xgrad_x1_2rd: {}".format(xgrad_x1_2rd))
+    print("xgrad_x2_2rd: {}".format(xgrad_x2_2rd))
 
 if __name__ == "__main__":
 #    x1 = 3
