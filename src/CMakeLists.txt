@@ -2,6 +2,7 @@ add_subdirectory(cuda)
 add_subdirectory(tensor)
 add_subdirectory(op)
 add_subdirectory(utils)
+add_subdirectory(algo)
 add_subdirectory(py)
 
 install(TARGETS include tensor op utils cuda 
@@ -28,4 +29,4 @@ install(FILES
     share/auto_engine)
 
 add_executable(main main.cc)
-target_link_libraries(main include tensor op utils cuda)
+target_link_libraries(main include tensor op utils cuda algo)

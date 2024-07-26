@@ -1,6 +1,7 @@
 // 对python仅暴露op，并将op作为数据
 // 在每一次数据读取时进行计算
 
+#include "auto_engine/algo/grad_descent.h"
 #include "auto_engine/base/basic_types.h"
 #include "auto_engine/calc/calc.h"
 #include "auto_engine/cuda/info.h"
@@ -218,6 +219,10 @@ PYBIND11_MODULE(ae, m) {
         .def("reshape", [](std::shared_ptr<op::Op<base::Tensor<f64>>> op, const std::vector<u32>& dims) -> std::shared_ptr<op::Op<base::Tensor<f64>>> {
             return std::make_shared<op::Reshape<base::Tensor<f64>, base::Shape>>(op, base::Shape(dims));
         });
+
+    py::class_<algo::GradDescent, std::shared_ptr<algo::GradDescent>>(m, "grad_descent")
+        .def(py::init<std::shared_ptr<op::Op<base::Tensor<f64>>>, std::vector<std::shared_ptr<op::Op<base::Tensor<f64>>>>, f64, f64>())
+        .def("run", &algo::GradDescent::run);
 
 
     m.def("tensor", [](py::list lst, bool requires_grad=false) -> std::shared_ptr<op::Op<base::Tensor<f64>>> {

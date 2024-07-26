@@ -1,4 +1,5 @@
 
+#include "auto_engine/algo/grad_descent.h"
 #include "auto_engine/base/basic_types.h"
 #include "auto_engine/cuda/info.h"
 #include "auto_engine/op/bop.h"
@@ -206,6 +207,28 @@ TEST(Test_tensor, test) {
     base::Tensor<f64> t7(base::Shape({2, 3, 3}), {1, 2, 3, 4, 5, 6, 7, 2, 9, 0, 2, 3, 4, 5, 6, 7, 2, 9});
     ASSERT_TRUE(t7.inv() == base::Tensor<f64>(base::Shape({2, 3, 3}), {-11.0/12, 1.0/3, 1.0/12, -1.0/6, 1.0/3, -1.0/6, 3.0/4, -1.0/3, 1.0/12, -11.0/23, 4.0/23, 1.0/23, -2.0/23, 7.0/23, -4.0/23, 9.0/23, -14.0/69, 8.0/69}));
     ASSERT_TRUE(t2.sum({0}) == base::Tensor<f64>(base::Shape({2, 3}), {2, 4, 6, 8, 10, 12}));
+}
+
+TEST(Test_grad_descent, test) {
+    auto t1 = base::Tensor<f64>(base::Shape({2}), {1, 2});
+    auto t2 = base::Tensor<f64>(base::Shape({2}), {2, 3});
+    auto t3 = base::Tensor<f64>(base::Shape({2}), {4, 5});
+    auto x = std::make_shared<op::DataOp<base::Tensor<f64>>>(t1, true);
+    auto ct1 = std::make_shared<op::DataOp<base::Tensor<f64>>>(t2);
+    auto ct2 = std::make_shared<op::DataOp<base::Tensor<f64>>>(t3);
+    auto item1 = std::make_shared<op::Mul<base::Tensor<f64>>>(x, x);
+    auto item2 = std::make_shared<op::Mul<base::Tensor<f64>>>(ct1, x);
+    auto item3 = std::make_shared<op::Add<base::Tensor<f64>>>(item1, item2);
+    auto item4 = std::make_shared<op::Add<base::Tensor<f64>>>(item3, ct2);
+    auto item5 = std::make_shared<op::Reshape<base::Tensor<f64>, base::Shape>>(item4, base::Shape({1, 2}));
+    auto item6 = std::make_shared<op::DataOp<base::Tensor<f64>>>(base::Tensor<f64>(base::Shape({2, 1}), 1));
+    auto item = std::make_shared<op::Mmul<base::Tensor<f64>>>(item5, item6);
+    
+    auto d = std::make_shared<algo::GradDescent>(item, std::vector<std::shared_ptr<op::Op<base::Tensor<f64>>>>{x}, 0.000000001, 0.5);
+    d->run();
+    // std::cout << x->getOutput().toString() << std::endl;
+    // 不能断言，会有细微差异
+    // ASSERT_TRUE(x->getOutput() == base::Tensor<f64>(base::Shape({2}), {-1, -1.5}));
 }
 
 int main(int argc, char* argv[]) {

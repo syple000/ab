@@ -113,7 +113,7 @@ __global__ void apply_neg(T* data, int size) {return apply<T>(data, size, neg);}
 template<typename T>
 __global__ void apply_pow(T* data1, const T* data2, int size) {return apply<T>(data1, data2, size, pow);}
 
-template<typename T>
+template<typename T> // 实现的不好
 __global__ void apply_sum(const T* src, int src_size, T* dst, int dst_size) {
     int index = blockIdx.x * blockDim.x + threadIdx.x; 
     if (index >= dst_size) {return;}

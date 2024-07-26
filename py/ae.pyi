@@ -3,7 +3,12 @@ auto engine
 """
 from __future__ import annotations
 import typing
-__all__ = ['invalid_argument', 'op', 'runtime_err', 'tensor']
+__all__ = ['grad_descent', 'invalid_argument', 'op', 'runtime_err', 'tensor']
+class grad_descent:
+    def __init__(self, arg0: op, arg1: list[op], arg2: float, arg3: float) -> None:
+        ...
+    def run(self) -> None:
+        ...
 class invalid_argument(Exception):
     pass
 class op:
