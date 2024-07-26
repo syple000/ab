@@ -9,7 +9,13 @@ mkdir -p $main_dir/build
 cd $main_dir/build
 cmake .. && make
 
-mv compile_commands.json .. 
-mv lib/ae* ..
+mv compile_commands.json .. # clangd
 
-cd -
+mv lib/ae\.* ../py # py
+cd $main_dir/py
+export PYTHONPATH=$main_dir/py:$PYTHONPATH
+pybind11-stubgen ae
+mv stubs/* .
+rm -r stubs && rm ae.INFO info.log*
+
+cd $main_dir

@@ -1,5 +1,5 @@
 /build/
 /vcpkg_installed/
 /.cache/
-ae.*
+ae.INFO
 info.log*

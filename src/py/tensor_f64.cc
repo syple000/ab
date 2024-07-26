@@ -51,39 +51,6 @@ PYBIND11_MODULE(ae, m) {
     py::register_exception<std::invalid_argument>(m, "invalid_argument");
     py::register_exception<std::runtime_error>(m, "runtime_err");
 
-    m.def("tensor", [](py::list lst, bool requires_grad=false) -> std::shared_ptr<op::Op<base::Tensor<f64>>> {
-        std::vector<u32> dims;
-        std::vector<f64> data;
-        std::function<void(py::list, int)> f = [&dims, &data, &f](py::list lst, int level) {
-            if (dims.size() == level) {
-                dims.push_back(lst.size());
-            }
-            if (dims[level] != lst.size()) {
-                throw std::invalid_argument(fmt::format("level {}: {}, {} conflict", level, dims[level], lst.size()));
-            }
-            for (auto e : lst) {
-                if (py::isinstance<py::list>(e)) {
-                    auto elst = py::cast<py::list>(e);
-                    f(elst, level + 1);       
-                } else if (py::isinstance<py::int_>(e)) {
-                    auto ei = py::cast<i64>(e);
-                    data.push_back(ei);
-                } else if (py::isinstance<py::float_>(e)) {
-                    auto ef = py::cast<f64>(e);
-                    data.push_back(ef);
-                } else {
-                    throw std::invalid_argument(fmt::format("unknown input type: level: {}", level));
-                }
-            }       
-        };
-        f(lst, 0);
-        auto shape = base::Shape(dims);
-        if (shape.tensorSize() != data.size()) {
-            throw std::invalid_argument("not a tensor");
-        }
-        return std::make_shared<op::DataOp<base::Tensor<f64>>>(base::Tensor<f64>(shape, data), requires_grad);
-    }, py::arg("lst"), py::arg("requires_grad")=false);
-
     py::class_<op::Op<base::Tensor<f64>>, std::shared_ptr<op::Op<base::Tensor<f64>>>>(m, "op")
         .def("__repr__", [](std::shared_ptr<op::Op<base::Tensor<f64>>> op) -> std::string {
             if (!op->hasOutput()) {
@@ -187,4 +154,40 @@ PYBIND11_MODULE(ae, m) {
         .def("reshape", [](std::shared_ptr<op::Op<base::Tensor<f64>>> op, const std::vector<u32>& dims) -> std::shared_ptr<op::Op<base::Tensor<f64>>> {
             return std::make_shared<op::Reshape<base::Tensor<f64>, base::Shape>>(op, base::Shape(dims));
         });
+
+
+    m.def("tensor", [](py::list lst, bool requires_grad=false) -> std::shared_ptr<op::Op<base::Tensor<f64>>> {
+        std::vector<u32> dims;
+        std::vector<f64> data;
+        std::function<void(py::list, int)> f = [&dims, &data, &f](py::list lst, int level) {
+            if (dims.size() == level) {
+                dims.push_back(lst.size());
+            }
+            if (dims[level] != lst.size()) {
+                throw std::invalid_argument(fmt::format("level {}: {}, {} conflict", level, dims[level], lst.size()));
+            }
+            for (auto e : lst) {
+                if (py::isinstance<py::list>(e)) {
+                    auto elst = py::cast<py::list>(e);
+                    f(elst, level + 1);       
+                } else if (py::isinstance<py::int_>(e)) {
+                    auto ei = py::cast<i64>(e);
+                    data.push_back(ei);
+                } else if (py::isinstance<py::float_>(e)) {
+                    auto ef = py::cast<f64>(e);
+                    data.push_back(ef);
+                } else {
+                    throw std::invalid_argument(fmt::format("unknown input type: level: {}", level));
+                }
+            }       
+        };
+        f(lst, 0);
+        auto shape = base::Shape(dims);
+        if (shape.tensorSize() != data.size()) {
+            throw std::invalid_argument("not a tensor");
+        }
+        return std::make_shared<op::DataOp<base::Tensor<f64>>>(base::Tensor<f64>(shape, data), requires_grad);
+    }, py::arg("lst"), py::arg("requires_grad")=false);
+
+
 }
