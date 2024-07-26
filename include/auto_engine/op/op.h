@@ -101,7 +101,9 @@ public:
             for (auto sop : op->template args()) {
                 recur(sop);
             }
-            _exec_queue.push_back(op);
+            if (op != this->template shared_from_this()) {
+                _exec_queue.push_back(op);
+            }
         };
         recur(this->template shared_from_this());
         return _exec_queue;
