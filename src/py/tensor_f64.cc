@@ -149,6 +149,14 @@ PYBIND11_MODULE(ae, m) {
         .def("log", [](std::shared_ptr<op::Op<base::Tensor<f64>>> op) -> std::shared_ptr<op::Op<base::Tensor<f64>>> {
             return std::make_shared<op::Log<base::Tensor<f64>>>(op);
         })
+        .def("sum", [](std::shared_ptr<op::Op<base::Tensor<f64>>> op) -> std::shared_ptr<op::Op<base::Tensor<f64>>> {
+            auto shape = op->getOutput().shape();
+            auto exp_shape = shape.reshape({shape.tensorSize(), 1});
+            auto vexp_shape = shape.reshape({1, shape.tensorSize()});
+            auto ct = std::make_shared<op::DataOp<base::Tensor<f64>>>(base::Tensor<f64>(exp_shape, 1));
+            auto vexp_op = std::make_shared<op::Reshape<base::Tensor<f64>, base::Shape>>(op, vexp_shape);
+            return std::make_shared<op::Mmul<base::Tensor<f64>>>(vexp_op, ct);
+        })
         .def("mm", [](std::shared_ptr<op::Op<base::Tensor<f64>>> op1, std::shared_ptr<op::Op<base::Tensor<f64>>> op2) -> std::shared_ptr<op::Op<base::Tensor<f64>>> {
             return std::make_shared<op::Mmul<base::Tensor<f64>>>(op1, op2);
         })

@@ -58,7 +58,7 @@ if __name__ == "__main__":
     print("xgrad_x2_2rd: {} {}".format(x1_.grad(), x2_.grad()))
     x2_grad.clear_grad()
 
-    a = ae.tensor([1, 2])
+    a = ae.tensor([[1, 2], [3, 4]])
     b = ae.tensor([3, 4])
     b.update(a)
-    print("b: {}".format(b))
+    print("b: {}, sum: {}".format(b, b.sum()))
