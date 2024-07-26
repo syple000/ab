@@ -59,6 +59,13 @@ PYBIND11_MODULE(ae, m) {
             }
             return fmt::format("{{\"shape\": {0}, \"data\": {1}}}", op->getOutput().shape().toString(), op->getOutput().toString(true));
         })
+        .def("update", [](std::shared_ptr<op::Op<base::Tensor<f64>>> op1, std::shared_ptr<op::Op<base::Tensor<f64>>> op2) {
+            if (!op2->hasOutput()) {
+                calc::Calculator<base::Tensor<f64>> c(op2);
+                c.call();
+            }
+            op1->setOutput(op2->getOutput());
+        })
         .def("item", [](std::shared_ptr<op::Op<base::Tensor<f64>>> op) -> f64 {
             if (!op->hasOutput()) {
                 calc::Calculator<base::Tensor<f64>> c(op);

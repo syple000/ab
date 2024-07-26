@@ -16,6 +16,6 @@ cd $main_dir/py
 export PYTHONPATH=$main_dir/py:$PYTHONPATH
 pybind11-stubgen ae
 mv stubs/* .
-rm -r stubs && rm ae.INFO info.log*
+rm -r stubs && rm ae.INFO ae.WARNING ae.ERROR info.log* warning.log* error.log*
 
 cd $main_dir

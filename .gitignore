@@ -2,4 +2,8 @@
 /vcpkg_installed/
 /.cache/
 ae.INFO
+ae.WARNING
+ae.ERROR
 info.log*
+warning.log*
+error.log*
