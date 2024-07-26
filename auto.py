@@ -1,6 +1,8 @@
 from math import *
 import torch
 
+# 验证用文件
+
 def f(x1, x2):
     return (2*x1 + x2) * (x1 - x2) + x2/x1 + x2**(x1+x2+1) + log(x1+x2) + sin(x2-x1)/cos(x1+x2)
 

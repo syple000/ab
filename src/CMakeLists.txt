@@ -2,6 +2,7 @@ add_subdirectory(cuda)
 add_subdirectory(tensor)
 add_subdirectory(op)
 add_subdirectory(utils)
+add_subdirectory(py)
 
 install(TARGETS include tensor op utils cuda 
     EXPORT auto_engine

@@ -11,6 +11,7 @@ static_assert(sizeof(float) == 4, "float size != 4");
 typedef uint64_t size64;
 typedef uint32_t u32;
 typedef uint64_t u64;
+typedef int64_t i64;
 typedef float f32;
 typedef double f64; 
 

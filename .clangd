@@ -6,3 +6,4 @@ CompileFlags:
     # - --options-file
     - --generate-code=*
     - --expt-relaxed-constexpr
+    - -Xcompiler=-fPIC

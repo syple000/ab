@@ -13,9 +13,10 @@
 #include <cmath>
 #include <cstdlib>
 #include <cstring>
+#include <fmt/core.h>
 #include <functional>
-#include <memory>
 #include <sstream>
+#include <stdexcept>
 #include <string>
 #include <unordered_set>
 #include <vector>
@@ -35,6 +36,9 @@ public:
     Tensor(const Shape& shape, const T& e): _shape(shape), _data(std::vector<T>(shape.tensorSize(), e)) {}
     Tensor(const Shape& shape, const std::vector<T>& data): _shape(shape), _data(std::vector<T>(data)) {
         if (_shape.tensorSize() != _data.size()) {
+            if (ENABLE_TENSOR_EXCEPTION) {
+                throw std::runtime_error(fmt::format("tensor size invalid, shape size: {}, data size: {}", shape.tensorSize(), data.size()));
+            }
             LOG(ERROR) << "tensor size invalid";
             _shape = Shape();
             _data = std::vector<T>();
@@ -86,6 +90,9 @@ public:
     Tensor<T> reshape(const std::vector<u32>& dims) const {
         auto shape = _shape.reshape(dims);
         if (shape.tensorSize() != _shape.tensorSize()) {
+            if (ENABLE_TENSOR_EXCEPTION) {
+                throw std::runtime_error(fmt::format("tensor reshape err, orig shape: {}, target shape: {}", _shape.toString(), shape.toString()));
+            }
             LOG(ERROR) << "tensor reshape err";
             return Tensor();
         }
@@ -93,6 +100,9 @@ public:
     }
     Tensor<T> reshape(const base::Shape& shape) const {
         if (shape.tensorSize() != _shape.tensorSize()) {
+            if (ENABLE_TENSOR_EXCEPTION) {
+                throw std::runtime_error(fmt::format("tensor reshape err, orig shape: {}, target shape: {}", _shape.toString(), shape.toString()));
+            }
             LOG(ERROR) << "tensor reshape err";
             return Tensor();
         }
@@ -102,7 +112,10 @@ public:
     std::string toString(bool compact = false) const {
         std::function<std::string(u32, u32&)> recur_gen = [&recur_gen, &compact, this](u32 dim_index, u32& offset) -> std::string {
             std::stringstream stream;
-            stream << std::string(dim_index*4, ' ') << "[";
+            if (!compact) {
+                stream << std::string(dim_index*4, ' ');
+            }
+            stream << "[";
             if (dim_index == _shape.dimCnt() - 1) {
                 for (int i = 0; i < _shape.getDim(dim_index); i++) {
                     stream << _data[offset];
@@ -122,7 +135,10 @@ public:
                 for (int i = 0; i < _shape.getDim(dim_index); i++) {
                     stream << recur_gen(dim_index + 1, offset);
                 }
-                stream << std::string(dim_index*4, ' ') << "]";
+                if (!compact) {
+                    stream << std::string(dim_index*4, ' ');
+                }
+                stream << "]";
                 if (!compact) {
                     stream << "\n";
                 }
@@ -134,7 +150,7 @@ public:
     }
 
     const Shape& shape() const {return _shape;}
-    const std::shared_ptr<std::vector<T>> data() const {return _data;}
+    const std::vector<T> data() const {return _data;}
 private:
     Shape _shape;
     std::vector<T> _data;
@@ -144,6 +160,9 @@ private:
 template<typename T>
 Tensor<T> Tensor<T>::operator+(const Tensor<T>& t) const {
     if (!(_shape == t._shape)) {
+        if (ENABLE_TENSOR_EXCEPTION) {
+            throw std::runtime_error(fmt::format("tensor + fail, shape diff, shape1: {}, shape2: {}", _shape.toString(), t._shape.toString()));
+        }
         LOG(ERROR) << "tensor + fail, shape diff";
         return Tensor();
     }
@@ -161,6 +180,9 @@ Tensor<T> Tensor<T>::operator+(const Tensor<T>& t) const {
 template<typename T>
 Tensor<T> Tensor<T>::operator-(const Tensor<T>& t) const {
     if (!(_shape == t._shape)) {
+        if (ENABLE_TENSOR_EXCEPTION) {
+            throw std::runtime_error(fmt::format("tensor - fail, shape diff, shape1: {}, shape2: {}", _shape.toString(), t._shape.toString()));
+        }
         LOG(ERROR) << "tensor - fail, shape diff";
         return Tensor();
     }
@@ -178,6 +200,9 @@ Tensor<T> Tensor<T>::operator-(const Tensor<T>& t) const {
 template<typename T>
 Tensor<T> Tensor<T>::operator*(const Tensor<T>& t) const {
     if (!(_shape == t._shape)) {
+        if (ENABLE_TENSOR_EXCEPTION) {
+            throw std::runtime_error(fmt::format("tensor * fail, shape diff, shape1: {}, shape2: {}", _shape.toString(), t._shape.toString()));
+        }
         LOG(ERROR) << "tensor * fail, shape diff";
         return Tensor();
     }
@@ -195,6 +220,9 @@ Tensor<T> Tensor<T>::operator*(const Tensor<T>& t) const {
 template<typename T>
 Tensor<T> Tensor<T>::operator/(const Tensor<T>& t) const {
     if (!(_shape == t._shape)) {
+        if (ENABLE_TENSOR_EXCEPTION) {
+            throw std::runtime_error(fmt::format("tensor / fail, shape diff, shape1: {}, shape2: {}", _shape.toString(), t._shape.toString()));
+        }
         LOG(ERROR) << "tensor / fail, shape diff";
         return Tensor();
     }
@@ -212,6 +240,9 @@ Tensor<T> Tensor<T>::operator/(const Tensor<T>& t) const {
 template<typename T>
 Tensor<T> Tensor<T>::pow(const Tensor<T>& t) const {
     if (!(_shape == t._shape)) {
+        if (ENABLE_TENSOR_EXCEPTION) {
+            throw std::runtime_error(fmt::format("tensor pow fail, shape diff, shape1: {}, shape2: {}", _shape.toString(), t._shape.toString()));
+        }
         LOG(ERROR) << "tensor pow fail, shape diff";
         return Tensor();
     }
@@ -282,6 +313,9 @@ template<typename T>
 Tensor<T> Tensor<T>::transpose() const {
     auto shape = _shape.transpose();
     if (shape.tensorSize() <= 0) {
+        if (ENABLE_TENSOR_EXCEPTION) {
+            throw std::runtime_error(fmt::format("tensor transpose fail: {}", _shape.toString()));
+        }
         return Tensor();
     }
     auto rt = Tensor(shape, _data); // 仅对shape进行转置，数据还未转置
@@ -307,6 +341,9 @@ template<typename T>
 Tensor<T> Tensor<T>::mmul(const Tensor<T>& t) const {
     auto shape = _shape.mmul(t._shape);
     if (shape.tensorSize() <= 0) {
+        if (ENABLE_TENSOR_EXCEPTION) {
+            throw std::runtime_error(fmt::format("tensor mmul fail, shape1: {}, shape2: {}", _shape.toString(), t._shape.toString()));
+        }
         return Tensor();
     }
     auto rt = Tensor(shape);
@@ -336,6 +373,9 @@ Tensor<T> Tensor<T>::mmul(const Tensor<T>& t) const {
 template<typename T>
 Tensor<T> Tensor<T>::inv() const {
     if (_shape.dimCnt() < 2 || _shape.getDim(_shape.dimCnt() - 2) != _shape.getDim(_shape.dimCnt() - 1)) {
+        if (ENABLE_TENSOR_EXCEPTION) {
+            throw std::runtime_error(fmt::format("tensor inv fail: {}", _shape.toString()));
+        }
         LOG(ERROR) << "not a square matrix";
         return Tensor();
     }
@@ -344,6 +384,9 @@ Tensor<T> Tensor<T>::inv() const {
     auto matrix_size = _shape.subTensorSize(_shape.dimCnt() - 2);
     if (std::is_same<T, f64>::value && ENABLE_CUDA) {
         if (!cuda::inv(row_col_cnt, rt._data.data(), _shape.tensorSize()/matrix_size)) {
+            if (ENABLE_TENSOR_EXCEPTION) {
+                throw std::runtime_error(fmt::format("tensor inv fail"));
+            }
             rt = Tensor();
         }
     } else {
@@ -363,6 +406,9 @@ Tensor<T> Tensor<T>::sum(const std::vector<u32>& dim_indexs) const {
     std::unordered_set<u32> dim_index_set;
     for (auto index : dim_indexs) {
         if (index >= _shape.dimCnt()) {
+            if (ENABLE_TENSOR_EXCEPTION) {
+                throw std::runtime_error(fmt::format("tensor sum fail index out of range: {}, shape: {}", index, _shape.toString()));
+            }
             LOG(ERROR) << "sum index out of range";
             return Tensor();
         }

@@ -8,6 +8,8 @@ echo "project dir: " $main_dir
 mkdir -p $main_dir/build
 cd $main_dir/build
 cmake .. && make
+
 mv compile_commands.json .. 
+mv lib/ae* ..
 
 cd -

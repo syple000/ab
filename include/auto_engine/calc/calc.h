@@ -25,7 +25,9 @@ public:
             calls.clear();
             for (auto c : bcalls) {
                 LOG(INFO) << "call: " << c->template name();
-                c->template forward();
+                if (!c->template hasOutput()) {
+                    c->template forward();
+                }
                 for (auto dc : _call_deped[c]) {
                     call_dep_cnt[dc] -= 1;
                     if (call_dep_cnt[dc] == 0) {
