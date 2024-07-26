@@ -50,7 +50,9 @@ public:
     void clearOutput() {
         const auto& a = _op->template exec_queue();
         for (int i = 0; i < a.size(); i++) {
-            a[i]->template clearOutput();
+            if (a[i]->template args().size() > 0) {
+                a[i]->template clearOutput();
+            }
         }
         _op->template clearOutput();
     }

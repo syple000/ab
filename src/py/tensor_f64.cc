@@ -117,6 +117,10 @@ PYBIND11_MODULE(ae, m) {
             calc::Calculator<base::Tensor<f64>> c(op);
             c.createGradGraph();
         })
+        .def("clear_output", [](std::shared_ptr<op::Op<base::Tensor<f64>>> op) {
+            calc::Calculator<base::Tensor<f64>> c(op);
+            c.clearOutput();
+        })
         .def("clear_grad", [](std::shared_ptr<op::Op<base::Tensor<f64>>> op) {
             calc::Calculator<base::Tensor<f64>> c(op);
             c.clearGrad();
