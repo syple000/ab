@@ -61,4 +61,4 @@ if __name__ == "__main__":
     a = ae.tensor([[1, 2], [3, 4]])
     b = ae.tensor([3, 4])
     b.update(a)
-    print("b: {}, sum: {}".format(b, b.sum()))
+    print("b: {}, sum: {}, add1: {}, sub1: {}, mul2: {}, div2: {}, pow2: {}".format(b, b.sum(), b + 1, b - 1, b * 2, b / 2, b ** 2))

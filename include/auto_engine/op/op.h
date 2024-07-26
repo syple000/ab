@@ -6,13 +6,15 @@
 #include "auto_engine/utils/vec_utils.h"
 #include "glog/logging.h"
 #include <cstdlib>
+#include <functional>
 #include <memory>
+#include <unordered_set>
 #include <vector>
 
 namespace op {
 
 template<typename T> // T必须支持四则运算
-class Op {
+class Op : public std::enable_shared_from_this<Op<T>> {
 public:
     template<typename... Args>
     Op(Args... args) {
@@ -32,6 +34,9 @@ public:
         for (auto arg : this->_args) {
             arg->template clearGradGraph();
         }
+        if (_gen_exec_queue) {
+            _exec_queue.clear();
+        }
     };
     virtual void forward() = 0;
     virtual void backward() = 0;
@@ -48,6 +53,7 @@ public:
     void setOutput(const T& data) {_output = data; _has_output = true;}
     void setOutput(T&& data) {_output = std::move(data); _has_output = true;}
     bool hasOutput() const {return _has_output;}
+    void clearOutput() {_has_output = false;}
 
     const T& getGrad() const {
         if (!_has_grad) {
@@ -79,6 +85,27 @@ public:
     std::shared_ptr<Op<T>> arg() const {return _args[0];}
     std::shared_ptr<Op<T>> arg1() const {return _args[0];}
     std::shared_ptr<Op<T>> arg2() const {return _args[1];}
+
+    const std::vector<std::shared_ptr<Op<T>>>& exec_queue() {
+        if (_gen_exec_queue) {
+            return _exec_queue;
+        }
+        _gen_exec_queue = true;
+
+        std::unordered_set<std::shared_ptr<op::Op<T>>> visted;
+        std::function<void(std::shared_ptr<op::Op<T>>)> recur = [&recur, &visted, this](std::shared_ptr<op::Op<T>> op) {
+            if (visted.find(op) != visted.end()) {
+                return;
+            }
+            visted.insert(op);
+            for (auto sop : op->template args()) {
+                recur(sop);
+            }
+            _exec_queue.push_back(op);
+        };
+        recur(this->template shared_from_this());
+        return _exec_queue;
+    }
 private: // 继承类仅关注方法，不直接操作数据
     T _output;
     bool _has_output = false;
@@ -87,6 +114,10 @@ private: // 继承类仅关注方法，不直接操作数据
     std::shared_ptr<Op<T>> _grad_graph;
     bool _requires_grad = false;
     std::vector<std::shared_ptr<Op<T>>> _args;
+
+    // 执行图，懒执行
+    bool _gen_exec_queue = false;
+    std::vector<std::shared_ptr<Op<T>>> _exec_queue;
 };
 
 template<typename T, typename... Args>
@@ -111,5 +142,7 @@ template<int N, typename T>
 using GenOpFuncT = typename GenOpFunc<N, T>::type;
 
 }
+
+
 
 #endif

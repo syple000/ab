@@ -2,21 +2,42 @@
 auto engine
 """
 from __future__ import annotations
+import typing
 __all__ = ['invalid_argument', 'op', 'runtime_err', 'tensor']
 class invalid_argument(Exception):
     pass
 class op:
+    @typing.overload
     def __add__(self, arg0: op) -> op:
         ...
+    @typing.overload
+    def __add__(self, arg0: float) -> op:
+        ...
+    @typing.overload
     def __mul__(self, arg0: op) -> op:
         ...
+    @typing.overload
+    def __mul__(self, arg0: float) -> op:
+        ...
+    @typing.overload
     def __pow__(self, arg0: op) -> op:
+        ...
+    @typing.overload
+    def __pow__(self, arg0: float) -> op:
         ...
     def __repr__(self) -> str:
         ...
+    @typing.overload
     def __sub__(self, arg0: op) -> op:
         ...
+    @typing.overload
+    def __sub__(self, arg0: float) -> op:
+        ...
+    @typing.overload
     def __truediv__(self, arg0: op) -> op:
+        ...
+    @typing.overload
+    def __truediv__(self, arg0: float) -> op:
         ...
     def backward(self) -> None:
         ...

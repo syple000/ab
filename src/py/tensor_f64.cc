@@ -6,6 +6,7 @@
 #include "auto_engine/cuda/info.h"
 #include "auto_engine/op/add.h"
 #include "auto_engine/op/data_op.h"
+#include "auto_engine/op/div.h"
 #include "auto_engine/op/inv.h"
 #include "auto_engine/op/log.h"
 #include "auto_engine/op/mmul.h"
@@ -128,17 +129,57 @@ PYBIND11_MODULE(ae, m) {
         .def("__add__", [](std::shared_ptr<op::Op<base::Tensor<f64>>> op1, std::shared_ptr<op::Op<base::Tensor<f64>>> op2) -> std::shared_ptr<op::Op<base::Tensor<f64>>> {
             return std::make_shared<op::Add<base::Tensor<f64>>>(op1, op2);
         })
+        .def("__add__", [](std::shared_ptr<op::Op<base::Tensor<f64>>> op, f64 n) -> std::shared_ptr<op::Op<base::Tensor<f64>>> {
+            if (!op->hasOutput()) {
+                calc::Calculator<base::Tensor<f64>> c(op);
+                c.call();
+            }
+            auto add_op = std::make_shared<op::DataOp<base::Tensor<f64>>>(base::Tensor<f64>(op->getOutput().shape(), n));
+            return std::make_shared<op::Add<base::Tensor<f64>>>(op, add_op);
+        })
         .def("__sub__", [](std::shared_ptr<op::Op<base::Tensor<f64>>> op1, std::shared_ptr<op::Op<base::Tensor<f64>>> op2) -> std::shared_ptr<op::Op<base::Tensor<f64>>> {
             return std::make_shared<op::Sub<base::Tensor<f64>>>(op1, op2);
+        })
+        .def("__sub__", [](std::shared_ptr<op::Op<base::Tensor<f64>>> op, f64 n) -> std::shared_ptr<op::Op<base::Tensor<f64>>> {
+            if (!op->hasOutput()) {
+                calc::Calculator<base::Tensor<f64>> c(op);
+                c.call();
+            }
+            auto sub_op = std::make_shared<op::DataOp<base::Tensor<f64>>>(base::Tensor<f64>(op->getOutput().shape(), n));
+            return std::make_shared<op::Sub<base::Tensor<f64>>>(op, sub_op);
         })
         .def("__mul__", [](std::shared_ptr<op::Op<base::Tensor<f64>>> op1, std::shared_ptr<op::Op<base::Tensor<f64>>> op2) -> std::shared_ptr<op::Op<base::Tensor<f64>>> {
             return std::make_shared<op::Mul<base::Tensor<f64>>>(op1, op2);
         })
+        .def("__mul__", [](std::shared_ptr<op::Op<base::Tensor<f64>>> op, f64 n) -> std::shared_ptr<op::Op<base::Tensor<f64>>> {
+            if (!op->hasOutput()) {
+                calc::Calculator<base::Tensor<f64>> c(op);
+                c.call();
+            }
+            auto mul_op = std::make_shared<op::DataOp<base::Tensor<f64>>>(base::Tensor<f64>(op->getOutput().shape(), n));
+            return std::make_shared<op::Mul<base::Tensor<f64>>>(op, mul_op);
+        })
         .def("__truediv__", [](std::shared_ptr<op::Op<base::Tensor<f64>>> op1, std::shared_ptr<op::Op<base::Tensor<f64>>> op2) -> std::shared_ptr<op::Op<base::Tensor<f64>>> {
             return std::make_shared<op::Div<base::Tensor<f64>>>(op1, op2);
         })
+        .def("__truediv__", [](std::shared_ptr<op::Op<base::Tensor<f64>>> op, f64 n) -> std::shared_ptr<op::Op<base::Tensor<f64>>> {
+            if (!op->hasOutput()) {
+                calc::Calculator<base::Tensor<f64>> c(op);
+                c.call();
+            }
+            auto div_op = std::make_shared<op::DataOp<base::Tensor<f64>>>(base::Tensor<f64>(op->getOutput().shape(), n));
+            return std::make_shared<op::Div<base::Tensor<f64>>>(op, div_op);
+        })
         .def("__pow__", [](std::shared_ptr<op::Op<base::Tensor<f64>>> op1, std::shared_ptr<op::Op<base::Tensor<f64>>> op2) -> std::shared_ptr<op::Op<base::Tensor<f64>>> {
             return std::make_shared<op::Pow<base::Tensor<f64>>>(op1, op2);
+        })
+        .def("__pow__", [](std::shared_ptr<op::Op<base::Tensor<f64>>> op, f64 n) -> std::shared_ptr<op::Op<base::Tensor<f64>>> {
+            if (!op->hasOutput()) {
+                calc::Calculator<base::Tensor<f64>> c(op);
+                c.call();
+            }
+            auto pow_op = std::make_shared<op::DataOp<base::Tensor<f64>>>(base::Tensor<f64>(op->getOutput().shape(), n));
+            return std::make_shared<op::Pow<base::Tensor<f64>>>(op, pow_op);
         })
         .def("sin", [](std::shared_ptr<op::Op<base::Tensor<f64>>> op) -> std::shared_ptr<op::Op<base::Tensor<f64>>> {
             return std::make_shared<op::Sin<base::Tensor<f64>>>(op);
@@ -150,6 +191,10 @@ PYBIND11_MODULE(ae, m) {
             return std::make_shared<op::Log<base::Tensor<f64>>>(op);
         })
         .def("sum", [](std::shared_ptr<op::Op<base::Tensor<f64>>> op) -> std::shared_ptr<op::Op<base::Tensor<f64>>> {
+            if (!op->hasOutput()) {
+                calc::Calculator<base::Tensor<f64>> c(op);
+                c.call();
+            }
             auto shape = op->getOutput().shape();
             auto exp_shape = shape.reshape({shape.tensorSize(), 1});
             auto vexp_shape = shape.reshape({1, shape.tensorSize()});
