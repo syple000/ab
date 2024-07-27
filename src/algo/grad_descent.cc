@@ -53,8 +53,8 @@ void GradDescent::run() {
         }
         // 试探步长，回溯线搜索，找到一个有一定显著值的下降步长
         auto step = _init_step;
-        if (ENABLE_GRAD_DESCENNT_RAND_STEP && (std::rand() & 1024) < 1024 * ENABLE_GRAD_DESCENNT_RAND_STEP_RATIO) {
-            step = step * ((std::rand() & 8) + 1);
+        if (ENABLE_GRAD_DESCENNT_RAND_STEP && (std::rand() & ((1 << 10) - 1)) < (1 << 10) * ENABLE_GRAD_DESCENNT_RAND_STEP_RATIO) {
+            step = step * ((std::rand() & ((1 << 3) - 1)) + 1);
             LOG(INFO) << "enable grad descent rand step: " << step;
         } 
         u32 retries = 0;
