@@ -5,7 +5,7 @@ from __future__ import annotations
 import typing
 __all__ = ['grad_descent', 'invalid_argument', 'op', 'runtime_err', 'tensor']
 class grad_descent:
-    def __init__(self, cost: op, vars: list[op], init_step: float, rho: float, tangent_slope_coef: float = 0.0001, max_probe_retries: int = 50) -> None:
+    def __init__(self, cost: op, vars: list[op], init_step: float, rho: float, tangent_slope_coef: float = 0.0001, max_iter_cnt: int = 50, max_probe_retries: int = 100) -> None:
         ...
     def run(self) -> None:
         ...

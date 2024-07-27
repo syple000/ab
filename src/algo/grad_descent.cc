@@ -85,16 +85,19 @@ void GradDescent::run() {
         return -1;
     };
     f64 pre = cost_call();
-    while (true) {
+    u32 iter_cnt = 0;
+    while (iter_cnt < _max_iter_cnt) {
         bool terminate;
         f64 cur = find_update_step(pre, terminate);
         if (terminate) {
             LOG(INFO) << "iter break, terminate...";
-            break;
+            return;
         }
         LOG(INFO) << "update, pre: " << pre << ", cur: " << cur;
         pre = cur;
+        iter_cnt += 1;
     }
+    LOG(INFO) << "iter cnt limit...";
 }
 
 }
