@@ -1,7 +1,7 @@
 // 对python仅暴露op，并将op作为数据
 // 在每一次数据读取时进行计算
 
-#include "auto_engine/algo/grad_descent.h"
+#include "auto_engine/algo/algo.h"
 #include "auto_engine/base/basic_types.h"
 #include "auto_engine/calc/calc.h"
 #include "auto_engine/cuda/info.h"
@@ -215,11 +215,12 @@ PYBIND11_MODULE(ae, m) {
             return std::make_shared<op::Reshape<base::Tensor<f64>, base::Shape>>(op, base::Shape(dims));
         });
 
-    py::class_<algo::GradDescent, std::shared_ptr<algo::GradDescent>>(m, "grad_descent")
-        .def(py::init<std::shared_ptr<op::Op<base::Tensor<f64>>>, std::vector<std::shared_ptr<op::Op<base::Tensor<f64>>>>, f64, f64, f64, u32, u32>(),
-            py::arg("cost"), py::arg("vars"), py::arg("init_step"), py::arg("rho"), py::arg("tangent_slope_coef")=0.0001, py::arg("max_iter_cnt")=50, py::arg("max_probe_retries")=100
+    py::class_<algo::OptAlgo, std::shared_ptr<algo::OptAlgo>>(m, "opt_algo")
+        .def(py::init<std::shared_ptr<op::Op<base::Tensor<f64>>>, std::vector<std::shared_ptr<op::Op<base::Tensor<f64>>>>>(),
+            py::arg("cost"), py::arg("vars")
         )
-        .def("run", &algo::GradDescent::run);
+        .def("algo_hyper_params", &algo::OptAlgo::algoHyperParams)
+        .def("run", &algo::OptAlgo::run);
 
 
     m.def("tensor", [](py::list lst, bool requires_grad=false) -> std::shared_ptr<op::Op<base::Tensor<f64>>> {

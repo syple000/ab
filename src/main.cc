@@ -1,5 +1,5 @@
 
-#include "auto_engine/algo/grad_descent.h"
+#include "auto_engine/algo/algo.h"
 #include "auto_engine/base/basic_types.h"
 #include "auto_engine/cuda/info.h"
 #include "auto_engine/op/bop.h"
@@ -224,7 +224,14 @@ TEST(Test_grad_descent, test) {
     auto item6 = std::make_shared<op::DataOp<base::Tensor<f64>>>(base::Tensor<f64>(base::Shape({2, 1}), 1));
     auto item = std::make_shared<op::Mmul<base::Tensor<f64>>>(item5, item6);
     
-    auto d = std::make_shared<algo::GradDescent>(item, std::vector<std::shared_ptr<op::Op<base::Tensor<f64>>>>{x}, 1, 0.8, 0.00001, 50, 50);
+    auto d = std::make_shared<algo::OptAlgo>(item, std::vector<std::shared_ptr<op::Op<base::Tensor<f64>>>>{x});
+    d->algoHyperParams("grad_descent", {
+        {"init_step", 1},
+        {"step_decay_ratio", 0.8},
+        {"tangent_slope_coef", 0.0001},
+        {"max_probe_retries", 50},
+        {"max_iter_cnt", 50}
+    });
     d->run();
     std::cout << x->getOutput().toString() << std::endl;
     // 不能断言，会有细微差异
