@@ -1,7 +1,10 @@
 #include "auto_engine/algo/grad_descent.h"
 #include "auto_engine/base/basic_types.h"
 #include "auto_engine/calc/calc.h"
+#include "auto_engine/config/config.h"
+#include "auto_engine/op/op.h"
 #include "auto_engine/tensor/tensor.h"
+#include <sstream>
 #include <vector>
 
 namespace algo {
@@ -57,6 +60,13 @@ void GradDescent::run() {
             LOG(INFO) << "retries: " << retries << ", base: " << base << ", cost: " << cost;
             if (cost < target) {
                 LOG(INFO) << "found step and update: " << step;
+                if (ENABLE_GRAD_DESCENT_ECHO_GRAD) {
+                    std::stringstream stream;
+                    for (int i = 0; i < _var_vec.size(); i++) {
+                        stream << " " << i << "th: " << _var_vec[i]->getGrad().toString(true);
+                    }
+                    LOG(INFO) << "grad is: " << stream.str();
+                }
                 terminate = false;
                 return cost;
             }
