@@ -93,7 +93,7 @@ void GradDescent::run() {
             LOG(INFO) << "iter break, terminate...";
             return;
         }
-        LOG(INFO) << "update, pre: " << pre << ", cur: " << cur;
+        LOG(INFO) << "iter cnt: " << iter_cnt << ", update, pre: " << pre << ", cur: " << cur;
         pre = cur;
         iter_cnt += 1;
     }
