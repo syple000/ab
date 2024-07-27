@@ -4,12 +4,16 @@
 #include "auto_engine/config/config.h"
 #include "auto_engine/op/op.h"
 #include "auto_engine/tensor/tensor.h"
+#include <cstdlib>
 #include <sstream>
 #include <vector>
 
 namespace algo {
 
 void GradDescent::run() {
+    // 随机种子
+    std::srand(std::time(0));
+    
     auto cost_call = [this]() -> f64 { // 返回cost
         calc::Calculator<base::Tensor<f64>> c(_cost_op);
         c.clearOutput();
@@ -49,6 +53,10 @@ void GradDescent::run() {
         }
         // 试探步长，回溯线搜索，找到一个有一定显著值的下降步长
         auto step = _init_step;
+        if (ENABLE_GRAD_DESCENNT_RAND_STEP && (std::rand() & 1024) < 1024 * ENABLE_GRAD_DESCENNT_RAND_STEP_RATIO) {
+            step = step * ((std::rand() & 8) + 1);
+            LOG(INFO) << "enable grad descent rand step: " << step;
+        } 
         u32 retries = 0;
         while (retries <= _max_probe_retries) {
             f64 target = base - _tangent_slope_coef * step * res;
