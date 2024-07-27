@@ -224,9 +224,9 @@ TEST(Test_grad_descent, test) {
     auto item6 = std::make_shared<op::DataOp<base::Tensor<f64>>>(base::Tensor<f64>(base::Shape({2, 1}), 1));
     auto item = std::make_shared<op::Mmul<base::Tensor<f64>>>(item5, item6);
     
-    auto d = std::make_shared<algo::GradDescent>(item, std::vector<std::shared_ptr<op::Op<base::Tensor<f64>>>>{x}, 0.000000001, 0.5);
+    auto d = std::make_shared<algo::GradDescent>(item, std::vector<std::shared_ptr<op::Op<base::Tensor<f64>>>>{x}, 1, 0.8, 0.00001, 50);
     d->run();
-    // std::cout << x->getOutput().toString() << std::endl;
+    std::cout << x->getOutput().toString() << std::endl;
     // 不能断言，会有细微差异
     // ASSERT_TRUE(x->getOutput() == base::Tensor<f64>(base::Shape({2}), {-1, -1.5}));
 }

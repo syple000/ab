@@ -1,6 +1,8 @@
 #include "auto_engine/algo/grad_descent.h"
 #include "auto_engine/base/basic_types.h"
 #include "auto_engine/calc/calc.h"
+#include "auto_engine/tensor/tensor.h"
+#include <vector>
 
 namespace algo {
 
@@ -15,8 +17,9 @@ void GradDescent::run() {
         }
         return cost.data()[0];
     };
-    auto find_update_step = [&cost_call, this](f64 base) -> f64 {
-        // 计算sqrt(sum(梯度^2))
+    auto find_update_step = [&cost_call, this](f64 base, bool& terminate) -> f64 {
+        // 计算sum(梯度^2) 即梯度的2次范数，和开方
+        // 梯度标识曲线收敛陡峭度（dx对dy的影响）
         calc::Calculator<base::Tensor<f64>> c(_cost_op);
         c.clearGrad();
         c.deriv();
@@ -29,37 +32,54 @@ void GradDescent::run() {
                 .data()[0];
             res += n;
         }
-        res = ::sqrt(res);
         // 梯度为0，当前已是最低点（或局部最低点）
         if (res < EPSILON) {
-            return base;
+            LOG(INFO) << "grad zero, terminate";
+            terminate = true;
+            return -1;
         }
-        // 更新初始步长
+        // 保存原始tensor，将op中output置空
+        std::vector<base::Tensor<f64>> org_outs;
+        org_outs.reserve(_var_vec.size());
         for (int i = 0; i < _var_vec.size(); i++) {
-            _var_vec[i]->setOutput(_var_vec[i]->getOutput() - _var_vec[i]->getGrad() * base::Tensor<f64>(_var_vec[i]->getGrad().shape(), _init_step / res));
+            org_outs.emplace(org_outs.end(), _var_vec[i]->getOutput());
         }
-        // 试探步长
-        auto step = _init_step / 2;
-        while (step > EPSILON) {
+        // 试探步长，回溯线搜索，找到一个有一定显著值的下降步长
+        auto step = _init_step;
+        u32 retries = 0;
+        while (retries <= _max_probe_retries) {
+            f64 target = base - _tangent_slope_coef * step * res;
+            for (int i = 0; i < _var_vec.size(); i++) {
+                _var_vec[i]->setOutput(org_outs[i] - _var_vec[i]->getGrad() * base::Tensor<f64>(_var_vec[i]->getGrad().shape(), step));
+            }
             f64 cost = cost_call();
-            LOG(INFO) << "base: " << base << ", cost: " << cost;
-            if (cost - base < -_threshold) {
-                LOG(INFO) << "found step and update: " << step * 2;
+
+            LOG(INFO) << "retries: " << retries << ", base: " << base << ", cost: " << cost;
+            if (cost < target) {
+                LOG(INFO) << "found step and update: " << step;
+                terminate = false;
                 return cost;
             }
-            for (int i = 0; i < _var_vec.size(); i++) {
-                _var_vec[i]->setOutput(_var_vec[i]->getOutput() + _var_vec[i]->getGrad() * base::Tensor<f64>(_var_vec[i]->getGrad().shape(), step / res));
-            }
-            step = step / 2;
+            step = step * _rho;
+            retries += 1;
         }
         LOG(INFO) << "step not found, maybe base is opt or curve is too steep";
-        return base; // 返回base
+
+        // 恢复参数并进行一次传播
+        for (int i = 0; i < _var_vec.size(); i++) {
+            _var_vec[i]->setOutput(org_outs[i]);
+        }
+        cost_call();
+
+        terminate = true;
+        return -1;
     };
     f64 pre = cost_call();
     while (true) {
-        f64 cur = find_update_step(pre);
-        if (abs(cur - pre) < _threshold) {
-            LOG(INFO) << "iter break, less than threshold";
+        bool terminate;
+        f64 cur = find_update_step(pre, terminate);
+        if (terminate) {
+            LOG(INFO) << "iter break, terminate...";
             break;
         }
         LOG(INFO) << "update, pre: " << pre << ", cur: " << cur;

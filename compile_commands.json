@@ -1,61 +1,61 @@
 [
 {
-  "directory": "/home/syple/code/auto_engine/build/src",
-  "command": "/usr/bin/c++ -DGFLAGS_IS_A_DLL=0 -DGLOG_USE_GFLAGS -DGLOG_USE_GLOG_EXPORT -I/home/syple/code/auto_engine/include -isystem /home/syple/code/auto_engine/build/vcpkg_installed/x64-linux/include -isystem /home/syple/miniconda3/envs/py3/include/python3.7m -fPIE -Wno-unused-result -o CMakeFiles/main.dir/main.cc.o -c /home/syple/code/auto_engine/src/main.cc",
+  "directory": "/home/syple/code/auto_engine/build",
+  "command": "/usr/bin/g++ -DGFLAGS_IS_A_DLL=0 -DGLOG_USE_GFLAGS -DGLOG_USE_GLOG_EXPORT -DPy_DEBUG -I/home/syple/code/auto_engine/include -isystem /home/syple/code/auto_engine/build/vcpkg_installed/x64-linux/include -isystem /home/syple/miniconda3/include/python3.12 -g -fPIE -Wno-unused-result -o src/CMakeFiles/main.dir/main.cc.o -c /home/syple/code/auto_engine/src/main.cc",
   "file": "/home/syple/code/auto_engine/src/main.cc",
   "output": "src/CMakeFiles/main.dir/main.cc.o"
 },
 {
-  "directory": "/home/syple/code/auto_engine/build/src/cuda",
-  "command": "/opt/nvidia/hpc_sdk/Linux_x86_64/24.3/compilers/bin/nvcc -forward-unknown-to-host-compiler -DGFLAGS_IS_A_DLL=0 -DGLOG_USE_GFLAGS -DGLOG_USE_GLOG_EXPORT -I/home/syple/code/auto_engine/include -isystem /home/syple/code/auto_engine/build/vcpkg_installed/x64-linux/include -isystem /home/syple/miniconda3/envs/py3/include/python3.7m  \"--generate-code=arch=compute_52,code=[compute_52,sm_52]\" -Xcompiler=-fPIC -Wno-unused-result --expt-relaxed-constexpr -x cu -c /home/syple/code/auto_engine/src/cuda/mem.cu -o CMakeFiles/cuda.dir/mem.cu.o",
+  "directory": "/home/syple/code/auto_engine/build",
+  "command": "/opt/nvidia/hpc_sdk/Linux_x86_64/24.3/compilers/bin/nvcc -forward-unknown-to-host-compiler -DGFLAGS_IS_A_DLL=0 -DGLOG_USE_GFLAGS -DGLOG_USE_GLOG_EXPORT -DPy_DEBUG -I/home/syple/code/auto_engine/include -isystem /home/syple/code/auto_engine/build/vcpkg_installed/x64-linux/include -isystem /home/syple/miniconda3/include/python3.12 -g \"--generate-code=arch=compute_52,code=[compute_52,sm_52]\" -Xcompiler=-fPIC -Wno-unused-result --expt-relaxed-constexpr -x cu -c /home/syple/code/auto_engine/src/cuda/mem.cu -o src/cuda/CMakeFiles/cuda.dir/mem.cu.o",
   "file": "/home/syple/code/auto_engine/src/cuda/mem.cu",
   "output": "src/cuda/CMakeFiles/cuda.dir/mem.cu.o"
 },
 {
-  "directory": "/home/syple/code/auto_engine/build/src/cuda",
-  "command": "/opt/nvidia/hpc_sdk/Linux_x86_64/24.3/compilers/bin/nvcc -forward-unknown-to-host-compiler -DGFLAGS_IS_A_DLL=0 -DGLOG_USE_GFLAGS -DGLOG_USE_GLOG_EXPORT -I/home/syple/code/auto_engine/include -isystem /home/syple/code/auto_engine/build/vcpkg_installed/x64-linux/include -isystem /home/syple/miniconda3/envs/py3/include/python3.7m  \"--generate-code=arch=compute_52,code=[compute_52,sm_52]\" -Xcompiler=-fPIC -Wno-unused-result --expt-relaxed-constexpr -x cu -c /home/syple/code/auto_engine/src/cuda/info.cu -o CMakeFiles/cuda.dir/info.cu.o",
+  "directory": "/home/syple/code/auto_engine/build",
+  "command": "/opt/nvidia/hpc_sdk/Linux_x86_64/24.3/compilers/bin/nvcc -forward-unknown-to-host-compiler -DGFLAGS_IS_A_DLL=0 -DGLOG_USE_GFLAGS -DGLOG_USE_GLOG_EXPORT -DPy_DEBUG -I/home/syple/code/auto_engine/include -isystem /home/syple/code/auto_engine/build/vcpkg_installed/x64-linux/include -isystem /home/syple/miniconda3/include/python3.12 -g \"--generate-code=arch=compute_52,code=[compute_52,sm_52]\" -Xcompiler=-fPIC -Wno-unused-result --expt-relaxed-constexpr -x cu -c /home/syple/code/auto_engine/src/cuda/info.cu -o src/cuda/CMakeFiles/cuda.dir/info.cu.o",
   "file": "/home/syple/code/auto_engine/src/cuda/info.cu",
   "output": "src/cuda/CMakeFiles/cuda.dir/info.cu.o"
 },
 {
-  "directory": "/home/syple/code/auto_engine/build/src/cuda",
-  "command": "/opt/nvidia/hpc_sdk/Linux_x86_64/24.3/compilers/bin/nvcc -forward-unknown-to-host-compiler -DGFLAGS_IS_A_DLL=0 -DGLOG_USE_GFLAGS -DGLOG_USE_GLOG_EXPORT -I/home/syple/code/auto_engine/include -isystem /home/syple/code/auto_engine/build/vcpkg_installed/x64-linux/include -isystem /home/syple/miniconda3/envs/py3/include/python3.7m  \"--generate-code=arch=compute_52,code=[compute_52,sm_52]\" -Xcompiler=-fPIC -Wno-unused-result --expt-relaxed-constexpr -x cu -c /home/syple/code/auto_engine/src/cuda/tensor.cu -o CMakeFiles/cuda.dir/tensor.cu.o",
+  "directory": "/home/syple/code/auto_engine/build",
+  "command": "/opt/nvidia/hpc_sdk/Linux_x86_64/24.3/compilers/bin/nvcc -forward-unknown-to-host-compiler -DGFLAGS_IS_A_DLL=0 -DGLOG_USE_GFLAGS -DGLOG_USE_GLOG_EXPORT -DPy_DEBUG -I/home/syple/code/auto_engine/include -isystem /home/syple/code/auto_engine/build/vcpkg_installed/x64-linux/include -isystem /home/syple/miniconda3/include/python3.12 -g \"--generate-code=arch=compute_52,code=[compute_52,sm_52]\" -Xcompiler=-fPIC -Wno-unused-result --expt-relaxed-constexpr -x cu -c /home/syple/code/auto_engine/src/cuda/tensor.cu -o src/cuda/CMakeFiles/cuda.dir/tensor.cu.o",
   "file": "/home/syple/code/auto_engine/src/cuda/tensor.cu",
   "output": "src/cuda/CMakeFiles/cuda.dir/tensor.cu.o"
 },
 {
-  "directory": "/home/syple/code/auto_engine/build/src/tensor",
-  "command": "/usr/bin/c++ -DGFLAGS_IS_A_DLL=0 -DGLOG_USE_GFLAGS -DGLOG_USE_GLOG_EXPORT -I/home/syple/code/auto_engine/include -isystem /home/syple/code/auto_engine/build/vcpkg_installed/x64-linux/include -isystem /home/syple/miniconda3/envs/py3/include/python3.7m -fPIC -Wno-unused-result -o CMakeFiles/tensor.dir/shape.cc.o -c /home/syple/code/auto_engine/src/tensor/shape.cc",
+  "directory": "/home/syple/code/auto_engine/build",
+  "command": "/usr/bin/g++ -DGFLAGS_IS_A_DLL=0 -DGLOG_USE_GFLAGS -DGLOG_USE_GLOG_EXPORT -DPy_DEBUG -I/home/syple/code/auto_engine/include -isystem /home/syple/code/auto_engine/build/vcpkg_installed/x64-linux/include -isystem /home/syple/miniconda3/include/python3.12 -g -fPIC -Wno-unused-result -o src/tensor/CMakeFiles/tensor.dir/shape.cc.o -c /home/syple/code/auto_engine/src/tensor/shape.cc",
   "file": "/home/syple/code/auto_engine/src/tensor/shape.cc",
   "output": "src/tensor/CMakeFiles/tensor.dir/shape.cc.o"
 },
 {
-  "directory": "/home/syple/code/auto_engine/build/src/op",
-  "command": "/usr/bin/c++ -DGFLAGS_IS_A_DLL=0 -DGLOG_USE_GFLAGS -DGLOG_USE_GLOG_EXPORT -I/home/syple/code/auto_engine/include -isystem /home/syple/code/auto_engine/build/vcpkg_installed/x64-linux/include -isystem /home/syple/miniconda3/envs/py3/include/python3.7m -fPIC -Wno-unused-result -o CMakeFiles/op.dir/methods.cc.o -c /home/syple/code/auto_engine/src/op/methods.cc",
+  "directory": "/home/syple/code/auto_engine/build",
+  "command": "/usr/bin/g++ -DGFLAGS_IS_A_DLL=0 -DGLOG_USE_GFLAGS -DGLOG_USE_GLOG_EXPORT -DPy_DEBUG -I/home/syple/code/auto_engine/include -isystem /home/syple/code/auto_engine/build/vcpkg_installed/x64-linux/include -isystem /home/syple/miniconda3/include/python3.12 -g -fPIC -Wno-unused-result -o src/op/CMakeFiles/op.dir/methods.cc.o -c /home/syple/code/auto_engine/src/op/methods.cc",
   "file": "/home/syple/code/auto_engine/src/op/methods.cc",
   "output": "src/op/CMakeFiles/op.dir/methods.cc.o"
 },
 {
-  "directory": "/home/syple/code/auto_engine/build/src/utils",
-  "command": "/usr/bin/c++ -DGFLAGS_IS_A_DLL=0 -DGLOG_USE_GFLAGS -DGLOG_USE_GLOG_EXPORT -I/home/syple/code/auto_engine/include -isystem /home/syple/code/auto_engine/build/vcpkg_installed/x64-linux/include -isystem /home/syple/miniconda3/envs/py3/include/python3.7m -fPIC -Wno-unused-result -o CMakeFiles/utils.dir/maths.cc.o -c /home/syple/code/auto_engine/src/utils/maths.cc",
+  "directory": "/home/syple/code/auto_engine/build",
+  "command": "/usr/bin/g++ -DGFLAGS_IS_A_DLL=0 -DGLOG_USE_GFLAGS -DGLOG_USE_GLOG_EXPORT -DPy_DEBUG -I/home/syple/code/auto_engine/include -isystem /home/syple/code/auto_engine/build/vcpkg_installed/x64-linux/include -isystem /home/syple/miniconda3/include/python3.12 -g -fPIC -Wno-unused-result -o src/utils/CMakeFiles/utils.dir/maths.cc.o -c /home/syple/code/auto_engine/src/utils/maths.cc",
   "file": "/home/syple/code/auto_engine/src/utils/maths.cc",
   "output": "src/utils/CMakeFiles/utils.dir/maths.cc.o"
 },
 {
-  "directory": "/home/syple/code/auto_engine/build/src/utils",
-  "command": "/usr/bin/c++ -DGFLAGS_IS_A_DLL=0 -DGLOG_USE_GFLAGS -DGLOG_USE_GLOG_EXPORT -I/home/syple/code/auto_engine/include -isystem /home/syple/code/auto_engine/build/vcpkg_installed/x64-linux/include -isystem /home/syple/miniconda3/envs/py3/include/python3.7m -fPIC -Wno-unused-result -o CMakeFiles/utils.dir/defer.cc.o -c /home/syple/code/auto_engine/src/utils/defer.cc",
+  "directory": "/home/syple/code/auto_engine/build",
+  "command": "/usr/bin/g++ -DGFLAGS_IS_A_DLL=0 -DGLOG_USE_GFLAGS -DGLOG_USE_GLOG_EXPORT -DPy_DEBUG -I/home/syple/code/auto_engine/include -isystem /home/syple/code/auto_engine/build/vcpkg_installed/x64-linux/include -isystem /home/syple/miniconda3/include/python3.12 -g -fPIC -Wno-unused-result -o src/utils/CMakeFiles/utils.dir/defer.cc.o -c /home/syple/code/auto_engine/src/utils/defer.cc",
   "file": "/home/syple/code/auto_engine/src/utils/defer.cc",
   "output": "src/utils/CMakeFiles/utils.dir/defer.cc.o"
 },
 {
-  "directory": "/home/syple/code/auto_engine/build/src/algo",
-  "command": "/usr/bin/c++ -DGFLAGS_IS_A_DLL=0 -DGLOG_USE_GFLAGS -DGLOG_USE_GLOG_EXPORT -I/home/syple/code/auto_engine/include -isystem /home/syple/code/auto_engine/build/vcpkg_installed/x64-linux/include -isystem /home/syple/miniconda3/envs/py3/include/python3.7m -fPIC -Wno-unused-result -o CMakeFiles/algo.dir/grad_descent.cc.o -c /home/syple/code/auto_engine/src/algo/grad_descent.cc",
+  "directory": "/home/syple/code/auto_engine/build",
+  "command": "/usr/bin/g++ -DGFLAGS_IS_A_DLL=0 -DGLOG_USE_GFLAGS -DGLOG_USE_GLOG_EXPORT -DPy_DEBUG -I/home/syple/code/auto_engine/include -isystem /home/syple/code/auto_engine/build/vcpkg_installed/x64-linux/include -isystem /home/syple/miniconda3/include/python3.12 -g -fPIC -Wno-unused-result -o src/algo/CMakeFiles/algo.dir/grad_descent.cc.o -c /home/syple/code/auto_engine/src/algo/grad_descent.cc",
   "file": "/home/syple/code/auto_engine/src/algo/grad_descent.cc",
   "output": "src/algo/CMakeFiles/algo.dir/grad_descent.cc.o"
 },
 {
-  "directory": "/home/syple/code/auto_engine/build/src/py",
-  "command": "/usr/bin/c++ -DGFLAGS_IS_A_DLL=0 -DGLOG_USE_GFLAGS -DGLOG_USE_GLOG_EXPORT -Dae_EXPORTS -I/home/syple/code/auto_engine/include -isystem /home/syple/miniconda3/envs/py3/include/python3.7m -isystem /home/syple/code/auto_engine/build/vcpkg_installed/x64-linux/include -fPIC -fvisibility=hidden -Wno-unused-result -flto -fno-fat-lto-objects -o CMakeFiles/ae.dir/tensor_f64.cc.o -c /home/syple/code/auto_engine/src/py/tensor_f64.cc",
+  "directory": "/home/syple/code/auto_engine/build",
+  "command": "/usr/bin/g++ -DGFLAGS_IS_A_DLL=0 -DGLOG_USE_GFLAGS -DGLOG_USE_GLOG_EXPORT -DPy_DEBUG -Dae_EXPORTS -I/home/syple/code/auto_engine/include -isystem /home/syple/miniconda3/include/python3.12 -isystem /home/syple/code/auto_engine/build/vcpkg_installed/x64-linux/include -g -fPIC -fvisibility=hidden -Wno-unused-result -o src/py/CMakeFiles/ae.dir/tensor_f64.cc.o -c /home/syple/code/auto_engine/src/py/tensor_f64.cc",
   "file": "/home/syple/code/auto_engine/src/py/tensor_f64.cc",
   "output": "src/py/CMakeFiles/ae.dir/tensor_f64.cc.o"
 }

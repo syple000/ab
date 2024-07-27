@@ -221,7 +221,9 @@ PYBIND11_MODULE(ae, m) {
         });
 
     py::class_<algo::GradDescent, std::shared_ptr<algo::GradDescent>>(m, "grad_descent")
-        .def(py::init<std::shared_ptr<op::Op<base::Tensor<f64>>>, std::vector<std::shared_ptr<op::Op<base::Tensor<f64>>>>, f64, f64>())
+        .def(py::init<std::shared_ptr<op::Op<base::Tensor<f64>>>, std::vector<std::shared_ptr<op::Op<base::Tensor<f64>>>>, f64, f64, f64, u32>(),
+            py::arg("cost"), py::arg("vars"), py::arg("init_step"), py::arg("rho"), py::arg("tangent_slope_coef")=0.0001, py::arg("max_probe_retries")=50
+        )
         .def("run", &algo::GradDescent::run);
 
 
