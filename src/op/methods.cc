@@ -81,8 +81,19 @@ base::Tensor<f64> reshape(const base::Tensor<f64>& t, const base::Shape& shape) 
 }
 
 template<>
-const base::Shape& shape(const base::Tensor<f64>& t) {
+base::Tensor<f64> sum(const base::Tensor<f64>& t) {
+    return t.sum();
+}
+
+template<>
+base::Tensor<f64> expand(const base::Tensor<f64>& t, const base::Shape& shape) {
+    return t.expand(shape);
+}
+
+template<>
+base::Shape shape(const base::Tensor<f64>& t) {
     return t.shape();
 }
+
 
 }

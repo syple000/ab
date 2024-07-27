@@ -30,11 +30,17 @@ T mmul(const T&, const T&);
 template<typename T>
 T inv(const T&);
 
-template<typename T, typename SHAPE>
-T reshape(const T&, const SHAPE& shape);
+template<typename T>
+T sum(const T&);
 
 template<typename T, typename SHAPE>
-const SHAPE& shape(const T&);
+T expand(const T&, const SHAPE&);
+
+template<typename T, typename SHAPE>
+T reshape(const T&, const SHAPE&);
+
+template<typename T, typename SHAPE>
+SHAPE shape(const T&);
 
 }
 #endif

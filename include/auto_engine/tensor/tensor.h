@@ -18,6 +18,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <type_traits>
 #include <unordered_set>
 #include <vector>
 
@@ -27,19 +28,53 @@ template<typename T>
 struct Tensor {
 public:
     Tensor() {}
-    Tensor(const Shape& shape): _shape(shape), _data(std::vector<T>(shape.tensorSize())) {}
+    Tensor(const Shape& shape): _shape(shape), _data(std::vector<T>(shape.tensorSize())) {
+        if (_shape.tensorSize() == 0) {
+            if (ENABLE_TENSOR_EXCEPTION) {
+                throw std::runtime_error("tensor size 0");
+            }
+            LOG(ERROR) << "tensor size 0";
+            _shape = Shape();
+            _data = std::vector<T>();
+        }
+    }
     Tensor(const Shape& shape, const std::function<T()>& f): _shape(shape), _data(std::vector<T>(shape.tensorSize())) {
+        if (_shape.tensorSize() == 0) {
+            if (ENABLE_TENSOR_EXCEPTION) {
+                throw std::runtime_error("tensor size 0");
+            }
+            LOG(ERROR) << "tensor size 0";
+            _shape = Shape();
+            _data = std::vector<T>();
+        }
         for (auto& d : _data) {
             d = f();
         }
     }
-    Tensor(const Shape& shape, const T& e): _shape(shape), _data(std::vector<T>(shape.tensorSize(), e)) {}
+    Tensor(const Shape& shape, const T& e): _shape(shape), _data(std::vector<T>(shape.tensorSize(), e)) {
+        if (_shape.tensorSize() == 0) {
+            if (ENABLE_TENSOR_EXCEPTION) {
+                throw std::runtime_error("tensor size 0");
+            }
+            LOG(ERROR) << "tensor size 0";
+            _shape = Shape();
+            _data = std::vector<T>();
+        }
+    }
     Tensor(const Shape& shape, const std::vector<T>& data): _shape(shape), _data(std::vector<T>(data)) {
         if (_shape.tensorSize() != _data.size()) {
             if (ENABLE_TENSOR_EXCEPTION) {
                 throw std::runtime_error(fmt::format("tensor size invalid, shape size: {}, data size: {}", shape.tensorSize(), data.size()));
             }
             LOG(ERROR) << "tensor size invalid";
+            _shape = Shape();
+            _data = std::vector<T>();
+        }
+        if (_shape.tensorSize() == 0) {
+            if (ENABLE_TENSOR_EXCEPTION) {
+                throw std::runtime_error("tensor size 0");
+            }
+            LOG(ERROR) << "tensor size 0";
             _shape = Shape();
             _data = std::vector<T>();
         }
@@ -86,6 +121,8 @@ public:
     Tensor<T> inv() const;
 
     Tensor<T> sum(const std::vector<u32>& dim_indexs) const;
+    Tensor<T> sum() const;
+    Tensor<T> expand(const base::Shape&) const;
 
     Tensor<T> reshape(const std::vector<u32>& dims) const {
         auto shape = _shape.reshape(dims);
@@ -434,6 +471,31 @@ Tensor<T> Tensor<T>::sum(const std::vector<u32>& dim_indexs) const {
         }
     }
     return std::move(rt);
+}
+
+template<typename T>
+Tensor<T> Tensor<T>::sum() const {
+    Tensor<T> res(Shape({1}));
+    if (std::is_same<T, f64>::value && ENABLE_CUDA) {
+        cuda::apply_sum(_data.data(), _data.size(), &res._data[0]);
+    } else {
+        for (int i = 0; i < _data.size(); i++) {
+            res._data[0] += _data[i];
+        }
+    }
+    return std::move(res);
+}
+
+template<typename T>
+Tensor<T> Tensor<T>::expand(const base::Shape& shape) const {
+    if (_shape.tensorSize() != 1) {
+        if (ENABLE_TENSOR_EXCEPTION) {
+            throw std::runtime_error("expand tensor size != 1");
+        }
+        LOG(ERROR) << "expand tensor size != 1";
+        return Tensor();
+    }
+    return Tensor(shape, _data[0]);
 }
 
 }

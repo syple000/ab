@@ -15,6 +15,7 @@ void apply_mul(f64* data1, const f64* data2, int size);
 void apply_div(f64* data1, const f64* data2, int size);
 void apply_pow(f64* data1, const f64* data2, int size);
 void apply_sum(const f64* src, int src_size, f64* dst, int dst_size);
+void apply_sum(const f64* src, int size, f64* dst);
 void transpose(f64* ms, int row, int col, int size);
 void mmul(int m, int n, int k, const f64* data1, const f64* data2, f64* dst, int size);
 bool inv(int m, f64* data, int size);

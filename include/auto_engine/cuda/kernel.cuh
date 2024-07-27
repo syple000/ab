@@ -113,7 +113,7 @@ __global__ void apply_neg(T* data, int size) {return apply<T>(data, size, neg);}
 template<typename T>
 __global__ void apply_pow(T* data1, const T* data2, int size) {return apply<T>(data1, data2, size, pow);}
 
-template<typename T> // 实现的不好
+template<typename T> // 实现的不好, 效率低
 __global__ void apply_sum(const T* src, int src_size, T* dst, int dst_size) {
     int index = blockIdx.x * blockDim.x + threadIdx.x; 
     if (index >= dst_size) {return;}
@@ -124,6 +124,33 @@ __global__ void apply_sum(const T* src, int src_size, T* dst, int dst_size) {
         i += dst_size;
     }
     dst[index] = res;
+}
+
+template<typename T>
+__global__ void apply_sum(const T* src, int size, T* dst) {
+    __shared__ T shared_mem[cuda::sqrt_tcnt_per_block()];
+    
+    int index = blockIdx.x * blockDim.x + threadIdx.x; 
+    int shared_mem_index = threadIdx.x;
+
+    if (index < size) {
+        shared_mem[shared_mem_index] = src[index];
+    } else {
+        shared_mem[shared_mem_index] = 0;
+    }
+
+    __syncthreads();
+
+    for (int i = blockDim.x / 2; i > 0; i = i >> 1) {
+        if (shared_mem_index < i) {
+            shared_mem[shared_mem_index] += shared_mem[shared_mem_index + i];
+        }
+        __syncthreads();
+    }
+
+    if (shared_mem_index == 0) {
+        atomicAdd(dst, shared_mem[0]); 
+    }
 }
 
 // 三维，第一&二维是矩阵行列，第三维是矩阵个数。blockDim<TILE_DIM, TILE_DIM>(根据每一个block线程个数确认)，grimDim<row, col, matrix cnt>

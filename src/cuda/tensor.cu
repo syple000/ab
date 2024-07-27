@@ -84,6 +84,21 @@ void apply_sum(const f64* src, int src_size, f64* dst, int dst_size) {
     CHECK_CUDA_CALL(cudaMemcpy(dst, m2, sizeof(f64) * dst_size, cudaMemcpyDeviceToHost), "cuda_memcpy_d2h");
 }
 
+void apply_sum(const f64* src, int size, f64* dst) {
+    f64 *m1, *m2;
+    CHECK_MALLOC(Mem::malloc((void**)&m1, sizeof(f64) * size));
+    utils::Defer free_m1([&m1]() {Mem::free(m1);});
+    CHECK_MALLOC(Mem::malloc((void**)&m2, sizeof(f64)));
+    utils::Defer free_m2([&m2]() {Mem::free(m2);});
+
+    CHECK_CUDA_CALL(cudaMemcpy(m1, src, sizeof(f64) * size, cudaMemcpyHostToDevice), "cuda_memcpy_h2d");
+    CHECK_CUDA_CALL(cudaMemcpy(m2, dst, sizeof(f64), cudaMemcpyHostToDevice), "cuda_memcpy_h2d");
+    auto dims = get_apply_dims(size);
+    cuda_kernel::apply_sum<<<std::get<0>(dims), std::get<1>(dims)>>>(m1, size, m2);
+    CHECK_CUDA_CALL(cudaPeekAtLastError(), "apply_sum");
+    CHECK_CUDA_CALL(cudaMemcpy(dst, m2, sizeof(f64), cudaMemcpyDeviceToHost), "cuda_memcpy_d2h");
+}
+
 void transpose(f64* ms, int row, int col, int size) {
     int cnt = row * col * size;
     f64 *m1, *m2;

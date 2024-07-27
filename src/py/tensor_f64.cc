@@ -17,6 +17,7 @@
 #include "auto_engine/op/reshape.h"
 #include "auto_engine/op/sin_cos.h"
 #include "auto_engine/op/sub.h"
+#include "auto_engine/op/sum_expand.h"
 #include "auto_engine/tensor/shape.h"
 #include "auto_engine/tensor/tensor.h"
 #include "pybind11/pybind11.h"
@@ -196,16 +197,10 @@ PYBIND11_MODULE(ae, m) {
             return std::make_shared<op::Log<base::Tensor<f64>>>(op);
         })
         .def("sum", [](std::shared_ptr<op::Op<base::Tensor<f64>>> op) -> std::shared_ptr<op::Op<base::Tensor<f64>>> {
-            if (!op->hasOutput()) {
-                calc::Calculator<base::Tensor<f64>> c(op);
-                c.call();
-            }
-            auto shape = op->getOutput().shape();
-            auto exp_shape = shape.reshape({shape.tensorSize(), 1});
-            auto vexp_shape = shape.reshape({1, shape.tensorSize()});
-            auto ct = std::make_shared<op::DataOp<base::Tensor<f64>>>(base::Tensor<f64>(exp_shape, 1));
-            auto vexp_op = std::make_shared<op::Reshape<base::Tensor<f64>, base::Shape>>(op, vexp_shape);
-            return std::make_shared<op::Mmul<base::Tensor<f64>>>(vexp_op, ct);
+            return std::make_shared<op::Sum<base::Tensor<f64>, base::Shape>>(op);
+        })
+        .def("expand", [](std::shared_ptr<op::Op<base::Tensor<f64>>> op, const std::vector<u32>& dims) -> std::shared_ptr<op::Op<base::Tensor<f64>>> {
+            return std::make_shared<op::Expand<base::Tensor<f64>, base::Shape>>(op, base::Shape(dims));
         })
         .def("mm", [](std::shared_ptr<op::Op<base::Tensor<f64>>> op1, std::shared_ptr<op::Op<base::Tensor<f64>>> op2) -> std::shared_ptr<op::Op<base::Tensor<f64>>> {
             return std::make_shared<op::Mmul<base::Tensor<f64>>>(op1, op2);

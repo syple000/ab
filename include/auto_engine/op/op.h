@@ -57,7 +57,7 @@ public:
 
     const T& getGrad() const {
         if (!_has_grad) {
-            LOG(ERROR) << "[" << __FUNCTION__ << "]" << "touch unset grad: ";
+            LOG(ERROR) << "[" << __FUNCTION__ << "]" << "touch unset grad: " << name();
             exit(TOUCH_UNSET_GRAD);
         }
         return _grad;

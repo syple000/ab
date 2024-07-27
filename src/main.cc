@@ -10,6 +10,7 @@
 #include "auto_engine/calc/calc.h"
 #include "auto_engine/op/data_op.h"
 #include "auto_engine/op/div.h"
+#include "auto_engine/op/sum_expand.h"
 #include "auto_engine/op/transpose.h"
 #include "auto_engine/tensor/shape.h"
 #include "auto_engine/op/sub.h"
@@ -168,9 +169,10 @@ TEST(Test_grad_tensor2, test) {
     auto item3 = std::make_shared<op::Mmul<base::Tensor<f64>>>(item2, x2);
     auto item4 = std::make_shared<op::Mmul<base::Tensor<f64>>>(item3, std::make_shared<op::Transpose<base::Tensor<f64>>>(ct));
     auto item5 = std::make_shared<op::Transpose<base::Tensor<f64>>>(item4);
-    auto item = std::make_shared<op::Mmul<base::Tensor<f64>>>(item5, std::make_shared<op::Transpose<base::Tensor<f64>>>(ct));
+    auto item6 = std::make_shared<op::Mmul<base::Tensor<f64>>>(item5, std::make_shared<op::Transpose<base::Tensor<f64>>>(ct));
+    auto item = std::make_shared<op::Sum<base::Tensor<f64>, base::Shape>>(item6);
     auto c = calc::Calculator<base::Tensor<f64>>(item);
-    ASSERT_TRUE(c.call() == base::Tensor<f64>(base::Shape({2, 1, 1}), {40.5, 33}));
+    ASSERT_TRUE(c.call() == base::Tensor<f64>(base::Shape({1}), {73.5}));
     c.deriv();
     ASSERT_TRUE(x1_->getGrad() == base::Tensor<f64>(base::Shape({2, 2, 2}), {-31.5, -15.75, 4.5, 2.25, -1, 8, 8, -64}));
     ASSERT_TRUE(x2_->getGrad() == base::Tensor<f64>(base::Shape({2, 3, 2}), {13.5, 13.5, 13.5, 0, 0, 0, -2, -2, -2, 16, 16, 16}));
@@ -207,6 +209,7 @@ TEST(Test_tensor, test) {
     base::Tensor<f64> t7(base::Shape({2, 3, 3}), {1, 2, 3, 4, 5, 6, 7, 2, 9, 0, 2, 3, 4, 5, 6, 7, 2, 9});
     ASSERT_TRUE(t7.inv() == base::Tensor<f64>(base::Shape({2, 3, 3}), {-11.0/12, 1.0/3, 1.0/12, -1.0/6, 1.0/3, -1.0/6, 3.0/4, -1.0/3, 1.0/12, -11.0/23, 4.0/23, 1.0/23, -2.0/23, 7.0/23, -4.0/23, 9.0/23, -14.0/69, 8.0/69}));
     ASSERT_TRUE(t2.sum({0}) == base::Tensor<f64>(base::Shape({2, 3}), {2, 4, 6, 8, 10, 12}));
+    ASSERT_TRUE(t2.sum() == base::Tensor<f64>(base::Shape({1}), 42));
 }
 
 TEST(Test_grad_descent, test) {

@@ -3,6 +3,7 @@
 
 #include "auto_engine/op/methods.h"
 #include "auto_engine/op/uop.h"
+#include <cstdlib>
 #include <memory>
 namespace op {
 
@@ -15,7 +16,7 @@ public:
         return reshape(arg, _shape);
     }
 
-    T deriv(u32 _, const T& grad, const T& arg) override {
+    T deriv(u32 index, const T& grad, const T& arg) override {
         return reshape(grad, shape<T, SHAPE>(arg));
     }
 
