@@ -167,10 +167,7 @@ TEST(Test_grad_tensor2, test) {
     auto item1 = std::make_shared<op::Mmul<base::Tensor<f64>>>(x1, x2);
     auto item2 = std::make_shared<op::Transpose<base::Tensor<f64>>>(item1);
     auto item3 = std::make_shared<op::Mmul<base::Tensor<f64>>>(item2, x2);
-    auto item4 = std::make_shared<op::Mmul<base::Tensor<f64>>>(item3, std::make_shared<op::Transpose<base::Tensor<f64>>>(ct));
-    auto item5 = std::make_shared<op::Transpose<base::Tensor<f64>>>(item4);
-    auto item6 = std::make_shared<op::Mmul<base::Tensor<f64>>>(item5, std::make_shared<op::Transpose<base::Tensor<f64>>>(ct));
-    auto item = std::make_shared<op::Sum<base::Tensor<f64>, base::Shape>>(item6);
+    auto item = std::make_shared<op::Sum<base::Tensor<f64>, base::Shape>>(item3);
     auto c = calc::Calculator<base::Tensor<f64>>(item);
     ASSERT_TRUE(c.call() == base::Tensor<f64>(base::Shape({1}), {73.5}));
     c.deriv();
