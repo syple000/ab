@@ -43,22 +43,22 @@ void OptAlgo::adam() {
 
         // 更新并校准矩向量
         for (int i = 0; i < _vars.size(); i++) {
-            m[i] = base::Tensor<f64>(m[i].shape(), first_coef) * m[i] + base::Tensor<f64>(m[i].shape(), 1 - first_coef) * _vars[i]->getGrad();
+            m[i] = m[i] * first_coef + _vars[i]->getGrad() * (1 - first_coef);
             auto grad_pow2 = _vars[i]->getGrad() * _vars[i]->getGrad();
             if (enable_yogi) {
-                v[i] = v[i] - base::Tensor<f64>(v[i].shape(), 1 - second_coef) * grad_pow2 * (v[i] - grad_pow2).sign();
+                v[i] = v[i] - grad_pow2 * (1 - second_coef) * (v[i] - grad_pow2).sign();
             } else {
-                v[i] = base::Tensor<f64>(v[i].shape(), second_coef) * v[i] + base::Tensor<f64>(v[i].shape(), 1 - second_coef) * grad_pow2;
+                v[i] = v[i] * second_coef + grad_pow2 * (1 - second_coef);
             }
         }
         for (int i = 0; i < _vars.size(); i++) {
-            mm[i] = m[i] / base::Tensor<f64>(m[i].shape(), 1 - pow(first_coef, iter_cnt + 1));
-            vm[i] = v[i] / base::Tensor<f64>(v[i].shape(), 1 - pow(second_coef, iter_cnt + 1));
+            mm[i] = m[i] / (1 - pow(first_coef, iter_cnt + 1));
+            vm[i] = v[i] / (1 - pow(second_coef, iter_cnt + 1));
         }
 
         // 计算目标更新梯度方向
         for (int i = 0; i < _vars.size(); i++) {
-            grads[i] = mm[i] / (vm[i].pow(base::Tensor<f64>(vm[i].shape(), 0.5)) + base::Tensor<f64>(vm[i].shape(), EPSILON));
+            grads[i] = mm[i] / (vm[i].pow(0.5) + EPSILON);
         }
         if (ENABLE_GRAD_DESCENT_ECHO_GRAD) {
             LOG(INFO) << fmt::format("org grad: {}, adam grad: {}, m: {}, v: {}", gradStr(), gradStr(grads), gradStr(m), gradStr(v));
