@@ -224,18 +224,23 @@ TEST(Test_grad_descent, test) {
     auto item6 = std::make_shared<op::DataOp<base::Tensor<f64>>>(base::Tensor<f64>(base::Shape({2, 1}), 1));
     auto item = std::make_shared<op::Mmul<base::Tensor<f64>>>(item5, item6);
     
-    auto d = std::make_shared<algo::OptAlgo>(item, std::vector<std::shared_ptr<op::Op<base::Tensor<f64>>>>{x});
-    d->algoHyperParams("grad_descent", {
-        {"init_step", 1},
+    auto d1 = std::make_shared<algo::OptAlgo>(item, std::vector<std::shared_ptr<op::Op<base::Tensor<f64>>>>{x});
+    d1->algoHyperParams("grad_descent", {
+        {"step", 1},
         {"step_decay_ratio", 0.8},
         {"tangent_slope_coef", 0.0001},
         {"max_probe_retries", 50},
         {"max_iter_cnt", 50}
     });
-    d->run();
+    d1->run();
     std::cout << x->getOutput().toString() << std::endl;
-    // 不能断言，会有细微差异
-    // ASSERT_TRUE(x->getOutput() == base::Tensor<f64>(base::Shape({2}), {-1, -1.5}));
+
+    auto d2 = std::make_shared<algo::OptAlgo>(item, std::vector<std::shared_ptr<op::Op<base::Tensor<f64>>>>{x});
+    d2->algoHyperParams("adam", {
+        {"step", 0.001}
+    });
+    d2->run();
+    std::cout << x->getOutput().toString() << std::endl;
 }
 
 int main(int argc, char* argv[]) {

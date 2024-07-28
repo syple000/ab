@@ -3,7 +3,7 @@
 
 #include <cstdint>
 
-#define EPSILON 1e-7
+#define EPSILON 1e-8
 
 static_assert(sizeof(double) == 8, "double size != 8");
 static_assert(sizeof(float) == 4, "float size != 4");

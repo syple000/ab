@@ -219,7 +219,7 @@ PYBIND11_MODULE(ae, m) {
         .def(py::init<std::shared_ptr<op::Op<base::Tensor<f64>>>, std::vector<std::shared_ptr<op::Op<base::Tensor<f64>>>>>(),
             py::arg("cost"), py::arg("vars")
         )
-        .def("algo_hyper_params", &algo::OptAlgo::algoHyperParams)
+        .def("algo_hyper_params", &algo::OptAlgo::algoHyperParams, py::arg("algo"), py::arg("hyper_params"))
         .def("run", &algo::OptAlgo::run);
 
 

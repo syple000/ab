@@ -54,6 +54,12 @@
   "output": "src/algo/CMakeFiles/algo.dir/grad_descent.cc.o"
 },
 {
+  "directory": "/home/syple/code/auto_engine/build/src/algo",
+  "command": "/usr/bin/c++ -DGFLAGS_IS_A_DLL=0 -DGLOG_USE_GFLAGS -DGLOG_USE_GLOG_EXPORT -I/home/syple/code/auto_engine/include -isystem /home/syple/code/auto_engine/build/vcpkg_installed/x64-linux/include -isystem /home/syple/miniconda3/envs/py3/include/python3.7m -fPIC -Wno-unused-result -o CMakeFiles/algo.dir/adam.cc.o -c /home/syple/code/auto_engine/src/algo/adam.cc",
+  "file": "/home/syple/code/auto_engine/src/algo/adam.cc",
+  "output": "src/algo/CMakeFiles/algo.dir/adam.cc.o"
+},
+{
   "directory": "/home/syple/code/auto_engine/build/src/py",
   "command": "/usr/bin/c++ -DGFLAGS_IS_A_DLL=0 -DGLOG_USE_GFLAGS -DGLOG_USE_GLOG_EXPORT -Dae_EXPORTS -I/home/syple/code/auto_engine/include -isystem /home/syple/miniconda3/envs/py3/include/python3.7m -isystem /home/syple/code/auto_engine/build/vcpkg_installed/x64-linux/include -fPIC -fvisibility=hidden -Wno-unused-result -flto -fno-fat-lto-objects -o CMakeFiles/ae.dir/tensor_f64.cc.o -c /home/syple/code/auto_engine/src/py/tensor_f64.cc",
   "file": "/home/syple/code/auto_engine/src/py/tensor_f64.cc",
