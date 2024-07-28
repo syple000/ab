@@ -73,6 +73,7 @@ void OptAlgo::adam() {
             return;
         }
         LOG(INFO) << fmt::format("iter cnt: {}, pre cost: {}, cur cost: {}", iter_cnt, pre_cost, cur_cost);
+        pre_cost = cur_cost;
         iter_cnt += 1;
     }
 
