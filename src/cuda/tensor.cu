@@ -47,6 +47,8 @@ DEFINE_APPLY_1E(apply_sin, f64)
 DEFINE_APPLY_1E(apply_cos, f64)
 DEFINE_APPLY_1E(apply_log, f64)
 DEFINE_APPLY_1E(apply_neg, f64)
+DEFINE_APPLY_1E(apply_sign, f64)
+DEFINE_APPLY_1E(apply_abs, f64)
 
 #define DEFINE_APPLY_2E(fn, T) \
 void fn(T* data1, const T* data2, int size) { \

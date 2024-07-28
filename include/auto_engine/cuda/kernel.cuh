@@ -62,6 +62,20 @@ inline __device__ T neg(const T& n) {
 }
 
 template<typename T>
+inline __device__ T sign(const T& n) {
+    if (n >= 0) {
+        return 1;
+    } else {
+        return -1;
+    }
+}
+
+template<typename T>
+inline __device__ T abs(const T& n) {
+    return ::abs(n);
+}
+
+template<typename T>
 inline __device__ T add(const T& n1, const T& n2) {
     return n1 + n2;
 }
@@ -109,6 +123,12 @@ __global__ void apply_div(T* data1, const T* data2, int size) {return apply<T>(d
 
 template<typename T>
 __global__ void apply_neg(T* data, int size) {return apply<T>(data, size, neg);}
+
+template<typename T>
+__global__ void apply_sign(T* data, int size) {return apply<T>(data, size, sign);}
+
+template<typename T>
+__global__ void apply_abs(T* data, int size) {return apply<T>(data, size, abs);}
 
 template<typename T>
 __global__ void apply_pow(T* data1, const T* data2, int size) {return apply<T>(data1, data2, size, pow);}

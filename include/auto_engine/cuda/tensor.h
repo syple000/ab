@@ -9,6 +9,8 @@ void apply_sin(f64* data, int size);
 void apply_cos(f64* data, int size);
 void apply_log(f64* data, int size);
 void apply_neg(f64* data, int size);
+void apply_sign(f64* data, int size);
+void apply_abs(f64* data, int size);
 void apply_add(f64* data1, const f64* data2, int size);
 void apply_sub(f64* data1, const f64* data2, int size);
 void apply_mul(f64* data1, const f64* data2, int size);

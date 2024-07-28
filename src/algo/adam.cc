@@ -12,9 +12,12 @@ namespace algo {
 void OptAlgo::adam() {
     // 读取超参
     f64 step = mustGetHyperParam("step");
+    bool enable_yogi = getHyperParam("enable_yogi", -1) > 0; // adam二次矩过大, yogi算法优化
     f64 first_coef = getHyperParam("first_coef", 0.9);
     f64 second_coef = getHyperParam("second_coef", 0.999);
     u32 max_iter_cnt = round(getHyperParam("max_iter_cnt", 100));
+    LOG(INFO) << fmt::format("hyper params, step: {}, enable_yogi: {}, first_coef: {}, second_coef: {}, max_iter_cnt: {}", 
+        step, enable_yogi, first_coef, second_coef, max_iter_cnt);
 
     if (first_coef >= 1 || first_coef <= 0 || second_coef >= 1 || second_coef <= 0) {
         LOG(ERROR) << fmt::format("adam coef invalid, first coef: {}, second coef: {}", first_coef, second_coef);
@@ -23,11 +26,14 @@ void OptAlgo::adam() {
 
     // 一/二阶矩向量，初始化0
     f64 pre_cost = calcCost();
-    std::vector<base::Tensor<f64>> m, v;
-    m.reserve(_vars.size()); v.reserve(_vars.size());
+    std::vector<base::Tensor<f64>> m, v, mm, vm, grads;
+    m.reserve(_vars.size()); v.reserve(_vars.size()); mm.reserve(_vars.size()); vm.reserve(_vars.size()); grads.reserve(_vars.size());
     for (int i = 0; i < _vars.size(); i++) {
         m.emplace_back(base::Tensor<f64>(_vars[i]->getOutput().shape()));
+        mm.emplace_back(base::Tensor<f64>(_vars[i]->getOutput().shape()));
         v.emplace_back(base::Tensor<f64>(_vars[i]->getOutput().shape()));
+        vm.emplace_back(base::Tensor<f64>(_vars[i]->getOutput().shape()));
+        grads.emplace_back(base::Tensor<f64>(_vars[i]->getOutput().shape()));
     }
 
     // 循环
@@ -38,19 +44,24 @@ void OptAlgo::adam() {
         // 更新并校准矩向量
         for (int i = 0; i < _vars.size(); i++) {
             m[i] = base::Tensor<f64>(m[i].shape(), first_coef) * m[i] + base::Tensor<f64>(m[i].shape(), 1 - first_coef) * _vars[i]->getGrad();
-            m[i] = m[i] / base::Tensor<f64>(m[i].shape(), 1 - pow(first_coef, iter_cnt + 1));
-            v[i] = base::Tensor<f64>(v[i].shape(), second_coef) * v[i] + base::Tensor<f64>(v[i].shape(), 1 - second_coef) * _vars[i]->getGrad() * _vars[i]->getGrad();
-            v[i] = v[i] / base::Tensor<f64>(v[i].shape(), 1 - pow(second_coef, iter_cnt + 1));
+            auto grad_pow2 = _vars[i]->getGrad() * _vars[i]->getGrad();
+            if (enable_yogi) {
+                v[i] = v[i] - base::Tensor<f64>(v[i].shape(), 1 - second_coef) * grad_pow2 * (v[i] - grad_pow2).sign();
+            } else {
+                v[i] = base::Tensor<f64>(v[i].shape(), second_coef) * v[i] + base::Tensor<f64>(v[i].shape(), 1 - second_coef) * grad_pow2;
+            }
+        }
+        for (int i = 0; i < _vars.size(); i++) {
+            mm[i] = m[i] / base::Tensor<f64>(m[i].shape(), 1 - pow(first_coef, iter_cnt + 1));
+            vm[i] = v[i] / base::Tensor<f64>(v[i].shape(), 1 - pow(second_coef, iter_cnt + 1));
         }
 
         // 计算目标更新梯度方向
-        std::vector<base::Tensor<f64>> grads;
-        grads.reserve(_vars.size());
         for (int i = 0; i < _vars.size(); i++) {
-            grads.emplace_back(m[i] / (v[i].pow(base::Tensor<f64>(v[i].shape(), 0.5)) + base::Tensor<f64>(v[i].shape(), EPSILON)));
+            grads[i] = mm[i] / (vm[i].pow(base::Tensor<f64>(vm[i].shape(), 0.5)) + base::Tensor<f64>(vm[i].shape(), EPSILON));
         }
         if (ENABLE_GRAD_DESCENT_ECHO_GRAD) {
-            LOG(INFO) << fmt::format("org grad: {}, adam grad: {}", gradStr(), gradStr(grads));
+            LOG(INFO) << fmt::format("org grad: {}, adam grad: {}, m: {}, v: {}", gradStr(), gradStr(grads), gradStr(m), gradStr(v));
         }
         if (!checkGrad2rdNorm(grad2rdNorm(grads))) {
             return;

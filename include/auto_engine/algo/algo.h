@@ -157,7 +157,8 @@ private: // 终止检查
         if (getHyperParam("enable_check_grad2rd_norm", 1) < 0) {
             return true;
         }
-        if (getHyperParam("grad2rd_norm_threshold", EPSILON) > norm) {
+        auto sqrt_norm = sqrt(norm);
+        if (getHyperParam("grad2rd_norm_threshold", EPSILON) > sqrt_norm) {
             LOG(INFO) << "check norm lt threshold";
             return false;
         }

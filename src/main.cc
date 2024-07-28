@@ -237,7 +237,8 @@ TEST(Test_grad_descent, test) {
 
     auto d2 = std::make_shared<algo::OptAlgo>(item, std::vector<std::shared_ptr<op::Op<base::Tensor<f64>>>>{x});
     d2->algoHyperParams("adam", {
-        {"step", 0.001}
+        {"step", 0.001},
+        // {"enable_yogi", 1}
     });
     d2->run();
     std::cout << x->getOutput().toString() << std::endl;

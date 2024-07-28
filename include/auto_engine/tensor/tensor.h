@@ -114,6 +114,8 @@ public:
     Tensor<T> log() const;
     Tensor<T> sin() const;
     Tensor<T> cos() const;
+    Tensor<T> sign() const;
+    Tensor<T> abs() const;
     Tensor<T> pow(const Tensor<T>&) const;
 
     Tensor<T> transpose() const;
@@ -315,6 +317,36 @@ Tensor<T> Tensor<T>::log() const {
     } else {
         for (int i = 0; i < _data.size(); i++) {
             ret._data[i] = ::log(ret._data[i]);
+        }
+    }
+    return ret;
+}
+
+template<typename T>
+Tensor<T> Tensor<T>::sign() const {
+    auto ret = *this;
+    if (std::is_same<T, f64>::value && ENABLE_CUDA) {
+        cuda::apply_sign(ret._data.data(), ret._data.size());
+    } else {
+        for (int i = 0; i < _data.size(); i++) {
+            if (ret._data[i] >= 0) {
+                ret._data[i] = 1;
+            } else {
+                ret._data[i] = -1;
+            }
+        }
+    }
+    return ret;
+}
+
+template<typename T>
+Tensor<T> Tensor<T>::abs() const {
+    auto ret = *this;
+    if (std::is_same<T, f64>::value && ENABLE_CUDA) {
+        cuda::apply_abs(ret._data.data(), ret._data.size());
+    } else {
+        for (int i = 0; i < _data.size(); i++) {
+            ret._data[i] = ::abs(ret._data[i]);
         }
     }
     return ret;
