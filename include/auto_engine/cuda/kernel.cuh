@@ -35,6 +35,13 @@ __device__ void apply(T* data1, const T* data2, int size, T f(const T&, const T&
 } 
 
 template<typename T>
+__device__ void apply(T* data, T n, int size, T f(const T&, const T&)) {
+    int index = blockIdx.x * blockDim.x + threadIdx.x; 
+    if (index >= size) {return;}
+    data[index] = f(data[index], n);
+}
+
+template<typename T>
 __device__ void apply(T* data, int size, T f(const T&)) {
     int index = blockIdx.x * blockDim.x + threadIdx.x; 
     if (index >= size) {return;}
@@ -122,6 +129,18 @@ template<typename T>
 __global__ void apply_div(T* data1, const T* data2, int size) {return apply<T>(data1, data2, size, div);}
 
 template<typename T>
+__global__ void apply_add(T* data, T n, int size) {return apply<T>(data, n, size, add);}
+
+template<typename T>
+__global__ void apply_sub(T* data, T n, int size) {return apply<T>(data, n, size, sub);}
+
+template<typename T>
+__global__ void apply_mul(T* data, T n, int size) {return apply<T>(data, n, size, mul);}
+
+template<typename T>
+__global__ void apply_div(T* data, T n, int size) {return apply<T>(data, n, size, div);}
+
+template<typename T>
 __global__ void apply_neg(T* data, int size) {return apply<T>(data, size, neg);}
 
 template<typename T>
@@ -132,6 +151,9 @@ __global__ void apply_abs(T* data, int size) {return apply<T>(data, size, abs);}
 
 template<typename T>
 __global__ void apply_pow(T* data1, const T* data2, int size) {return apply<T>(data1, data2, size, pow);}
+
+template<typename T>
+__global__ void apply_pow(T* data, T n, int size) {return apply<T>(data, n, size, pow);}
 
 template<typename T> // 实现的不好, 效率低
 __global__ void apply_sum(const T* src, int src_size, T* dst, int dst_size) {

@@ -6,7 +6,7 @@ import torch
 def f(x1, x2):
     return (2*x1 + x2) * (x1 - x2) + x2/x1 + x2**(x1+x2+1) + log(x1+x2) + sin(x2-x1)/cos(x1+x2)
 
-def ft(x1, x2):
+def ft():
     x1_ = torch.tensor([
         [
             [1, 2],
@@ -54,22 +54,25 @@ def ft(x1, x2):
     print("xgrad_x1_2rd: {}".format(xgrad_x1_2rd))
     print("xgrad_x2_2rd: {}".format(xgrad_x2_2rd))
 
+def ft2():
+    x1 = torch.tensor([
+        [1, 2],
+        [3, 4]
+    ], dtype=float, requires_grad=True)
+    x2 = torch.tensor([2], dtype=float, requires_grad=True)
+    item1 = x1 + x2
+    item2 = item1 * x2
+    item3 = item2 ** x2
+    item4 = item3 / x2 
+    item = item4 - x2
+    print("item: {}".format(item))
+    xgrad = torch.autograd.grad(outputs=item.sum(), inputs=[x1, x2], create_graph=True)
+    print("xgrad: {}".format(xgrad))
+    xgrad_x1_2rd = torch.autograd.grad(outputs=xgrad[0].sum(), inputs=[x1, x2], create_graph=True)
+    xgrad_x2_2rd = torch.autograd.grad(outputs=xgrad[1].sum(), inputs=[x1, x2], create_graph=True)
+    print("xgrad_x1_2rd: {}".format(xgrad_x1_2rd))
+    print("xgrad_x2_2rd: {}".format(xgrad_x2_2rd))
+
 if __name__ == "__main__":
-#    x1 = 3
-#    x2 = 4
-#    delta = 0.00001
-#    print("f(x1=1, x2=2) = ", f(x1, x2))
-#    print("dx1|x1=1, x2=2, = ", (f(x1+delta, x2)-f(x1, x2))/delta)
-#    print("dx2|x1=1, x2=2, = ", (f(x1, x2+delta)-f(x1, x2))/delta)
-#    df_dx1_pos = (f(x1+delta, x2)-f(x1, x2))/delta
-#    df_dx1_neg = (f(x1, x2)-f(x1-delta, x2))/delta
-#    print("dx1*2|x1=1, x2=2, = ", (df_dx1_pos - df_dx1_neg)/delta)
-#    df_dx2_pos = (f(x1, x2+delta)-f(x1, x2))/delta
-#    df_dx2_neg = (f(x1, x2)-f(x1, x2-delta))/delta
-#    print("dx2*2|x1=1, x2=2, = ", (df_dx2_pos-df_dx2_neg)/delta)
-#
-#    df_dx1_dx2 = ((f(x1+delta, x2+delta)-f(x1, x2+delta))/delta - (f(x1+delta, x2)-f(x1, x2))/delta)/delta
-#    print("dx1*dx2| x1=1, x2=2, = ", df_dx1_dx2)
-#    df_dx2_dx1 = ((f(x1-delta, x2-delta)-f(x1-delta, x2))/delta - (f(x1, x2-delta)-f(x1, x2))/delta)/delta
-#    print("dx2*dx1| x1=1, x2=2, = ", df_dx2_dx1)
-    ft(1, 2)
+    ft()
+    ft2()

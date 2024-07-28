@@ -15,6 +15,7 @@
 #include <cstring>
 #include <fmt/core.h>
 #include <functional>
+#include <iomanip>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -106,9 +107,13 @@ public:
     }
 
     Tensor<T> operator+(const Tensor<T>&) const;
+    Tensor<T> operator+(T) const;
     Tensor<T> operator-(const Tensor<T>&) const;
+    Tensor<T> operator-(T) const;
     Tensor<T> operator*(const Tensor<T>&) const;
+    Tensor<T> operator*(T) const;
     Tensor<T> operator/(const Tensor<T>&) const;
+    Tensor<T> operator/(T) const;
 
     Tensor<T> neg() const;
     Tensor<T> log() const;
@@ -117,6 +122,7 @@ public:
     Tensor<T> sign() const;
     Tensor<T> abs() const;
     Tensor<T> pow(const Tensor<T>&) const;
+    Tensor<T> pow(T) const;
 
     Tensor<T> transpose() const;
     Tensor<T> mmul(const Tensor<T>&) const;
@@ -157,7 +163,7 @@ public:
             stream << "[";
             if (dim_index == _shape.dimCnt() - 1) {
                 for (int i = 0; i < _shape.getDim(dim_index); i++) {
-                    stream << _data[offset];
+                    stream << std::setprecision(12) << _data[offset];
                     if (i != _shape.getDim(dim_index) - 1) {
                         stream << ", ";
                     }
@@ -217,6 +223,19 @@ Tensor<T> Tensor<T>::operator+(const Tensor<T>& t) const {
 }
 
 template<typename T>
+Tensor<T> Tensor<T>::operator+(T t) const {
+    auto ret = *this;
+    if (std::is_same<T, f64>::value && ENABLE_CUDA) {
+        cuda::apply_add(ret._data.data(), t, ret._data.size());
+    } else {
+        for (int i = 0; i < _data.size(); i++) {
+            ret._data[i] += t;
+        }
+    }
+    return ret;
+}
+
+template<typename T>
 Tensor<T> Tensor<T>::operator-(const Tensor<T>& t) const {
     if (!(_shape == t._shape)) {
         if (ENABLE_TENSOR_EXCEPTION) {
@@ -231,6 +250,19 @@ Tensor<T> Tensor<T>::operator-(const Tensor<T>& t) const {
     } else {
         for (int i = 0; i < t._data.size(); i++) {
             ret._data[i] -= t._data[i];
+        }
+    }
+    return ret;
+}
+
+template<typename T>
+Tensor<T> Tensor<T>::operator-(T t) const {
+    auto ret = *this;
+    if (std::is_same<T, f64>::value && ENABLE_CUDA) {
+        cuda::apply_sub(ret._data.data(), t, ret._data.size());
+    } else {
+        for (int i = 0; i < _data.size(); i++) {
+            ret._data[i] -= t;
         }
     }
     return ret;
@@ -257,6 +289,19 @@ Tensor<T> Tensor<T>::operator*(const Tensor<T>& t) const {
 }
 
 template<typename T>
+Tensor<T> Tensor<T>::operator*(T t) const {
+    auto ret = *this;
+    if (std::is_same<T, f64>::value && ENABLE_CUDA) {
+        cuda::apply_mul(ret._data.data(), t, ret._data.size());
+    } else {
+        for (int i = 0; i < _data.size(); i++) {
+            ret._data[i] *= t;
+        }
+    }
+    return ret;
+}
+
+template<typename T>
 Tensor<T> Tensor<T>::operator/(const Tensor<T>& t) const {
     if (!(_shape == t._shape)) {
         if (ENABLE_TENSOR_EXCEPTION) {
@@ -277,6 +322,19 @@ Tensor<T> Tensor<T>::operator/(const Tensor<T>& t) const {
 }
 
 template<typename T>
+Tensor<T> Tensor<T>::operator/(T t) const {
+    auto ret = *this;
+    if (std::is_same<T, f64>::value && ENABLE_CUDA) {
+        cuda::apply_div(ret._data.data(), t, ret._data.size());
+    } else {
+        for (int i = 0; i < _data.size(); i++) {
+            ret._data[i] /= t;
+        }
+    }
+    return ret;
+}
+
+template<typename T>
 Tensor<T> Tensor<T>::pow(const Tensor<T>& t) const {
     if (!(_shape == t._shape)) {
         if (ENABLE_TENSOR_EXCEPTION) {
@@ -291,6 +349,19 @@ Tensor<T> Tensor<T>::pow(const Tensor<T>& t) const {
     } else {
         for (int i = 0; i < t._data.size(); i++) {
             ret._data[i] = ::pow(ret._data[i], t._data[i]);
+        }
+    }
+    return ret;
+}
+
+template<typename T>
+Tensor<T> Tensor<T>::pow(T t) const {
+    auto ret = *this;
+    if (std::is_same<T, f64>::value && ENABLE_CUDA) {
+        cuda::apply_pow(ret._data.data(), t, ret._data.size());
+    } else {
+        for (int i = 0; i < _data.size(); i++) {
+            ret._data[i] = ::pow(ret._data[i], t);
         }
     }
     return ret;

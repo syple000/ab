@@ -1,8 +1,11 @@
 #include "auto_engine/op/methods.h"
 #include "auto_engine/base/basic_types.h"
+#include "auto_engine/config/config.h"
 #include "auto_engine/tensor/shape.h"
 #include "auto_engine/tensor/tensor.h"
 #include <cmath>
+#include <fmt/core.h>
+#include <stdexcept>
 
 namespace op {
 
@@ -94,6 +97,68 @@ template<>
 base::Shape shape(const base::Tensor<f64>& t) {
     return t.shape();
 }
+
+template<>
+base::Tensor<f64> addN(const base::Tensor<f64>& t1, const base::Tensor<f64>& t2) {
+    if (t2.shape().tensorSize() != 1) {
+        LOG(INFO) << fmt::format("[{}] t2 tensor size != 1", __FUNCTION__);
+        if (ENABLE_TENSOR_EXCEPTION) {
+            throw std::runtime_error(fmt::format("[{}] t2 tensor size != 1", __FUNCTION__));
+        }
+        return base::Tensor<f64>();
+    }
+    return t1 + t2.data()[0];
+}
+
+template<>
+base::Tensor<f64> subN(const base::Tensor<f64>& t1, const base::Tensor<f64>& t2) {
+    if (t2.shape().tensorSize() != 1) {
+        LOG(INFO) << fmt::format("[{}] t2 tensor size != 1", __FUNCTION__);
+        if (ENABLE_TENSOR_EXCEPTION) {
+            throw std::runtime_error(fmt::format("[{}] t2 tensor size != 1", __FUNCTION__));
+        }
+        return base::Tensor<f64>();
+    }
+    return t1 - t2.data()[0];
+}
+
+template<>
+base::Tensor<f64> mulN(const base::Tensor<f64>& t1, const base::Tensor<f64>& t2) {
+    if (t2.shape().tensorSize() != 1) {
+        LOG(INFO) << fmt::format("[{}] t2 tensor size != 1", __FUNCTION__);
+        if (ENABLE_TENSOR_EXCEPTION) {
+            throw std::runtime_error(fmt::format("[{}] t2 tensor size != 1", __FUNCTION__));
+        }
+        return base::Tensor<f64>();
+    }
+    return t1 * t2.data()[0];
+}
+
+template<>
+base::Tensor<f64> divN(const base::Tensor<f64>& t1, const base::Tensor<f64>& t2) {
+    if (t2.shape().tensorSize() != 1) {
+        LOG(INFO) << fmt::format("[{}] t2 tensor size != 1", __FUNCTION__);
+        if (ENABLE_TENSOR_EXCEPTION) {
+            throw std::runtime_error(fmt::format("[{}] t2 tensor size != 1", __FUNCTION__));
+        }
+        return base::Tensor<f64>();
+    }
+    return t1 / t2.data()[0];
+}
+
+template<>
+base::Tensor<f64> powN(const base::Tensor<f64>& t1, const base::Tensor<f64>& t2) {
+    if (t2.shape().tensorSize() != 1) {
+        LOG(INFO) << fmt::format("[{}] t2 tensor size != 1", __FUNCTION__);
+        if (ENABLE_TENSOR_EXCEPTION) {
+            throw std::runtime_error(fmt::format("[{}] t2 tensor size != 1", __FUNCTION__));
+        }
+        return base::Tensor<f64>();
+    }
+    return t1.pow(t2.data()[0]);
+}
+
+
 
 
 }

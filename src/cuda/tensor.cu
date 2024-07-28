@@ -66,11 +66,30 @@ void fn(T* data1, const T* data2, int size) { \
     CHECK_CUDA_CALL(cudaMemcpy(data1, m1, sizeof(T) * size, cudaMemcpyDeviceToHost), "cuda_memcpy_d2h"); \
 } \
 
+#define DEFINE_APPLY_1E_1T(fn, T) \
+void fn(T* data, T n, int size) { \
+    f64 *m; \
+    CHECK_MALLOC(Mem::malloc((void**)&m, sizeof(T) * size)); \
+    utils::Defer free_m([&m]() {Mem::free(m);}); \
+ \
+    CHECK_CUDA_CALL(cudaMemcpy(m, data, sizeof(T) * size, cudaMemcpyHostToDevice), "cuda_memcpy_h2d"); \
+    auto dims = get_apply_dims(size); \
+    cuda_kernel::fn<<<std::get<0>(dims), std::get<1>(dims)>>>(m, n, size); \
+    CHECK_CUDA_CALL(cudaPeekAtLastError(), #fn); \
+    CHECK_CUDA_CALL(cudaMemcpy(data, m, sizeof(T) * size, cudaMemcpyDeviceToHost), "cuda_memcpy_d2h"); \
+} \
+
 DEFINE_APPLY_2E(apply_add, f64)
 DEFINE_APPLY_2E(apply_sub, f64)
 DEFINE_APPLY_2E(apply_mul, f64)
 DEFINE_APPLY_2E(apply_div, f64)
 DEFINE_APPLY_2E(apply_pow, f64)
+
+DEFINE_APPLY_1E_1T(apply_add, f64)
+DEFINE_APPLY_1E_1T(apply_sub, f64)
+DEFINE_APPLY_1E_1T(apply_mul, f64)
+DEFINE_APPLY_1E_1T(apply_div, f64)
+DEFINE_APPLY_1E_1T(apply_pow, f64)
 
 void apply_sum(const f64* src, int src_size, f64* dst, int dst_size) {
     f64 *m1, *m2;
