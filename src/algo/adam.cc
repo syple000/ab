@@ -25,7 +25,6 @@ void OptAlgo::adam() {
     }
 
     // 一/二阶矩向量，初始化0
-    f64 pre_cost = calcCost();
     std::vector<base::Tensor<f64>> m, v, mm, vm, grads;
     m.reserve(_vars.size()); v.reserve(_vars.size()); mm.reserve(_vars.size()); vm.reserve(_vars.size()); grads.reserve(_vars.size());
     for (int i = 0; i < _vars.size(); i++) {
@@ -37,9 +36,11 @@ void OptAlgo::adam() {
     }
 
     // 循环
+    auto cost = _cost_func(_vars);
+    f64 pre_cost = calcCost(cost);
     u32 iter_cnt = 0;
     while (iter_cnt < max_iter_cnt) {
-        calcGrad();
+        calcGrad(cost);
 
         // 更新并校准矩向量
         for (int i = 0; i < _vars.size(); i++) {
@@ -68,7 +69,10 @@ void OptAlgo::adam() {
         }
         updateVars(step, grads);
         
-        f64 cur_cost = calcCost();
+        if (!_fix_cost_graph) {
+            cost = _cost_func(_vars);
+        }
+        f64 cur_cost = calcCost(cost);
         if (!checkCostDiff(pre_cost, cur_cost)) {
             return;
         }

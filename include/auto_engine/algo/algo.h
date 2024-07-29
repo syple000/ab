@@ -17,7 +17,9 @@ namespace algo {
 
 class OptAlgo {
 public:
-    OptAlgo(std::shared_ptr<op::Op<base::Tensor<f64>>> cost, const std::vector<std::shared_ptr<op::Op<base::Tensor<f64>>>> vars) : _cost(cost), _vars(vars) {}
+    OptAlgo(std::function<std::shared_ptr<op::Op<base::Tensor<f64>>>(const std::vector<std::shared_ptr<op::Op<base::Tensor<f64>>>>&)> cost_func,
+        const std::vector<std::shared_ptr<op::Op<base::Tensor<f64>>>>& vars,
+        bool fix_cost_graph = false) : _cost_func(cost_func), _vars(vars), _fix_cost_graph(fix_cost_graph) {}
     
     void algoHyperParams(const std::string& algo, const std::unordered_map<std::string, f64>& hyper_params) {
         _algo = algo;
@@ -35,8 +37,9 @@ public:
     }
 
 private:
-    std::shared_ptr<op::Op<base::Tensor<f64>>> _cost;
+    std::function<std::shared_ptr<op::Op<base::Tensor<f64>>>(const std::vector<std::shared_ptr<op::Op<base::Tensor<f64>>>>&)> _cost_func;
     std::vector<std::shared_ptr<op::Op<base::Tensor<f64>>>> _vars;
+    bool _fix_cost_graph = false; // 是否固定计算图（算子如果经过if等逻辑，就是非固定）
     
     std::string _algo;
     std::unordered_map<std::string, f64> _hyper_params;
@@ -58,20 +61,20 @@ private: // 参数获取方法
     }
 
 private: // 通用方法
-    f64 calcCost() {
-        calc::Calculator<base::Tensor<f64>> c(_cost);
+    f64 calcCost(std::shared_ptr<op::Op<base::Tensor<f64>>> cost) {
+        calc::Calculator<base::Tensor<f64>> c(cost);
         c.clearOutput();
         c.call();
-        const auto& cost = _cost->getOutput();
-        if (cost.shape().tensorSize() != 1) {
+        const auto& t = cost->getOutput();
+        if (t.shape().tensorSize() != 1) {
             throw std::runtime_error("cost tensor size != 1");
         }
-        return cost.data()[0];
+        return t.data()[0];
     }
 
-    void calcGrad() {
-        calc::Calculator<base::Tensor<f64>> c(_cost);
-        if (!_cost->hasOutput()) {calcCost();}
+    void calcGrad(std::shared_ptr<op::Op<base::Tensor<f64>>> cost) {
+        calc::Calculator<base::Tensor<f64>> c(cost);
+        if (!cost->hasOutput()) {calcCost(cost);}
         c.clearGrad();
         c.deriv();
     }

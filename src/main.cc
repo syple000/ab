@@ -254,20 +254,24 @@ TEST(Test_tensor, test) {
 
 TEST(Test_grad_descent, test) {
     auto t1 = base::Tensor<f64>(base::Shape({2}), {1, 2});
-    auto t2 = base::Tensor<f64>(base::Shape({2}), {2, 3});
-    auto t3 = base::Tensor<f64>(base::Shape({2}), {4, 5});
     auto x = std::make_shared<op::DataOp<base::Tensor<f64>>>(t1, true);
-    auto ct1 = std::make_shared<op::DataOp<base::Tensor<f64>>>(t2);
-    auto ct2 = std::make_shared<op::DataOp<base::Tensor<f64>>>(t3);
-    auto item1 = std::make_shared<op::Mul<base::Tensor<f64>>>(x, x);
-    auto item2 = std::make_shared<op::Mul<base::Tensor<f64>>>(ct1, x);
-    auto item3 = std::make_shared<op::Add<base::Tensor<f64>>>(item1, item2);
-    auto item4 = std::make_shared<op::Add<base::Tensor<f64>>>(item3, ct2);
-    auto item5 = std::make_shared<op::Reshape<base::Tensor<f64>, base::Shape>>(item4, base::Shape({1, 2}));
-    auto item6 = std::make_shared<op::DataOp<base::Tensor<f64>>>(base::Tensor<f64>(base::Shape({2, 1}), 1));
-    auto item = std::make_shared<op::Mmul<base::Tensor<f64>>>(item5, item6);
-    
-    auto d1 = std::make_shared<algo::OptAlgo>(item, std::vector<std::shared_ptr<op::Op<base::Tensor<f64>>>>{x});
+
+    auto cost_func = [](const std::vector<std::shared_ptr<op::Op<base::Tensor<f64>>>>& args) {
+        auto t2 = base::Tensor<f64>(base::Shape({2}), {2, 3});
+        auto t3 = base::Tensor<f64>(base::Shape({2}), {4, 5});
+        auto ct1 = std::make_shared<op::DataOp<base::Tensor<f64>>>(t2);
+        auto ct2 = std::make_shared<op::DataOp<base::Tensor<f64>>>(t3);
+        auto item1 = std::make_shared<op::Mul<base::Tensor<f64>>>(args[0], args[0]);
+        auto item2 = std::make_shared<op::Mul<base::Tensor<f64>>>(ct1, args[0]);
+        auto item3 = std::make_shared<op::Add<base::Tensor<f64>>>(item1, item2);
+        auto item4 = std::make_shared<op::Add<base::Tensor<f64>>>(item3, ct2);
+        auto item5 = std::make_shared<op::Reshape<base::Tensor<f64>, base::Shape>>(item4, base::Shape({1, 2}));
+        auto item6 = std::make_shared<op::DataOp<base::Tensor<f64>>>(base::Tensor<f64>(base::Shape({2, 1}), 1));
+        auto item = std::make_shared<op::Mmul<base::Tensor<f64>>>(item5, item6);
+        return item; 
+    };
+   
+    auto d1 = std::make_shared<algo::OptAlgo>(cost_func, std::vector<std::shared_ptr<op::Op<base::Tensor<f64>>>>{x});
     d1->algoHyperParams("grad_descent", {
         {"step", 1},
         {"step_decay_ratio", 0.8},
@@ -278,7 +282,7 @@ TEST(Test_grad_descent, test) {
     d1->run();
     std::cout << x->getOutput().toString() << std::endl;
 
-    auto d2 = std::make_shared<algo::OptAlgo>(item, std::vector<std::shared_ptr<op::Op<base::Tensor<f64>>>>{x});
+    auto d2 = std::make_shared<algo::OptAlgo>(cost_func, std::vector<std::shared_ptr<op::Op<base::Tensor<f64>>>>{x}, true);
     d2->algoHyperParams("adam", {
         {"step", 0.001},
         // {"enable_yogi", 1}

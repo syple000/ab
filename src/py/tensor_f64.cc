@@ -33,6 +33,7 @@
 #include <pybind11/detail/common.h>
 #include <pybind11/pytypes.h>
 #include <pybind11/stl.h>
+#include <pybind11/functional.h>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -201,8 +202,10 @@ PYBIND11_MODULE(ae, m) {
         });
 
     py::class_<algo::OptAlgo, std::shared_ptr<algo::OptAlgo>>(m, "opt_algo")
-        .def(py::init<std::shared_ptr<op::Op<base::Tensor<f64>>>, std::vector<std::shared_ptr<op::Op<base::Tensor<f64>>>>>(),
-            py::arg("cost"), py::arg("vars")
+        .def(py::init<std::function<std::shared_ptr<op::Op<base::Tensor<f64>>>(const std::vector<std::shared_ptr<op::Op<base::Tensor<f64>>>>&)>,
+            const std::vector<std::shared_ptr<op::Op<base::Tensor<f64>>>>&,
+            bool>(),
+            py::arg("cost_func"), py::arg("vars"), py::arg("fix_cost_graph") = false
         )
         .def("algo_hyper_params", &algo::OptAlgo::algoHyperParams, py::arg("algo"), py::arg("hyper_params"))
         .def("run", &algo::OptAlgo::run);
