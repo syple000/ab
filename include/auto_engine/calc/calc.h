@@ -30,6 +30,8 @@ public:
     }
     
     void deriv() {
+        call();
+
         _op->template setGrad(op::one<T>(_op->template getOutput()));
         _op->template backward();
         const auto& a = _op->template exec_queue();
@@ -39,6 +41,8 @@ public:
     }
 
     void createGradGraph() {
+        call();
+
         _op->template setGradGraph(std::make_shared<op::DataOp<T>>(op::one<T>(_op->template getOutput())));
         _op->template createGradGraph();
         const auto& a = _op->template exec_queue();

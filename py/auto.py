@@ -73,6 +73,20 @@ def ft2():
     print("xgrad_x1_2rd: {}".format(xgrad_x1_2rd))
     print("xgrad_x2_2rd: {}".format(xgrad_x2_2rd))
 
+def ft3():
+    x1 = torch.tensor([
+        [2, 3],
+        [4, 5]
+    ], dtype=float, requires_grad=True)
+    item1 = (x1 * x1).sum().sqrt()
+    item = x1 / item1
+    print("item: {}, pow2 sum: {}".format(item, (item * item).sum()))
+    xgrad = torch.autograd.grad(outputs=item.sum(), inputs=[x1], create_graph=True)
+    print("xgrad: {}".format(xgrad))
+    xgrad_x1_2rd = torch.autograd.grad(outputs=xgrad[0].sum(), inputs=[x1], create_graph=True)
+    print("xgrad_x1_2rd: {}".format(xgrad_x1_2rd))
+
 if __name__ == "__main__":
-    ft()
-    ft2()
+    # ft()
+    # ft2()
+    ft3()

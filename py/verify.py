@@ -2,7 +2,7 @@
 
 import ae
 
-if __name__ == "__main__":
+def ft1():
     x1_ = ae.tensor([
         [
             [1, 2],
@@ -61,3 +61,21 @@ if __name__ == "__main__":
     b.update(a)
     print("b: {}, sum: {}, add1: {}, sub1: {}, mul2: {}, div2: {}, pow2: {}".format(b, b.sum(), b + 1, b - 1, b * 2, b / 2, b ** 2))
     print(b.tolist())
+
+def ft2():
+    x1 = ae.tensor([
+        [2, 3],
+        [4, 5]
+    ], True)
+    item1 = (x1 * x1).sum() ** 0.5
+    item = x1.div_n(item1)
+    print("item: {}, pow2 sum: {}".format(item, (item * item).sum()))
+    item.sum().backward()
+    print("xgrad: {}".format(x1.grad()))
+    item.sum().clear_grad()
+    item.sum().create_grad_graph()
+    x1.grad_graph().sum().backward()
+    print("xgrad_x1_2rd: {}".format(x1.grad()))
+
+if __name__ == "__main__":
+    ft2()
