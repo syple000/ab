@@ -17,11 +17,11 @@ public:
     PowN(std::shared_ptr<Op<T>> arg1, std::shared_ptr<Op<T>> arg2): BOP<T>(arg1, arg2) {}
 
     T call(const T& arg1, const T& arg2) override {
-        return powN(arg1, arg2);
+        return pow_n(arg1, arg2);
     }
     T deriv(u32 index, const T& grad, const T& arg1, const T& arg2) override {
         if (index == 0) {
-            return grad * mulN(this->getOutput() / arg1, arg2);
+            return grad * mul_n(this->getOutput() / arg1, arg2);
         } else {
             return reshape(sum(grad * log(arg1) * this->getOutput()), shape<T, SHAPE>(arg2));
         }

@@ -20,7 +20,6 @@
 #include <stdexcept>
 #include <string>
 #include <type_traits>
-#include <unordered_set>
 #include <vector>
 
 namespace base {
@@ -128,9 +127,14 @@ public:
     Tensor<T> mmul(const Tensor<T>&) const;
     Tensor<T> inv() const;
 
-    Tensor<T> sum(const std::vector<u32>& dim_indexs) const;
+    Tensor<T> sumAlongRow() const;
+    Tensor<T> sumAlongCol() const;
+    Tensor<T> expandAlongRow(const base::Shape&) const;
+    Tensor<T> expandAlongCol(const base::Shape&) const;
     Tensor<T> sum() const;
     Tensor<T> expand(const base::Shape&) const;
+
+    Tensor<T> oneHot(u32 classes) const;
 
     Tensor<T> reshape(const std::vector<u32>& dims) const {
         auto shape = _shape.reshape(dims);
@@ -542,38 +546,114 @@ Tensor<T> Tensor<T>::inv() const {
 }
 
 template<typename T>
-Tensor<T> Tensor<T>::sum(const std::vector<u32>& dim_indexs) const {
-    std::unordered_set<u32> dim_index_set;
-    for (auto index : dim_indexs) {
-        if (index >= _shape.dimCnt()) {
-            if (ENABLE_TENSOR_EXCEPTION) {
-                throw std::runtime_error(fmt::format("tensor sum fail index out of range: {}, shape: {}", index, _shape.toString()));
-            }
-            LOG(ERROR) << "sum index out of range";
-            return Tensor();
+Tensor<T> Tensor<T>::sumAlongRow() const {
+    auto shape = _shape.sumAlongRow();
+    if (shape.tensorSize() == 0) {
+        if (ENABLE_TENSOR_EXCEPTION) {
+            throw std::runtime_error(fmt::format("tensor sum along row fail: {}", _shape.toString()));
         }
-        dim_index_set.insert(index);
+        LOG(ERROR) << fmt::format("tensor sum along row fail: {}", _shape.toString());
+        return Tensor();
     }
-
-    std::vector<u32> dims;
-    for (int i = 0; i < _shape.dimCnt(); i++) {
-        if (dim_index_set.find(i) == dim_index_set.end()) {
-            dims.push_back(_shape.getDim(i));
-        }
-    }
-    Tensor<T> rt((Shape(dims)));
+    auto matrix_size = _shape.subTensorSize(_shape.dimCnt()-2);
+    auto row_cnt = _shape.getDim(_shape.dimCnt() - 2);
+    auto col_cnt = _shape.getDim(_shape.dimCnt() - 1);
+    Tensor<T> res(shape);
     if (std::is_same<T, f64>::value && ENABLE_CUDA) {
-        cuda::apply_sum(_data.data(), _data.size(), rt._data.data(), rt._data.size());
+        cuda::sum_along_row(_data.data(), res._data.data(), row_cnt, col_cnt, _shape.tensorSize() / matrix_size);
     } else {
-        for (int i = 0; i < _data.size(); i++) {
-            if (i / rt._data.size() == 0) {
-                rt._data[i % rt._data.size()] = _data[i];
-            } else {
-                rt._data[i % rt._data.size()] += _data[i];
+        for (int i = 0; i < _shape.tensorSize() / matrix_size; i++) {
+            for (int j = 0; j < row_cnt; j++) {
+                for (int k = 0; k < col_cnt; k++) {
+                    res._data[i * row_cnt + j] += _data[i * matrix_size + j * col_cnt + k];
+                }
             }
         }
     }
-    return std::move(rt);
+    return std::move(res);
+}
+
+template<typename T>
+Tensor<T> Tensor<T>::sumAlongCol() const {
+    auto shape = _shape.sumAlongCol();
+    if (shape.tensorSize() == 0) {
+        if (ENABLE_TENSOR_EXCEPTION) {
+            throw std::runtime_error(fmt::format("tensor sum along col fail: {}", _shape.toString()));
+        }
+        LOG(ERROR) << fmt::format("tensor sum along col fail: {}", _shape.toString());
+        return Tensor();
+    }
+    auto matrix_size = _shape.subTensorSize(_shape.dimCnt()-2);
+    auto row_cnt = _shape.getDim(_shape.dimCnt() - 2);
+    auto col_cnt = _shape.getDim(_shape.dimCnt() - 1);
+    Tensor<T> res(shape);
+    if (std::is_same<T, f64>::value && ENABLE_CUDA) {
+        cuda::sum_along_col(_data.data(), res._data.data(), row_cnt, col_cnt, _shape.tensorSize() / matrix_size);
+    } else {
+        for (int i = 0; i < _shape.tensorSize() / matrix_size; i++) {
+            for (int j = 0; j < col_cnt; j++) {
+                for (int k = 0; k < row_cnt; k++) {
+                    res._data[i * col_cnt + j] += _data[i * matrix_size + k * col_cnt + j];
+                }
+            }
+        }
+    }
+    return std::move(res);
+}
+
+
+template<typename T>
+Tensor<T> Tensor<T>::expandAlongRow(const base::Shape& shape) const {
+    if (!(shape.sumAlongRow() == _shape)) {
+        if (ENABLE_TENSOR_EXCEPTION) {
+            throw std::runtime_error(fmt::format("expand along row err: {}, {}", _shape.toString(), shape.toString()));
+        }
+        LOG(ERROR) << fmt::format("expand along row err: {}, {}", _shape.toString(), shape.toString());
+        return Tensor();
+    }
+    auto matrix_size = shape.subTensorSize(shape.dimCnt()-2);
+    auto row_cnt = shape.getDim(shape.dimCnt() - 2);
+    auto col_cnt = shape.getDim(shape.dimCnt() - 1);
+    Tensor<T> res(shape);
+    if (std::is_same<T, f64>::value && ENABLE_CUDA) {
+        cuda::expand_along_row(_data.data(), res._data.data(), row_cnt, col_cnt, shape.tensorSize()/matrix_size);
+    } else {
+        for (int i = 0; i < shape.tensorSize() / matrix_size; i++) {
+            for (int j = 0; j < row_cnt; j++) {
+                for (int k = 0; k < col_cnt; k++) {
+                    res._data[i * matrix_size + j * col_cnt + k] = _data[i * row_cnt + j];
+                }
+            }
+        }
+    }
+    return std::move(res);
+}
+
+template<typename T>
+Tensor<T> Tensor<T>::expandAlongCol(const base::Shape& shape) const {
+    if (!(shape.sumAlongCol() == _shape)) {
+        if (ENABLE_TENSOR_EXCEPTION) {
+            throw std::runtime_error(fmt::format("expand along col err: {}, {}", _shape.toString(), shape.toString()));
+        }
+        LOG(ERROR) << fmt::format("expand along col err: {}, {}", _shape.toString(), shape.toString());
+        return Tensor();
+    }
+    auto matrix_size = shape.subTensorSize(shape.dimCnt()-2);
+    auto row_cnt = shape.getDim(shape.dimCnt() - 2);
+    auto col_cnt = shape.getDim(shape.dimCnt() - 1);
+    Tensor<T> res(shape);
+    if (std::is_same<T, f64>::value && ENABLE_CUDA) {
+        cuda::expand_along_col(_data.data(), res._data.data(), row_cnt, col_cnt, shape.tensorSize()/matrix_size);
+    } else {
+        for (int i = 0; i < shape.tensorSize() / matrix_size; i++) {
+            for (int j = 0; j < col_cnt; j++) {
+                for (int k = 0; k < row_cnt; k++) {
+                    res._data[i * matrix_size + k * col_cnt + j] = _data[i * col_cnt + j];
+                }
+            }
+        }
+    }
+    return std::move(res);
 }
 
 template<typename T>
@@ -598,7 +678,43 @@ Tensor<T> Tensor<T>::expand(const base::Shape& shape) const {
         LOG(ERROR) << "expand tensor size != 1";
         return Tensor();
     }
-    return Tensor(shape, _data[0]);
+    Tensor<T> res(shape);
+    if (std::is_same<T, f64>::value && ENABLE_CUDA) {
+        cuda::apply_expand(_data.data(), res._data.data(), res._data.size()); 
+    } else {
+        res = Tensor<T>(shape, _data[0]);
+    }
+    return std::move(res);
+}
+
+template<typename T>
+Tensor<T> Tensor<T>::oneHot(u32 classes) const {
+    if (_shape.dimCnt() != 1) {
+        if (ENABLE_TENSOR_EXCEPTION) {
+            throw std::runtime_error("one hot tensor dim cnt != 1");
+        }
+        LOG(ERROR) << "one hot tensor dim cnt != 1";
+        return Tensor();
+    }
+    auto res = Tensor<T>(base::Shape({_shape.getDim(0), classes}));
+    int err_index = -1;
+    if (std::is_same<T, f64>::value && ENABLE_CUDA) {
+        err_index = cuda::ont_hot(_data.data(), _shape.tensorSize(), res._data.data(), classes);
+    } else {
+        for (int i = 0; i < _data.size(); i++) {
+            int n = round(_data[i]);
+            if (n < 0 || n >= classes) {err_index = i; break;}
+            res._data[i * classes + n] = 1;
+        }
+    }
+    if (err_index >= 0) {
+        if (ENABLE_TENSOR_EXCEPTION) {
+            throw std::runtime_error(fmt::format("one hot fail at {}", err_index));
+        }
+        LOG(ERROR) << fmt::format("one hot fail at {}", err_index);
+        return Tensor();
+    }
+    return std::move(res);
 }
 
 }

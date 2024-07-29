@@ -1,4 +1,4 @@
-#include "auto_engine/algo/algo.h"
+#include "auto_engine/algo/opt.h"
 #include "auto_engine/base/basic_types.h"
 #include "auto_engine/config/config.h"
 #include "auto_engine/tensor/tensor.h"
@@ -9,7 +9,7 @@
 
 namespace algo {
 
-void OptAlgo::adam() {
+void Optimizer::adam() {
     // 读取超参
     f64 step = mustGetHyperParam("step");
     bool enable_yogi = getHyperParam("enable_yogi", -1) > 0; // adam二次矩过大, yogi算法优化

@@ -1,7 +1,7 @@
 // 对python仅暴露op，并将op作为数据
 // 在每一次数据读取时进行计算
 
-#include "auto_engine/algo/algo.h"
+#include "auto_engine/algo/opt.h"
 #include "auto_engine/base/basic_types.h"
 #include "auto_engine/calc/calc.h"
 #include "auto_engine/cuda/info.h"
@@ -208,14 +208,14 @@ PYBIND11_MODULE(ae, m) {
             return std::make_shared<op::Reshape<base::Tensor<f64>, base::Shape>>(op, base::Shape(dims));
         });
 
-    py::class_<algo::OptAlgo, std::shared_ptr<algo::OptAlgo>>(m, "opt_algo")
+    py::class_<algo::Optimizer, std::shared_ptr<algo::Optimizer>>(m, "opt_algo")
         .def(py::init<std::function<std::shared_ptr<op::Op<base::Tensor<f64>>>(const std::vector<std::shared_ptr<op::Op<base::Tensor<f64>>>>&)>,
             const std::vector<std::shared_ptr<op::Op<base::Tensor<f64>>>>&,
             bool>(),
             py::arg("cost_func"), py::arg("vars"), py::arg("fix_cost_graph") = false
         )
-        .def("algo_hyper_params", &algo::OptAlgo::algoHyperParams, py::arg("algo"), py::arg("hyper_params"))
-        .def("run", &algo::OptAlgo::run);
+        .def("algo_hyper_params", &algo::Optimizer::algoHyperParams, py::arg("algo"), py::arg("hyper_params"))
+        .def("run", &algo::Optimizer::run);
 
 
     m.def("tensor", [](py::list lst, bool requires_grad=false) -> std::shared_ptr<op::Op<base::Tensor<f64>>> {

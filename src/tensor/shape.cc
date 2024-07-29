@@ -107,6 +107,26 @@ std::string Shape::toString() const {
     return stream.str();
 }
 
+
+Shape Shape::sumAlongRow() const {
+    if (_dims.size() < 2) {
+        LOG(ERROR) << "sumAlongRow non-matrix";
+        return Shape();
+    }
+    auto dims = std::vector<u32>(_dims.begin(), _dims.end() - 1);
+    return Shape(dims);
+}
+
+Shape Shape::sumAlongCol() const {
+    if (_dims.size() < 2) {
+        LOG(ERROR) << "sumAlongCol non-matrix";
+        return Shape();
+    }
+    auto dims = std::vector<u32>(_dims.begin(), _dims.end() - 2);
+    dims.push_back(_dims[_dims.size() - 1]);
+    return Shape(dims);
+}
+
 Shape Shape::transpose() const {
     if (_dims.size() < 2) {
         LOG(ERROR) << "transpose non-matrix";

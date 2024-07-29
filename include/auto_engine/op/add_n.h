@@ -15,7 +15,7 @@ public:
     AddN(std::shared_ptr<Op<T>> arg1, std::shared_ptr<Op<T>> arg2): BOP<T>(arg1, arg2) {}
 
     T call(const T& arg1, const T& arg2) override {
-        return addN(arg1, arg2);
+        return add_n(arg1, arg2);
     }
 
     T deriv(u32 index, const T& grad, const T& arg1, const T& arg2) override {

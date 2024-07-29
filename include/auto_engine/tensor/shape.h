@@ -27,6 +27,8 @@ public:
     u32 getDim(u32 index) const {return index < _dims.size() ? _dims[index] : 0;}
     u32 dimCnt() const {return _dims.size();}
 
+    Shape sumAlongRow() const;
+    Shape sumAlongCol() const;
     Shape transpose() const;
     Shape mmul(const Shape&) const;
 private:

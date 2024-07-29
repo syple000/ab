@@ -155,17 +155,80 @@ __global__ void apply_pow(T* data1, const T* data2, int size) {return apply<T>(d
 template<typename T>
 __global__ void apply_pow(T* data, T n, int size) {return apply<T>(data, n, size, pow);}
 
-template<typename T> // 实现的不好, 效率低
-__global__ void apply_sum(const T* src, int src_size, T* dst, int dst_size) {
-    int index = blockIdx.x * blockDim.x + threadIdx.x; 
-    if (index >= dst_size) {return;}
-    int res = 0;
-    int i = index;
-    while (i < src_size) {
-        res += src[i];
-        i += dst_size;
+template<typename T>
+__global__ void sum_along_row(const T* srcs, T* dsts, int row, int col, int size) {
+    __shared__ T shared_mem[cuda::sqrt_tcnt_per_block()][cuda::sqrt_tcnt_per_block() + 1];
+
+    int matrix_index = blockIdx.z;
+    if (matrix_index >= size) {return;}
+    int i = blockIdx.x * blockDim.x + threadIdx.x; 
+    int j = blockIdx.y * blockDim.y + threadIdx.y;
+    if (i >= row || j >= col) {
+        shared_mem[threadIdx.x][threadIdx.y] = 0;
+    } else {
+        shared_mem[threadIdx.x][threadIdx.y] = srcs[matrix_index * row * col + i * col + j];
     }
-    dst[index] = res;
+
+    __syncthreads();
+
+    for (int i = blockDim.y / 2; i > 0; i = i >> 1) {
+        if (threadIdx.y < i) {
+            shared_mem[threadIdx.x][threadIdx.y] += shared_mem[threadIdx.x][threadIdx.y + i];
+        }
+        __syncthreads();
+    }
+
+    if (threadIdx.y == 0) {
+        atomicAdd(dsts + matrix_index * row + i, shared_mem[threadIdx.x][0]);
+    }
+}
+
+template<typename T>
+__global__ void expand_along_row(const T* src, T* dst, int row, int col, int size) {
+    int matrix_index = blockIdx.z;
+    if (matrix_index >= size) {return;}
+    int i = blockIdx.x * blockDim.x + threadIdx.x; 
+    int j = blockIdx.y * blockDim.y + threadIdx.y;
+    if (i >= row || j >= col) {return;}
+    dst[matrix_index * row * col + i * col + j] = src[matrix_index * row + i];
+}
+
+template<typename T>
+__global__ void sum_along_col(const T* srcs, T* dsts, int row, int col, int size) {
+    __shared__ T shared_mem[cuda::sqrt_tcnt_per_block()][cuda::sqrt_tcnt_per_block() + 1];
+
+    int matrix_index = blockIdx.z;
+    if (matrix_index >= size) {return;}
+    int i = blockIdx.x * blockDim.x + threadIdx.x; 
+    int j = blockIdx.y * blockDim.y + threadIdx.y;
+    if (i >= row || j >= col) {
+        shared_mem[threadIdx.x][threadIdx.y] = 0;
+    } else {
+        shared_mem[threadIdx.x][threadIdx.y] = srcs[matrix_index * row * col + i * col + j];
+    }
+
+    __syncthreads();
+
+    for (int i = blockDim.x / 2; i > 0; i = i >> 1) {
+        if (threadIdx.x < i) {
+            shared_mem[threadIdx.x][threadIdx.y] += shared_mem[threadIdx.x + i][threadIdx.y];
+        }
+        __syncthreads();
+    }
+
+    if (threadIdx.x == 0) {
+        atomicAdd(dsts + matrix_index * col + j, shared_mem[0][threadIdx.y]);
+    }
+}
+
+template<typename T>
+__global__ void expand_along_col(const T* src, T* dst, int row, int col, int size) {
+    int matrix_index = blockIdx.z;
+    if (matrix_index >= size) {return;}
+    int i = blockIdx.x * blockDim.x + threadIdx.x; 
+    int j = blockIdx.y * blockDim.y + threadIdx.y;
+    if (i >= row || j >= col) {return;}
+    dst[matrix_index * row * col + i * col + j] = src[matrix_index * col + j];
 }
 
 template<typename T>
@@ -193,6 +256,28 @@ __global__ void apply_sum(const T* src, int size, T* dst) {
     if (shared_mem_index == 0) {
         atomicAdd(dst, shared_mem[0]); 
     }
+}
+
+template<typename T>
+__global__ void apply_expand(const T* src, T* dst, int size) {
+    int index = blockIdx.x * blockDim.x + threadIdx.x; 
+    if (index >= size) {return;}
+    dst[index] = src[0];
+}
+
+template<typename T>
+__global__ void one_hot(const T* src, int size, T* dst, int classes, int* err_index) {
+    int index = blockIdx.x * blockDim.x + threadIdx.x; 
+    if (index >= size) {return;}
+    // 检查src的数据
+    int n = round(src[index]);
+    if (n < 0 || n >= classes) {*err_index = index; return;}
+    // 清空并赋值
+    for (int i = index * classes; i < index * classes + classes; i++) {
+        dst[i] = 0;
+    }
+    int dst_index = index * classes + n;
+    dst[dst_index] = 1;
 }
 
 // 三维，第一&二维是矩阵行列，第三维是矩阵个数。blockDim<TILE_DIM, TILE_DIM>(根据每一个block线程个数确认)，grimDim<row, col, matrix cnt>

@@ -1,5 +1,5 @@
 
-#include "auto_engine/algo/algo.h"
+#include "auto_engine/algo/opt.h"
 #include "auto_engine/base/basic_types.h"
 #include "auto_engine/cuda/info.h"
 #include "auto_engine/op/add_n.h"
@@ -242,14 +242,27 @@ TEST(Test_tensor, test) {
     ASSERT_TRUE(t6.inv() == base::Tensor<f64>(base::Shape({3, 3}), {-11.0/12, 1.0/3, 1.0/12, -1.0/6, 1.0/3, -1.0/6, 3.0/4, -1.0/3, 1.0/12}));
     base::Tensor<f64> t7(base::Shape({2, 3, 3}), {1, 2, 3, 4, 5, 6, 7, 2, 9, 0, 2, 3, 4, 5, 6, 7, 2, 9});
     ASSERT_TRUE(t7.inv() == base::Tensor<f64>(base::Shape({2, 3, 3}), {-11.0/12, 1.0/3, 1.0/12, -1.0/6, 1.0/3, -1.0/6, 3.0/4, -1.0/3, 1.0/12, -11.0/23, 4.0/23, 1.0/23, -2.0/23, 7.0/23, -4.0/23, 9.0/23, -14.0/69, 8.0/69}));
-    ASSERT_TRUE(t2.sum({0}) == base::Tensor<f64>(base::Shape({2, 3}), {2, 4, 6, 8, 10, 12}));
+    ASSERT_TRUE(t2.sumAlongRow() == base::Tensor<f64>(base::Shape({2, 2}), {6, 15, 6, 15}));
+    ASSERT_TRUE(t2.sumAlongRow().expandAlongRow(t2.shape()) == base::Tensor<f64>(base::Shape({2, 2, 3}), {6, 6, 6, 15, 15, 15, 6, 6, 6, 15, 15, 15}));
+    ASSERT_TRUE(t2.sumAlongCol() == base::Tensor<f64>(base::Shape({2, 3}), {5, 7, 9, 5, 7, 9}));
+    ASSERT_TRUE(t2.sumAlongCol().expandAlongCol(t2.shape()) == base::Tensor<f64>(base::Shape({2, 2, 3}), {5, 7, 9, 5, 7, 9, 5, 7, 9, 5, 7, 9}));
     ASSERT_TRUE(t2.sum() == base::Tensor<f64>(base::Shape({1}), 42));
+    ASSERT_TRUE(t2.sum().expand(t2.shape()) == base::Tensor<f64>(base::Shape({2, 2, 3}), {42, 42, 42, 42, 42, 42, 42, 42, 42, 42, 42, 42}));
 
     ASSERT_TRUE(t1 + 1 == base::Tensor<f64>(base::Shape({2, 3}), {2, 3, 4, 5, 6, 7}));
     ASSERT_TRUE(t1 - 1 == base::Tensor<f64>(base::Shape({2, 3}), {0, 1, 2, 3, 4, 5}));
     ASSERT_TRUE(t1 * 2 == base::Tensor<f64>(base::Shape({2, 3}), {2, 4, 6, 8, 10, 12}));
     ASSERT_TRUE(t1 / 2 == base::Tensor<f64>(base::Shape({2, 3}), {0.5, 1, 1.5, 2, 2.5, 3}));
     ASSERT_TRUE(t1.pow(2) == base::Tensor<f64>(base::Shape({2, 3}), {1, 4, 9, 16, 25, 36}));
+
+    base::Tensor<f64> t = base::Tensor<f64>(base::Shape({5}), {0, 1, 3, 2, 1});
+    ASSERT_TRUE(t.oneHot(4) == base::Tensor<f64>(base::Shape({5, 4}), {
+        1, 0, 0, 0,
+        0, 1, 0, 0,
+        0, 0, 0, 1,
+        0, 0, 1, 0,
+        0, 1, 0, 0
+    }));
 }
 
 TEST(Test_grad_descent, test) {
@@ -271,7 +284,7 @@ TEST(Test_grad_descent, test) {
         return item; 
     };
    
-    auto d1 = std::make_shared<algo::OptAlgo>(cost_func, std::vector<std::shared_ptr<op::Op<base::Tensor<f64>>>>{x});
+    auto d1 = std::make_shared<algo::Optimizer>(cost_func, std::vector<std::shared_ptr<op::Op<base::Tensor<f64>>>>{x});
     d1->algoHyperParams("grad_descent", {
         {"step", 1},
         {"step_decay_ratio", 0.8},
@@ -282,7 +295,7 @@ TEST(Test_grad_descent, test) {
     d1->run();
     std::cout << x->getOutput().toString() << std::endl;
 
-    auto d2 = std::make_shared<algo::OptAlgo>(cost_func, std::vector<std::shared_ptr<op::Op<base::Tensor<f64>>>>{x}, true);
+    auto d2 = std::make_shared<algo::Optimizer>(cost_func, std::vector<std::shared_ptr<op::Op<base::Tensor<f64>>>>{x}, true);
     d2->algoHyperParams("adam", {
         {"step", 0.001},
         // {"enable_yogi", 1}

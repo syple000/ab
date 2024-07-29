@@ -1,4 +1,4 @@
-#include "auto_engine/algo/algo.h"
+#include "auto_engine/algo/opt.h"
 #include "auto_engine/base/basic_types.h"
 #include "auto_engine/config/config.h"
 #include "auto_engine/op/op.h"
@@ -9,7 +9,7 @@
 
 namespace algo {
 
-void OptAlgo::gradDescent() {
+void Optimizer::gradDescent() {
     std::srand(std::time(0));
 
     // 读取超参

@@ -16,11 +16,11 @@ public:
     MulN(std::shared_ptr<Op<T>> arg1, std::shared_ptr<Op<T>> arg2): op::BOP<T>(arg1, arg2) {}
 
     T call(const T& arg1, const T& arg2) override {
-        return mulN(arg1, arg2);
+        return mul_n(arg1, arg2);
     }
     T deriv(u32 index, const T& grad, const T& arg1, const T& arg2) override {
         if (index == 0) {
-            return mulN(grad, arg2);
+            return mul_n(grad, arg2);
         } else {
             return reshape(sum(grad * arg1), shape<T, SHAPE>(arg2));
         }

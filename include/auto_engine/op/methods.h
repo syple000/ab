@@ -36,6 +36,18 @@ T sum(const T&);
 template<typename T, typename SHAPE>
 T expand(const T&, const SHAPE&);
 
+template<typename T>
+T sum_along_col(const T&);
+
+template<typename T, typename SHAPE>
+T expand_along_col(const T&, const SHAPE&);
+
+template<typename T>
+T sum_along_row(const T&);
+
+template<typename T, typename SHAPE>
+T expand_along_row(const T&, const SHAPE&);
+
 template<typename T, typename SHAPE>
 T reshape(const T&, const SHAPE&);
 
@@ -43,19 +55,19 @@ template<typename T, typename SHAPE>
 SHAPE shape(const T&);
 
 template<typename T>
-T addN(const T&, const T&);
+T add_n(const T&, const T&);
 
 template<typename T>
-T subN(const T&, const T&);
+T sub_n(const T&, const T&);
 
 template<typename T>
-T mulN(const T&, const T&);
+T mul_n(const T&, const T&);
 
 template<typename T>
-T divN(const T&, const T&);
+T div_n(const T&, const T&);
 
 template<typename T>
-T powN(const T&, const T&);
+T pow_n(const T&, const T&);
 
 }
 #endif

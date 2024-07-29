@@ -29,4 +29,5 @@ install(FILES
     share/auto_engine)
 
 add_executable(main main.cc)
+# target_compile_options(main PRIVATE -g)
 target_link_libraries(main include tensor op utils cuda algo)

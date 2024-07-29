@@ -99,7 +99,7 @@ base::Shape shape(const base::Tensor<f64>& t) {
 }
 
 template<>
-base::Tensor<f64> addN(const base::Tensor<f64>& t1, const base::Tensor<f64>& t2) {
+base::Tensor<f64> add_n(const base::Tensor<f64>& t1, const base::Tensor<f64>& t2) {
     if (t2.shape().tensorSize() != 1) {
         LOG(INFO) << fmt::format("[{}] t2 tensor size != 1", __FUNCTION__);
         if (ENABLE_TENSOR_EXCEPTION) {
@@ -111,7 +111,7 @@ base::Tensor<f64> addN(const base::Tensor<f64>& t1, const base::Tensor<f64>& t2)
 }
 
 template<>
-base::Tensor<f64> subN(const base::Tensor<f64>& t1, const base::Tensor<f64>& t2) {
+base::Tensor<f64> sub_n(const base::Tensor<f64>& t1, const base::Tensor<f64>& t2) {
     if (t2.shape().tensorSize() != 1) {
         LOG(INFO) << fmt::format("[{}] t2 tensor size != 1", __FUNCTION__);
         if (ENABLE_TENSOR_EXCEPTION) {
@@ -123,7 +123,7 @@ base::Tensor<f64> subN(const base::Tensor<f64>& t1, const base::Tensor<f64>& t2)
 }
 
 template<>
-base::Tensor<f64> mulN(const base::Tensor<f64>& t1, const base::Tensor<f64>& t2) {
+base::Tensor<f64> mul_n(const base::Tensor<f64>& t1, const base::Tensor<f64>& t2) {
     if (t2.shape().tensorSize() != 1) {
         LOG(INFO) << fmt::format("[{}] t2 tensor size != 1", __FUNCTION__);
         if (ENABLE_TENSOR_EXCEPTION) {
@@ -135,7 +135,7 @@ base::Tensor<f64> mulN(const base::Tensor<f64>& t1, const base::Tensor<f64>& t2)
 }
 
 template<>
-base::Tensor<f64> divN(const base::Tensor<f64>& t1, const base::Tensor<f64>& t2) {
+base::Tensor<f64> div_n(const base::Tensor<f64>& t1, const base::Tensor<f64>& t2) {
     if (t2.shape().tensorSize() != 1) {
         LOG(INFO) << fmt::format("[{}] t2 tensor size != 1", __FUNCTION__);
         if (ENABLE_TENSOR_EXCEPTION) {
@@ -147,7 +147,7 @@ base::Tensor<f64> divN(const base::Tensor<f64>& t1, const base::Tensor<f64>& t2)
 }
 
 template<>
-base::Tensor<f64> powN(const base::Tensor<f64>& t1, const base::Tensor<f64>& t2) {
+base::Tensor<f64> pow_n(const base::Tensor<f64>& t1, const base::Tensor<f64>& t2) {
     if (t2.shape().tensorSize() != 1) {
         LOG(INFO) << fmt::format("[{}] t2 tensor size != 1", __FUNCTION__);
         if (ENABLE_TENSOR_EXCEPTION) {

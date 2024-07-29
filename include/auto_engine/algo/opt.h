@@ -1,5 +1,5 @@
-#ifndef ALGO_ALGO_H
-#define ALGO_ALGO_H
+#ifndef ALGO_OPT_H
+#define ALGO_OPT_H
 
 #include "auto_engine/base/basic_types.h"
 #include "auto_engine/calc/calc.h"
@@ -15,9 +15,9 @@
 
 namespace algo {
 
-class OptAlgo {
+class Optimizer {
 public:
-    OptAlgo(std::function<std::shared_ptr<op::Op<base::Tensor<f64>>>(const std::vector<std::shared_ptr<op::Op<base::Tensor<f64>>>>&)> cost_func,
+    Optimizer(std::function<std::shared_ptr<op::Op<base::Tensor<f64>>>(const std::vector<std::shared_ptr<op::Op<base::Tensor<f64>>>>&)> cost_func,
         const std::vector<std::shared_ptr<op::Op<base::Tensor<f64>>>>& vars,
         bool fix_cost_graph = false) : _cost_func(cost_func), _vars(vars), _fix_cost_graph(fix_cost_graph) {}
     
@@ -179,7 +179,7 @@ private: // 终止检查
         } else {
             _insign_cost_diff_cnt = 0;
         }
-        if (round(getHyperParam("cost_diff_patient", 3)) <= _insign_cost_diff_cnt) {
+        if ((u32)round(getHyperParam("cost_diff_patient", 3)) <= _insign_cost_diff_cnt) {
             LOG(INFO) << "check cost diff, cnt reach patient";
             return false;
         }

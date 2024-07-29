@@ -24,7 +24,7 @@ std::tuple<dim3, dim3> get_apply_dims(int size) {
     return std::tuple(dim3(grid_dim), dim3(sqrt_tcnt_per_block())); 
 }
 
-std::tuple<dim3, dim3> get_transpose_dims(int row, int col, int size) {
+std::tuple<dim3, dim3> get_matrix_dims(int row, int col, int size) {
     int grid_dim_x = (row + sqrt_tcnt_per_block() - 1) / sqrt_tcnt_per_block();
     int grid_dim_y = (col + sqrt_tcnt_per_block() - 1) / sqrt_tcnt_per_block();
     int grid_dim_z = size;
@@ -91,18 +91,62 @@ DEFINE_APPLY_1E_1T(apply_mul, f64)
 DEFINE_APPLY_1E_1T(apply_div, f64)
 DEFINE_APPLY_1E_1T(apply_pow, f64)
 
-void apply_sum(const f64* src, int src_size, f64* dst, int dst_size) {
+void sum_along_row(const f64* srcs, f64* dsts, int row, int col, int size) {
     f64 *m1, *m2;
-    CHECK_MALLOC(Mem::malloc((void**)&m1, sizeof(f64) * src_size));
+    CHECK_MALLOC(Mem::malloc((void**)&m1, sizeof(f64) * row * col * size));
     utils::Defer free_m1([&m1]() {Mem::free(m1);});
-    CHECK_MALLOC(Mem::malloc((void**)&m2, sizeof(f64) * dst_size));
+    CHECK_MALLOC(Mem::malloc((void**)&m2, sizeof(f64) * row * size));
     utils::Defer free_m2([&m2]() {Mem::free(m2);});
 
-    CHECK_CUDA_CALL(cudaMemcpy(m1, src, sizeof(f64) * src_size, cudaMemcpyHostToDevice), "cuda_memcpy_h2d");
-    auto dims = get_apply_dims(dst_size);
-    cuda_kernel::apply_sum<<<std::get<0>(dims), std::get<1>(dims)>>>(m1, src_size, m2, dst_size);
-    CHECK_CUDA_CALL(cudaPeekAtLastError(), "apply_sum");
-    CHECK_CUDA_CALL(cudaMemcpy(dst, m2, sizeof(f64) * dst_size, cudaMemcpyDeviceToHost), "cuda_memcpy_d2h");
+    CHECK_CUDA_CALL(cudaMemcpy(m1, srcs, sizeof(f64) * row * col * size, cudaMemcpyHostToDevice), "cuda_memcpy_h2d");
+    CHECK_CUDA_CALL(cudaMemset(m2, 0, sizeof(f64) * row * size), "cuda_memset");
+    auto dims = get_matrix_dims(row, col, size);
+    cuda_kernel::sum_along_row<<<std::get<0>(dims), std::get<1>(dims)>>>(m1, m2, row, col, size);
+    CHECK_CUDA_CALL(cudaPeekAtLastError(), "sum_along_row");
+    CHECK_CUDA_CALL(cudaMemcpy(dsts, m2, sizeof(f64) * row * size, cudaMemcpyDeviceToHost), "cuda_memcpy_d2h");
+}
+
+void expand_along_row(const f64* src, f64* dst, int row, int col, int size) {
+    f64 *m1, *m2;
+    CHECK_MALLOC(Mem::malloc((void**)&m1, sizeof(f64) * row * size));
+    utils::Defer free_m1([&m1]() {Mem::free(m1);});
+    CHECK_MALLOC(Mem::malloc((void**)&m2, sizeof(f64) * row * col * size));
+    utils::Defer free_m2([&m2]() {Mem::free(m2);});
+
+    CHECK_CUDA_CALL(cudaMemcpy(m1, src, sizeof(f64) * row * size, cudaMemcpyHostToDevice), "cuda_memcpy_h2d");
+    auto dims = get_matrix_dims(row, col, size);
+    cuda_kernel::expand_along_row<<<std::get<0>(dims), std::get<1>(dims)>>>(m1, m2, row, col, size);
+    CHECK_CUDA_CALL(cudaPeekAtLastError(), "expand_along_row");
+    CHECK_CUDA_CALL(cudaMemcpy(dst, m2, sizeof(f64) * row * col * size, cudaMemcpyDeviceToHost), "cuda_memcpy_d2h");
+}
+
+void sum_along_col(const f64* srcs, f64* dsts, int row, int col, int size) {
+    f64 *m1, *m2;
+    CHECK_MALLOC(Mem::malloc((void**)&m1, sizeof(f64) * row * col * size));
+    utils::Defer free_m1([&m1]() {Mem::free(m1);});
+    CHECK_MALLOC(Mem::malloc((void**)&m2, sizeof(f64) * col * size));
+    utils::Defer free_m2([&m2]() {Mem::free(m2);});
+
+    CHECK_CUDA_CALL(cudaMemcpy(m1, srcs, sizeof(f64) * row * col * size, cudaMemcpyHostToDevice), "cuda_memcpy_h2d");
+    CHECK_CUDA_CALL(cudaMemset(m2, 0, sizeof(f64) * col * size), "cuda_memset");
+    auto dims = get_matrix_dims(row, col, size);
+    cuda_kernel::sum_along_col<<<std::get<0>(dims), std::get<1>(dims)>>>(m1, m2, row, col, size);
+    CHECK_CUDA_CALL(cudaPeekAtLastError(), "sum_along_col");
+    CHECK_CUDA_CALL(cudaMemcpy(dsts, m2, sizeof(f64) * col * size, cudaMemcpyDeviceToHost), "cuda_memcpy_d2h");
+}
+
+void expand_along_col(const f64* src, f64* dst, int row, int col, int size) {
+    f64 *m1, *m2;
+    CHECK_MALLOC(Mem::malloc((void**)&m1, sizeof(f64) * col * size));
+    utils::Defer free_m1([&m1]() {Mem::free(m1);});
+    CHECK_MALLOC(Mem::malloc((void**)&m2, sizeof(f64) * row * col * size));
+    utils::Defer free_m2([&m2]() {Mem::free(m2);});
+
+    CHECK_CUDA_CALL(cudaMemcpy(m1, src, sizeof(f64) * col * size, cudaMemcpyHostToDevice), "cuda_memcpy_h2d");
+    auto dims = get_matrix_dims(row, col, size);
+    cuda_kernel::expand_along_col<<<std::get<0>(dims), std::get<1>(dims)>>>(m1, m2, row, col, size);
+    CHECK_CUDA_CALL(cudaPeekAtLastError(), "expand_along_col");
+    CHECK_CUDA_CALL(cudaMemcpy(dst, m2, sizeof(f64) * row * col * size, cudaMemcpyDeviceToHost), "cuda_memcpy_d2h");
 }
 
 void apply_sum(const f64* src, int size, f64* dst) {
@@ -113,11 +157,49 @@ void apply_sum(const f64* src, int size, f64* dst) {
     utils::Defer free_m2([&m2]() {Mem::free(m2);});
 
     CHECK_CUDA_CALL(cudaMemcpy(m1, src, sizeof(f64) * size, cudaMemcpyHostToDevice), "cuda_memcpy_h2d");
-    CHECK_CUDA_CALL(cudaMemcpy(m2, dst, sizeof(f64), cudaMemcpyHostToDevice), "cuda_memcpy_h2d");
+    CHECK_CUDA_CALL(cudaMemset(m2, 0, sizeof(f64)), "cuda_memset");
     auto dims = get_apply_dims(size);
     cuda_kernel::apply_sum<<<std::get<0>(dims), std::get<1>(dims)>>>(m1, size, m2);
     CHECK_CUDA_CALL(cudaPeekAtLastError(), "apply_sum");
     CHECK_CUDA_CALL(cudaMemcpy(dst, m2, sizeof(f64), cudaMemcpyDeviceToHost), "cuda_memcpy_d2h");
+}
+
+void apply_expand(const f64* src, f64* dst, int size) {
+    f64 *m1, *m2;
+    CHECK_MALLOC(Mem::malloc((void**)&m1, sizeof(f64)));
+    utils::Defer free_m1([&m1]() {Mem::free(m1);});
+    CHECK_MALLOC(Mem::malloc((void**)&m2, sizeof(f64) * size));
+    utils::Defer free_m2([&m2]() {Mem::free(m2);});
+
+    CHECK_CUDA_CALL(cudaMemcpy(m1, src, sizeof(f64), cudaMemcpyHostToDevice), "cuda_memcpy_h2d");
+    auto dims = get_apply_dims(size);
+    cuda_kernel::apply_expand<<<std::get<0>(dims), std::get<1>(dims)>>>(m1, m2, size);
+    CHECK_CUDA_CALL(cudaPeekAtLastError(), "apply_expand");
+    CHECK_CUDA_CALL(cudaMemcpy(dst, m2, sizeof(f64) * size, cudaMemcpyDeviceToHost), "cuda_memcpy_d2h");
+}
+
+int ont_hot(const f64* src, int size, f64* dst, int classes) {
+    int err_index = -1;
+
+    f64 *m1, *m2; int *m3;
+    CHECK_MALLOC(Mem::malloc((void**)&m1, sizeof(f64) * size));
+    utils::Defer free_m1([&m1]() {Mem::free(m1);});
+    CHECK_MALLOC(Mem::malloc((void**)&m2, sizeof(f64) * size * classes));
+    utils::Defer free_m2([&m2]() {Mem::free(m2);});
+    CHECK_MALLOC(Mem::malloc((void**)&m3, sizeof(int)));
+    utils::Defer free_m3([&m3]() {Mem::free(m3);});
+
+    CHECK_CUDA_CALL(cudaMemcpy(m1, src, sizeof(f64) * size, cudaMemcpyHostToDevice), "cuda_memcpy_h2d");
+    CHECK_CUDA_CALL(cudaMemcpy(m3, &err_index, sizeof(int), cudaMemcpyHostToDevice), "cuda_memcpy_h2d");
+    auto dims = get_apply_dims(size);
+    cuda_kernel::one_hot<<<std::get<0>(dims), std::get<1>(dims)>>>(m1, size, m2, classes, m3);
+    CHECK_CUDA_CALL(cudaPeekAtLastError(), "one_hot");
+    CHECK_CUDA_CALL(cudaMemcpy(&err_index, m3, sizeof(int), cudaMemcpyDeviceToHost), "cuda_memcpy_d2h");
+    if (err_index >= 0) {
+        return err_index;
+    }
+    CHECK_CUDA_CALL(cudaMemcpy(dst, m2, sizeof(f64) * size * classes, cudaMemcpyDeviceToHost), "cuda_memcpy_d2h");
+    return err_index;
 }
 
 void transpose(f64* ms, int row, int col, int size) {
@@ -129,7 +211,7 @@ void transpose(f64* ms, int row, int col, int size) {
     utils::Defer free_m2([&m2]() {Mem::free(m2);});
 
     CHECK_CUDA_CALL(cudaMemcpy(m1, ms, sizeof(f64) * cnt, cudaMemcpyHostToDevice), "cuda_memcpy_h2d");
-    auto dims = get_transpose_dims(row, col, size);
+    auto dims = get_matrix_dims(row, col, size);
     cuda_kernel::transpose<<<std::get<0>(dims), std::get<1>(dims)>>>(m1, m2, row, col, size);
     CHECK_CUDA_CALL(cudaPeekAtLastError(), "transpose");
     CHECK_CUDA_CALL(cudaMemcpy(ms, m2, sizeof(f64) * cnt, cudaMemcpyDeviceToHost), "cuda_memcpy_d2h");
