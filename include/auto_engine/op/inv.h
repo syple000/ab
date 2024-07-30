@@ -21,7 +21,7 @@ public:
     }
 
     T deriv(u32 _, const T& grad, const T& arg) override {
-        auto item1 = transpose(this->getOutput());
+        auto item1 = transpose(this->getOutput(), -2, -1);
         auto item2 = mmul(item1, grad);
         auto item3 = mmul(item2, item1);
         return zero(arg) - item3; 
@@ -29,7 +29,7 @@ public:
 
     std::shared_ptr<Op<T>> derivFunc(u32 _, std::shared_ptr<Op<T>> grad, std::shared_ptr<Op<T>> arg) override {
         auto item1 = std::make_shared<Inv<T>>(arg);
-        auto item2 = std::make_shared<Transpose<T>>(item1);
+        auto item2 = std::make_shared<Transpose<T>>(item1, -2, -1);
         auto item3 = std::make_shared<Mmul<T>>(std::make_shared<Mmul<T>>(item2, grad), item2);
         return std::make_shared<Sub<T>>(std::make_shared<DataOp<T>>(zero(arg->template getOutput())), item3);
     }

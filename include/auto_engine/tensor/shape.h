@@ -23,13 +23,13 @@ public:
 
     u32 tensorSize() const {return _dims.size() > 0 ? _counts[0] : 0;}
     u32 subTensorSize(u32 index) const {return _dims.size() > index ? _counts[index] : 0;}
-    const std::vector<u32>& getDims() {return _dims;}
+    const std::vector<u32>& getDims() const {return _dims;}
     u32 getDim(u32 index) const {return index < _dims.size() ? _dims[index] : 0;}
     u32 dimCnt() const {return _dims.size();}
 
     Shape sumAlongRow() const;
     Shape sumAlongCol() const;
-    Shape transpose() const;
+    Shape transpose(int d1, int d2) const;
     Shape mmul(const Shape&) const;
 private:
     std::vector<u32> _dims;

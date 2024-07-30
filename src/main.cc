@@ -202,7 +202,7 @@ TEST(Test_grad_tensor2, test) {
     auto x2 = std::make_shared<op::Reshape<base::Tensor<f64>, base::Shape>>(x2_, base::Shape({2, 2, 3}));
     auto ct = std::make_shared<op::DataOp<base::Tensor<f64>>>(t3);
     auto item1 = std::make_shared<op::Mmul<base::Tensor<f64>>>(x1, x2);
-    auto item2 = std::make_shared<op::Transpose<base::Tensor<f64>>>(item1);
+    auto item2 = std::make_shared<op::Transpose<base::Tensor<f64>>>(item1, -2, -1);
     auto item3 = std::make_shared<op::Mmul<base::Tensor<f64>>>(item2, x2);
     auto item = std::make_shared<op::Sum<base::Tensor<f64>, base::Shape>>(item3);
     auto c = calc::Calculator<base::Tensor<f64>>(item);
@@ -229,9 +229,10 @@ TEST(Test_grad_tensor2, test) {
 
 TEST(Test_tensor, test) {
     base::Tensor<f64> t1(base::Shape({2, 3}), {1, 2, 3, 4, 5, 6});
-    ASSERT_TRUE(t1.transpose() == base::Tensor<f64>(base::Shape({3, 2}), {1, 4, 2, 5, 3, 6}));
+    ASSERT_TRUE(t1.transpose(-2, -1) == base::Tensor<f64>(base::Shape({3, 2}), {1, 4, 2, 5, 3, 6}));
     base::Tensor<f64> t2(base::Shape({2, 2, 3}), {1, 2, 3, 4, 5, 6, 1, 2, 3, 4, 5, 6});
-    ASSERT_TRUE(t2.transpose() == base::Tensor<f64>(base::Shape({2, 3, 2}), {1, 4, 2, 5, 3, 6, 1, 4, 2, 5, 3, 6}));
+    ASSERT_TRUE(t2.transpose(-2, -1) == base::Tensor<f64>(base::Shape({2, 3, 2}), {1, 4, 2, 5, 3, 6, 1, 4, 2, 5, 3, 6}));
+    ASSERT_TRUE(t2.transpose(0, 1) == base::Tensor<f64>(base::Shape({2, 2, 3}), {1, 2, 3, 1, 2, 3, 4, 5, 6, 4, 5, 6}));
     base::Tensor<f64> t3(base::Shape({3, 2}), {1, 2, 3, 4, 5, 6});
     ASSERT_TRUE(t1.mmul(t3) == base::Tensor<f64>(base::Shape({2, 2}), {22, 28, 49, 64}));
     base::Tensor<f64> t4(base::Shape({2, 3, 2}), {1, 2, 3, 4, 5, 6, 1, 2, 3, 4, 5, 6});

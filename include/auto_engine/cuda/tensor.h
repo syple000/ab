@@ -2,6 +2,7 @@
 #define CUDA_TENSOR_H
 
 #include "auto_engine/base/basic_types.h"
+#include <vector>
 
 namespace cuda {
 
@@ -28,6 +29,7 @@ void sum_along_row(const f64* srcs, f64* dsts, int row, int col, int size);
 void expand_along_row(const f64* src, f64* dst, int row, int col, int size);
 void sum_along_col(const f64* srcs, f64* dsts, int row, int col, int size);
 void expand_along_col(const f64* src, f64* dst, int row, int col, int size);
+void transpose(f64* data, const std::vector<u32>& dims, u32 d1, u32 d2);
 void transpose(f64* ms, int row, int col, int size);
 void mmul(int m, int n, int k, const f64* data1, const f64* data2, f64* dst, int size);
 bool inv(int m, f64* data, int size);

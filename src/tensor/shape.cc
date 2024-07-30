@@ -2,6 +2,7 @@
 #include "auto_engine/base/exit_code.h"
 #include "glog/logging.h"
 #include <cstdlib>
+#include <fmt/core.h>
 #include <sstream>
 #include <string>
 #include <utility>
@@ -127,16 +128,13 @@ Shape Shape::sumAlongCol() const {
     return Shape(dims);
 }
 
-Shape Shape::transpose() const {
-    if (_dims.size() < 2) {
-        LOG(ERROR) << "transpose non-matrix";
+Shape Shape::transpose(int d1, int d2) const {
+    if (d1 < 0 || d2 < 0 || d1 == d2 || d1 >= _dims.size() || d2 >= _dims.size()) {
+        LOG(ERROR) << fmt::format("transpose d1/d2 invalid: {}, {}. shape dim cnt: {}", d1, d2, _dims.size());
         return Shape();
     }
-    auto row_cnt = _dims[_dims.size() - 2];
-    auto col_cnt = _dims[_dims.size() - 1];
     auto dims = _dims;
-    dims[_dims.size() - 2] = col_cnt;
-    dims[_dims.size() - 1] = row_cnt;
+    std::swap(dims[d1], dims[d2]);
     return Shape(dims);
 }
 

@@ -198,9 +198,9 @@ PYBIND11_MODULE(ae, m) {
         .def("mm", [](std::shared_ptr<op::Op<base::Tensor<f64>>> op1, std::shared_ptr<op::Op<base::Tensor<f64>>> op2) -> std::shared_ptr<op::Op<base::Tensor<f64>>> {
             return std::make_shared<op::Mmul<base::Tensor<f64>>>(op1, op2);
         })
-        .def("transpose", [](std::shared_ptr<op::Op<base::Tensor<f64>>> op) -> std::shared_ptr<op::Op<base::Tensor<f64>>> {
-            return std::make_shared<op::Transpose<base::Tensor<f64>>>(op);
-        })
+        .def("transpose", [](std::shared_ptr<op::Op<base::Tensor<f64>>> op, int d1, int d2) -> std::shared_ptr<op::Op<base::Tensor<f64>>> {
+            return std::make_shared<op::Transpose<base::Tensor<f64>>>(op, d1, d2);
+        }, py::arg("d1")=-2, py::arg("d2")=-1)
         .def("inverse", [](std::shared_ptr<op::Op<base::Tensor<f64>>> op) -> std::shared_ptr<op::Op<base::Tensor<f64>>> {
             return std::make_shared<op::Inv<base::Tensor<f64>>>(op);
         })

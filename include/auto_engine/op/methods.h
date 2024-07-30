@@ -22,7 +22,7 @@ template<typename T>
 T log(const T&);
 
 template<typename T>
-T transpose(const T&);
+T transpose(const T&, int, int);
 
 template<typename T>
 T mmul(const T&, const T&);

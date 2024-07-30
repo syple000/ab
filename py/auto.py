@@ -86,7 +86,22 @@ def ft3():
     xgrad_x1_2rd = torch.autograd.grad(outputs=xgrad[0].sum(), inputs=[x1], create_graph=True)
     print("xgrad_x1_2rd: {}".format(xgrad_x1_2rd))
 
+def ft4():
+    x1 = torch.tensor([
+        [
+            [1, 2, 3],
+            [4, 5, 6]
+        ],
+        [
+            [1, 2, 3],
+            [4, 5, 6]
+        ]
+    ])
+    print("transpose 0, 1: {}".format(x1.transpose(0, 1)))
+    print("transpose 1, 2: {}".format(x1.transpose(1, 2)))
+
 if __name__ == "__main__":
     # ft()
     # ft2()
-    ft3()
+    # ft3()
+    ft4()

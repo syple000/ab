@@ -1,6 +1,7 @@
 #ifndef CUDA_KERNEL_FUNC_H
 #define CUDA_KERNEL_FUNC_H
 
+#include "auto_engine/base/basic_types.h"
 #include "auto_engine/base/exit_code.h"
 #include "auto_engine/cuda/info.h"
 #include "glog/logging.h"
@@ -28,22 +29,22 @@ namespace cuda_kernel {
 // apply仅一维dim，blockDim<32-more> blockDim<(size + 31)/32>
 
 template<typename T>
-__device__ void apply(T* data1, const T* data2, int size, T f(const T&, const T&)) {
-    int index = blockIdx.x * blockDim.x + threadIdx.x; 
+__device__ void apply(T* data1, const T* data2, u32 size, T f(const T&, const T&)) {
+    u32 index = blockIdx.x * blockDim.x + threadIdx.x; 
     if (index >= size) {return;}
     data1[index] = f(data1[index], data2[index]);
 } 
 
 template<typename T>
-__device__ void apply(T* data, T n, int size, T f(const T&, const T&)) {
-    int index = blockIdx.x * blockDim.x + threadIdx.x; 
+__device__ void apply(T* data, T n, u32 size, T f(const T&, const T&)) {
+    u32 index = blockIdx.x * blockDim.x + threadIdx.x; 
     if (index >= size) {return;}
     data[index] = f(data[index], n);
 }
 
 template<typename T>
-__device__ void apply(T* data, int size, T f(const T&)) {
-    int index = blockIdx.x * blockDim.x + threadIdx.x; 
+__device__ void apply(T* data, u32 size, T f(const T&)) {
+    u32 index = blockIdx.x * blockDim.x + threadIdx.x; 
     if (index >= size) {return;}
     data[index] = f(data[index]);
 }
@@ -108,61 +109,128 @@ inline __device__ T pow(const T& n1, const T& n2) {
 }
 
 template<typename T>
-__global__ void apply_sin(T* data, int size) {return apply<T>(data, size, sin);}
+__global__ void apply_sin(T* data, u32 size) {return apply<T>(data, size, sin);}
 
 template<typename T>
-__global__ void apply_cos(T* data, int size) {return apply<T>(data, size, cos);}
+__global__ void apply_cos(T* data, u32 size) {return apply<T>(data, size, cos);}
 
 template<typename T>
-__global__ void apply_log(T* data, int size) {return apply<T>(data, size, log);}
+__global__ void apply_log(T* data, u32 size) {return apply<T>(data, size, log);}
 
 template<typename T>
-__global__ void apply_add(T* data1, const T* data2, int size) {return apply<T>(data1, data2, size, add);}
+__global__ void apply_add(T* data1, const T* data2, u32 size) {return apply<T>(data1, data2, size, add);}
 
 template<typename T>
-__global__ void apply_sub(T* data1, const T* data2, int size) {return apply<T>(data1, data2, size, sub);}
+__global__ void apply_sub(T* data1, const T* data2, u32 size) {return apply<T>(data1, data2, size, sub);}
 
 template<typename T>
-__global__ void apply_mul(T* data1, const T* data2, int size) {return apply<T>(data1, data2, size, mul);}
+__global__ void apply_mul(T* data1, const T* data2, u32 size) {return apply<T>(data1, data2, size, mul);}
 
 template<typename T>
-__global__ void apply_div(T* data1, const T* data2, int size) {return apply<T>(data1, data2, size, div);}
+__global__ void apply_div(T* data1, const T* data2, u32 size) {return apply<T>(data1, data2, size, div);}
 
 template<typename T>
-__global__ void apply_add(T* data, T n, int size) {return apply<T>(data, n, size, add);}
+__global__ void apply_add(T* data, T n, u32 size) {return apply<T>(data, n, size, add);}
 
 template<typename T>
-__global__ void apply_sub(T* data, T n, int size) {return apply<T>(data, n, size, sub);}
+__global__ void apply_sub(T* data, T n, u32 size) {return apply<T>(data, n, size, sub);}
 
 template<typename T>
-__global__ void apply_mul(T* data, T n, int size) {return apply<T>(data, n, size, mul);}
+__global__ void apply_mul(T* data, T n, u32 size) {return apply<T>(data, n, size, mul);}
 
 template<typename T>
-__global__ void apply_div(T* data, T n, int size) {return apply<T>(data, n, size, div);}
+__global__ void apply_div(T* data, T n, u32 size) {return apply<T>(data, n, size, div);}
 
 template<typename T>
-__global__ void apply_neg(T* data, int size) {return apply<T>(data, size, neg);}
+__global__ void apply_neg(T* data, u32 size) {return apply<T>(data, size, neg);}
 
 template<typename T>
-__global__ void apply_sign(T* data, int size) {return apply<T>(data, size, sign);}
+__global__ void apply_sign(T* data, u32 size) {return apply<T>(data, size, sign);}
 
 template<typename T>
-__global__ void apply_abs(T* data, int size) {return apply<T>(data, size, abs);}
+__global__ void apply_abs(T* data, u32 size) {return apply<T>(data, size, abs);}
 
 template<typename T>
-__global__ void apply_pow(T* data1, const T* data2, int size) {return apply<T>(data1, data2, size, pow);}
+__global__ void apply_pow(T* data1, const T* data2, u32 size) {return apply<T>(data1, data2, size, pow);}
 
 template<typename T>
-__global__ void apply_pow(T* data, T n, int size) {return apply<T>(data, n, size, pow);}
+__global__ void apply_pow(T* data, T n, u32 size) {return apply<T>(data, n, size, pow);}
+
+
+/* 重构实现，支持任意tensor维度进行加和&转置 */
 
 template<typename T>
-__global__ void sum_along_row(const T* srcs, T* dsts, int row, int col, int size) {
+__global__ void transpose(const T* src, T* dst, const u32* dims, const u32* strides, const u32* transpose_strides, u32 dim_cnt, u32 d) {
     __shared__ T shared_mem[cuda::sqrt_tcnt_per_block()][cuda::sqrt_tcnt_per_block() + 1];
 
-    int matrix_index = blockIdx.z;
+    // 以2*2*3张量,d=1为例，strides=[6, 3, 1], uindex最大取2*2，lindex最大取3
+    u32 lindex = threadIdx.x + blockDim.x * blockIdx.x;
+    u32 uindex = threadIdx.y + blockDim.y * blockIdx.y;
+    if (lindex >= strides[d]) {return;}
+    if (uindex >= dims[0] * strides[0] / strides[d]) {return;}
+
+    // 计算维度下标
+    u32 index = 0;
+    u32 output_index = 0;
+    for (u32 i = 0; i < d; i++) {
+        auto stride = strides[i] / strides[d];
+        u32 dim_index = uindex / stride;
+        uindex = uindex % stride;
+        index += dim_index * strides[i];
+        output_index += dim_index * transpose_strides[i];
+    }
+    for (u32 i = d + 1; i < dim_cnt - 1; i++) {
+        u32 dim_index = lindex / strides[i];
+        lindex = lindex % strides[i];
+        index += dim_index * strides[i];
+        output_index += dim_index * transpose_strides[i];
+    }
+    index += lindex * strides[dim_cnt - 1];
+    output_index += uindex * transpose_strides[dim_cnt - 1];
+    index += uindex * strides[d];
+    output_index += lindex * transpose_strides[d];
+
+    // 赋值给共享内存
+    shared_mem[threadIdx.x][threadIdx.y] = src[index];
+
+    __syncthreads();
+
+    dst[output_index] = shared_mem[threadIdx.x][threadIdx.y];
+}
+
+template<typename T>
+__global__ void transpose(const T* src, T* dst, const u32* dims, const u32* strides, const u32* transpose_strides, u32 dim_cnt, u32 d1, u32 d2) {
+    u32 index = threadIdx.x + blockDim.x * blockIdx.x;
+    if (index >= strides[0] * dims[0]) {return;}
+
+    u32 rindex = index;
+    u32 output_index = 0;
+    u32 d1index, d2index;
+    for (u32 i = 0; i < dim_cnt; i++) {
+        u32 dim_index = rindex / strides[i];
+        if (i == d1) {
+            d1index = dim_index;
+        } else if (i == d2) {
+            d2index = dim_index;
+        } else {
+            output_index += dim_index * transpose_strides[i];
+        }
+        rindex = rindex % strides[i];
+    }
+    output_index += d1index * transpose_strides[d2];
+    output_index += d2index * transpose_strides[d1];
+
+    dst[output_index] = src[index];
+}
+
+template<typename T>
+__global__ void sum_along_row(const T* srcs, T* dsts, u32 row, u32 col, u32 size) {
+    __shared__ T shared_mem[cuda::sqrt_tcnt_per_block()][cuda::sqrt_tcnt_per_block() + 1];
+
+    u32 matrix_index = blockIdx.z;
     if (matrix_index >= size) {return;}
-    int i = blockIdx.x * blockDim.x + threadIdx.x; 
-    int j = blockIdx.y * blockDim.y + threadIdx.y;
+    u32 i = blockIdx.x * blockDim.x + threadIdx.x; 
+    u32 j = blockIdx.y * blockDim.y + threadIdx.y;
     if (i >= row || j >= col) {
         shared_mem[threadIdx.x][threadIdx.y] = 0;
     } else {
@@ -171,7 +239,7 @@ __global__ void sum_along_row(const T* srcs, T* dsts, int row, int col, int size
 
     __syncthreads();
 
-    for (int i = blockDim.y / 2; i > 0; i = i >> 1) {
+    for (u32 i = blockDim.y / 2; i > 0; i = i >> 1) {
         if (threadIdx.y < i) {
             shared_mem[threadIdx.x][threadIdx.y] += shared_mem[threadIdx.x][threadIdx.y + i];
         }
@@ -184,23 +252,23 @@ __global__ void sum_along_row(const T* srcs, T* dsts, int row, int col, int size
 }
 
 template<typename T>
-__global__ void expand_along_row(const T* src, T* dst, int row, int col, int size) {
-    int matrix_index = blockIdx.z;
+__global__ void expand_along_row(const T* src, T* dst, u32 row, u32 col, u32 size) {
+    u32 matrix_index = blockIdx.z;
     if (matrix_index >= size) {return;}
-    int i = blockIdx.x * blockDim.x + threadIdx.x; 
-    int j = blockIdx.y * blockDim.y + threadIdx.y;
+    u32 i = blockIdx.x * blockDim.x + threadIdx.x; 
+    u32 j = blockIdx.y * blockDim.y + threadIdx.y;
     if (i >= row || j >= col) {return;}
     dst[matrix_index * row * col + i * col + j] = src[matrix_index * row + i];
 }
 
 template<typename T>
-__global__ void sum_along_col(const T* srcs, T* dsts, int row, int col, int size) {
+__global__ void sum_along_col(const T* srcs, T* dsts, u32 row, u32 col, u32 size) {
     __shared__ T shared_mem[cuda::sqrt_tcnt_per_block()][cuda::sqrt_tcnt_per_block() + 1];
 
-    int matrix_index = blockIdx.z;
+    u32 matrix_index = blockIdx.z;
     if (matrix_index >= size) {return;}
-    int i = blockIdx.x * blockDim.x + threadIdx.x; 
-    int j = blockIdx.y * blockDim.y + threadIdx.y;
+    u32 i = blockIdx.x * blockDim.x + threadIdx.x; 
+    u32 j = blockIdx.y * blockDim.y + threadIdx.y;
     if (i >= row || j >= col) {
         shared_mem[threadIdx.x][threadIdx.y] = 0;
     } else {
@@ -209,7 +277,7 @@ __global__ void sum_along_col(const T* srcs, T* dsts, int row, int col, int size
 
     __syncthreads();
 
-    for (int i = blockDim.x / 2; i > 0; i = i >> 1) {
+    for (u32 i = blockDim.x / 2; i > 0; i = i >> 1) {
         if (threadIdx.x < i) {
             shared_mem[threadIdx.x][threadIdx.y] += shared_mem[threadIdx.x + i][threadIdx.y];
         }
@@ -222,21 +290,21 @@ __global__ void sum_along_col(const T* srcs, T* dsts, int row, int col, int size
 }
 
 template<typename T>
-__global__ void expand_along_col(const T* src, T* dst, int row, int col, int size) {
-    int matrix_index = blockIdx.z;
+__global__ void expand_along_col(const T* src, T* dst, u32 row, u32 col, u32 size) {
+    u32 matrix_index = blockIdx.z;
     if (matrix_index >= size) {return;}
-    int i = blockIdx.x * blockDim.x + threadIdx.x; 
-    int j = blockIdx.y * blockDim.y + threadIdx.y;
+    u32 i = blockIdx.x * blockDim.x + threadIdx.x; 
+    u32 j = blockIdx.y * blockDim.y + threadIdx.y;
     if (i >= row || j >= col) {return;}
     dst[matrix_index * row * col + i * col + j] = src[matrix_index * col + j];
 }
 
 template<typename T>
-__global__ void apply_sum(const T* src, int size, T* dst) {
+__global__ void apply_sum(const T* src, u32 size, T* dst) {
     __shared__ T shared_mem[cuda::sqrt_tcnt_per_block()];
     
-    int index = blockIdx.x * blockDim.x + threadIdx.x; 
-    int shared_mem_index = threadIdx.x;
+    u32 index = blockIdx.x * blockDim.x + threadIdx.x; 
+    u32 shared_mem_index = threadIdx.x;
 
     if (index < size) {
         shared_mem[shared_mem_index] = src[index];
@@ -246,7 +314,7 @@ __global__ void apply_sum(const T* src, int size, T* dst) {
 
     __syncthreads();
 
-    for (int i = blockDim.x / 2; i > 0; i = i >> 1) {
+    for (u32 i = blockDim.x / 2; i > 0; i = i >> 1) {
         if (shared_mem_index < i) {
             shared_mem[shared_mem_index] += shared_mem[shared_mem_index + i];
         }
@@ -259,36 +327,36 @@ __global__ void apply_sum(const T* src, int size, T* dst) {
 }
 
 template<typename T>
-__global__ void apply_expand(const T* src, T* dst, int size) {
-    int index = blockIdx.x * blockDim.x + threadIdx.x; 
+__global__ void apply_expand(const T* src, T* dst, u32 size) {
+    u32 index = blockIdx.x * blockDim.x + threadIdx.x; 
     if (index >= size) {return;}
     dst[index] = src[0];
 }
 
 template<typename T>
-__global__ void one_hot(const T* src, int size, T* dst, int classes, int* err_index) {
-    int index = blockIdx.x * blockDim.x + threadIdx.x; 
+__global__ void one_hot(const T* src, u32 size, T* dst, u32 classes, u32* err_index) {
+    u32 index = blockIdx.x * blockDim.x + threadIdx.x; 
     if (index >= size) {return;}
     // 检查src的数据
-    int n = round(src[index]);
-    if (n < 0 || n >= classes) {*err_index = index; return;}
+    auto n = round(src[index]);
+    if ((u32)n >= classes || n < 0) {*err_index = index; return;}
     // 清空并赋值
-    for (int i = index * classes; i < index * classes + classes; i++) {
+    for (u32 i = index * classes; i < index * classes + classes; i++) {
         dst[i] = 0;
     }
-    int dst_index = index * classes + n;
+    u32 dst_index = index * classes + (u32)n;
     dst[dst_index] = 1;
 }
 
 // 三维，第一&二维是矩阵行列，第三维是矩阵个数。blockDim<TILE_DIM, TILE_DIM>(根据每一个block线程个数确认)，grimDim<row, col, matrix cnt>
 template<typename T>
-__global__ void transpose(const T* srcs, T* dsts, int row, int col, int size) {
+__global__ void transpose(const T* srcs, T* dsts, u32 row, u32 col, u32 size) {
     __shared__ T shared_mem[cuda::sqrt_tcnt_per_block()][cuda::sqrt_tcnt_per_block() + 1]; // 一个线程块内的共享内存，对应threadIdx.x * threadIdx.y * threadIdx.z
 
-    int matrix_index = blockIdx.z;
+    u32 matrix_index = blockIdx.z;
     if (matrix_index >= size) {return;}
-    int i = blockIdx.x * blockDim.x + threadIdx.x;
-    int j = blockIdx.y * blockDim.y + threadIdx.y;
+    u32 i = blockIdx.x * blockDim.x + threadIdx.x;
+    u32 j = blockIdx.y * blockDim.y + threadIdx.y;
     if (i >= row || j >= col) {return;}
     shared_mem[threadIdx.x][threadIdx.y] = srcs[matrix_index * row * col + i * col + j];
 

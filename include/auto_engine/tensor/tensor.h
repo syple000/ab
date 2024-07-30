@@ -20,6 +20,7 @@
 #include <stdexcept>
 #include <string>
 #include <type_traits>
+#include <utility>
 #include <vector>
 
 namespace base {
@@ -123,7 +124,7 @@ public:
     Tensor<T> pow(const Tensor<T>&) const;
     Tensor<T> pow(T) const;
 
-    Tensor<T> transpose() const;
+    Tensor<T> transpose(int d1, int d2) const;
     Tensor<T> mmul(const Tensor<T>&) const;
     Tensor<T> inv() const;
 
@@ -454,28 +455,39 @@ Tensor<T> Tensor<T>::cos() const {
 }
 
 template<typename T>
-Tensor<T> Tensor<T>::transpose() const {
-    auto shape = _shape.transpose();
+Tensor<T> Tensor<T>::transpose(int d1, int d2) const {
+    if (d1 < 0) {d1 = _shape.dimCnt() + d1;}
+    if (d2 < 0) {d2 = _shape.dimCnt() + d2;}
+
+    auto shape = _shape.transpose(d1, d2);
     if (shape.tensorSize() <= 0) {
         if (ENABLE_TENSOR_EXCEPTION) {
             throw std::runtime_error(fmt::format("tensor transpose fail: {}", _shape.toString()));
         }
         return Tensor();
     }
+
     auto rt = Tensor(shape, _data); // 仅对shape进行转置，数据还未转置
 
-    auto matrix_size = _shape.subTensorSize(_shape.dimCnt()-2);
-    auto row_cnt = _shape.getDim(_shape.dimCnt() - 2);
-    auto col_cnt = _shape.getDim(_shape.dimCnt() - 1);
     if (std::is_same<T, f64>::value && ENABLE_CUDA) {
-        cuda::transpose(rt._data.data(), row_cnt, col_cnt, _shape.tensorSize()/matrix_size);
+        cuda::transpose(rt._data.data(), _shape.getDims(), d1, d2);
     } else {
-        u32 index = 0;
-        while (index * matrix_size < _data.size()) {
-            auto m = Eigen::Map<const Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>(_data.data() + index * matrix_size, row_cnt, col_cnt);
-            auto tm = m.transpose();
-            Eigen::Map<Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>(rt._data.data() + index * matrix_size, col_cnt, row_cnt) = tm;
-            index += 1;
+        std::vector<u32> index(_shape.dimCnt());
+        for (u32 i = 0; i < _shape.tensorSize(); i++) { 
+            u32 ri = i;
+            for (int j = 0; j < _shape.dimCnt() - 1; j++) {
+                index[j] = ri / _shape.subTensorSize(j+1);
+                ri = ri % _shape.subTensorSize(j+1);
+            }
+            index[_shape.dimCnt() - 1] = ri;
+
+            std::swap(index[d1], index[d2]);
+            u32 oi = 0;
+            for (int i = 0; i < shape.dimCnt() - 1; i++) {
+                oi += index[i] * shape.subTensorSize(i + 1);
+            }
+            oi += index[shape.dimCnt() - 1];
+            rt._data[oi] = _data[i];
         }
     }
     return std::move(rt);

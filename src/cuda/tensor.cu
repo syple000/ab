@@ -6,7 +6,10 @@
 #include "auto_engine/utils/defer.h"
 #include "cublas_v2.h"
 #include <cstdlib>
+#include <fmt/core.h>
 #include <tuple>
+#include <utility>
+#include <vector>
 
 namespace cuda {
 
@@ -181,7 +184,7 @@ void apply_expand(const f64* src, f64* dst, int size) {
 int ont_hot(const f64* src, int size, f64* dst, int classes) {
     int err_index = -1;
 
-    f64 *m1, *m2; int *m3;
+    f64 *m1, *m2; u32 *m3;
     CHECK_MALLOC(Mem::malloc((void**)&m1, sizeof(f64) * size));
     utils::Defer free_m1([&m1]() {Mem::free(m1);});
     CHECK_MALLOC(Mem::malloc((void**)&m2, sizeof(f64) * size * classes));
@@ -200,6 +203,47 @@ int ont_hot(const f64* src, int size, f64* dst, int classes) {
     }
     CHECK_CUDA_CALL(cudaMemcpy(dst, m2, sizeof(f64) * size * classes, cudaMemcpyDeviceToHost), "cuda_memcpy_d2h");
     return err_index;
+}
+
+void transpose(f64* data, const std::vector<u32>& dims, u32 d1, u32 d2) {
+    if (d1 > d2) {std::swap(d1, d2);}
+
+    auto transpose_dims = dims;
+    std::swap(transpose_dims[d1], transpose_dims[d2]);
+
+    std::vector<u32> strides(dims.size()), transpose_strides(transpose_dims.size());
+    strides[strides.size() - 1] = 1; transpose_strides[transpose_strides.size() - 1] = 1;
+    for (int i = dims.size() - 2; i >= 0; i--) {
+        strides[i] = strides[i + 1] * dims[i + 1];
+        transpose_strides[i] = transpose_strides[i + 1] * transpose_dims[i + 1];
+    }
+
+    f64 *msrc, *mdst;
+    u32 *mds;
+    CHECK_MALLOC(Mem::malloc((void**)&msrc, sizeof(f64) * dims[0] * strides[0]));
+    utils::Defer free_msrc([&msrc]() {Mem::free(msrc);});
+    CHECK_MALLOC(Mem::malloc((void**)&mdst, sizeof(f64) * transpose_dims[0] * transpose_strides[0]));
+    utils::Defer free_mdst([&mdst]() {Mem::free(mdst);});
+    CHECK_MALLOC(Mem::malloc((void**)&mds, sizeof(u32) * dims.size() * 3));
+    utils::Defer free_mds([&mds]() {Mem::free(mds);});
+
+    CHECK_CUDA_CALL(cudaMemcpy(msrc, data, sizeof(f64) * dims[0] * strides[0], cudaMemcpyHostToDevice), "cuda_memcpy_h2d");
+    CHECK_CUDA_CALL(cudaMemcpy(mds, dims.data(), sizeof(u32) * dims.size(), cudaMemcpyHostToDevice), "cuda_memcpy_h2d");
+    CHECK_CUDA_CALL(cudaMemcpy(mds + dims.size(), strides.data(), sizeof(u32) * dims.size(), cudaMemcpyHostToDevice), "cuda_memcpy_h2d");
+    CHECK_CUDA_CALL(cudaMemcpy(mds + dims.size() * 2, transpose_strides.data(), sizeof(u32) * dims.size(), cudaMemcpyHostToDevice), "cuda_memcpy_h2d");
+
+    if (d2 == dims.size() - 1) {
+        u32 gridy_dim = (dims[0] * strides[0] / strides[d1] + sqrt_tcnt_per_block() - 1) / sqrt_tcnt_per_block();
+        u32 gridx_dim = (strides[d1] + sqrt_tcnt_per_block() - 1) / sqrt_tcnt_per_block();
+        cuda_kernel::transpose<<<dim3(gridx_dim, gridy_dim), dim3(sqrt_tcnt_per_block(), sqrt_tcnt_per_block())>>>(msrc, mdst, mds, mds + dims.size(), mds + dims.size() * 2, dims.size(), d1);
+        CHECK_CUDA_CALL(cudaPeekAtLastError(), "tranpose1");
+    } else {
+        u32 grid_dim = (dims[0] * strides[0] + sqrt_tcnt_per_block() - 1) / sqrt_tcnt_per_block();
+        cuda_kernel::transpose<<<dim3(grid_dim), dim3(sqrt_tcnt_per_block())>>>(msrc, mdst, mds, mds + dims.size(), mds + dims.size() * 2, dims.size(), d1, d2);
+        CHECK_CUDA_CALL(cudaPeekAtLastError(), "tranpose2");
+    }
+
+    CHECK_CUDA_CALL(cudaMemcpy(data, mdst, sizeof(f64) * dims[0] * strides[0], cudaMemcpyDeviceToHost), "cuda_memcpy_d2h");
 }
 
 void transpose(f64* ms, int row, int col, int size) {

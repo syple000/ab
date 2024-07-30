@@ -64,8 +64,8 @@ base::Tensor<f64> log<base::Tensor<f64>>(const base::Tensor<f64>& t) {
 }
 
 template<>
-base::Tensor<f64> transpose(const base::Tensor<f64>& t) {
-    return t.transpose();
+base::Tensor<f64> transpose(const base::Tensor<f64>& t, int d1, int d2) {
+    return t.transpose(d1, d2);
 }
 
 template<>
