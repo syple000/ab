@@ -1,11 +1,11 @@
 add_subdirectory(cuda)
-add_subdirectory(tensor)
+add_subdirectory(shape)
 add_subdirectory(op)
 add_subdirectory(utils)
 add_subdirectory(algo)
 add_subdirectory(py)
 
-install(TARGETS include tensor op utils cuda 
+install(TARGETS include shape op utils cuda 
     EXPORT auto_engine
     RUNTIME DESTINATION bin
     LIBRARY DESTINATION lib
@@ -30,4 +30,4 @@ install(FILES
 
 add_executable(main main.cc)
 # target_compile_options(main PRIVATE -g)
-target_link_libraries(main include tensor op utils cuda algo)
+target_link_libraries(main include shape op utils cuda algo)

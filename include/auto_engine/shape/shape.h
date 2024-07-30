@@ -17,23 +17,25 @@ public:
 
     bool operator==(const Shape&) const;
     Shape reshape(const std::vector<u32>& dims) const;
-    bool reshapeInplace(const std::vector<u32>& dims);
 
     std::string toString() const;
 
-    u32 tensorSize() const {return _dims.size() > 0 ? _counts[0] : 0;}
-    u32 subTensorSize(u32 index) const {return _dims.size() > index ? _counts[index] : 0;}
+    u32 tensorSize() const {return _size;}
+    u32 subTensorSize(u32 index) const {return _dims.size() > index ? _strides[index] * _dims[index] : 0;}
     const std::vector<u32>& getDims() const {return _dims;}
     u32 getDim(u32 index) const {return index < _dims.size() ? _dims[index] : 0;}
     u32 dimCnt() const {return _dims.size();}
+    const std::vector<u32>& getStrides() const {return _strides;}
 
-    Shape sumAlongRow() const;
-    Shape sumAlongCol() const;
-    Shape transpose(int d1, int d2) const;
+    Shape sum(u32) const;
+    Shape sum() const;
+    Shape transpose(u32, u32) const;
     Shape mmul(const Shape&) const;
 private:
+    void calcStrides();
     std::vector<u32> _dims;
-    std::vector<u32> _counts;
+    std::vector<u32> _strides;
+    u32 _size = 0;
 };
 }
 

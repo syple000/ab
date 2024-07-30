@@ -4,7 +4,7 @@
 #include "auto_engine/base/basic_types.h"
 #include "auto_engine/config/config.h"
 #include "auto_engine/cuda/tensor.h"
-#include "shape.h"
+#include "auto_engine/shape/shape.h"
 #include "glog/logging.h"
 #include "Eigen/Dense"
 #include <Eigen/src/Core/Map.h>
@@ -128,10 +128,6 @@ public:
     Tensor<T> mmul(const Tensor<T>&) const;
     Tensor<T> inv() const;
 
-    Tensor<T> sumAlongRow() const;
-    Tensor<T> sumAlongCol() const;
-    Tensor<T> expandAlongRow(const base::Shape&) const;
-    Tensor<T> expandAlongCol(const base::Shape&) const;
     Tensor<T> sum() const;
     Tensor<T> expand(const base::Shape&) const;
 
@@ -558,121 +554,10 @@ Tensor<T> Tensor<T>::inv() const {
 }
 
 template<typename T>
-Tensor<T> Tensor<T>::sumAlongRow() const {
-    auto shape = _shape.sumAlongRow();
-    if (shape.tensorSize() == 0) {
-        if (ENABLE_TENSOR_EXCEPTION) {
-            throw std::runtime_error(fmt::format("tensor sum along row fail: {}", _shape.toString()));
-        }
-        LOG(ERROR) << fmt::format("tensor sum along row fail: {}", _shape.toString());
-        return Tensor();
-    }
-    auto matrix_size = _shape.subTensorSize(_shape.dimCnt()-2);
-    auto row_cnt = _shape.getDim(_shape.dimCnt() - 2);
-    auto col_cnt = _shape.getDim(_shape.dimCnt() - 1);
-    Tensor<T> res(shape);
-    if (std::is_same<T, f64>::value && ENABLE_CUDA) {
-        cuda::sum_along_row(_data.data(), res._data.data(), row_cnt, col_cnt, _shape.tensorSize() / matrix_size);
-    } else {
-        for (int i = 0; i < _shape.tensorSize() / matrix_size; i++) {
-            for (int j = 0; j < row_cnt; j++) {
-                for (int k = 0; k < col_cnt; k++) {
-                    res._data[i * row_cnt + j] += _data[i * matrix_size + j * col_cnt + k];
-                }
-            }
-        }
-    }
-    return std::move(res);
-}
-
-template<typename T>
-Tensor<T> Tensor<T>::sumAlongCol() const {
-    auto shape = _shape.sumAlongCol();
-    if (shape.tensorSize() == 0) {
-        if (ENABLE_TENSOR_EXCEPTION) {
-            throw std::runtime_error(fmt::format("tensor sum along col fail: {}", _shape.toString()));
-        }
-        LOG(ERROR) << fmt::format("tensor sum along col fail: {}", _shape.toString());
-        return Tensor();
-    }
-    auto matrix_size = _shape.subTensorSize(_shape.dimCnt()-2);
-    auto row_cnt = _shape.getDim(_shape.dimCnt() - 2);
-    auto col_cnt = _shape.getDim(_shape.dimCnt() - 1);
-    Tensor<T> res(shape);
-    if (std::is_same<T, f64>::value && ENABLE_CUDA) {
-        cuda::sum_along_col(_data.data(), res._data.data(), row_cnt, col_cnt, _shape.tensorSize() / matrix_size);
-    } else {
-        for (int i = 0; i < _shape.tensorSize() / matrix_size; i++) {
-            for (int j = 0; j < col_cnt; j++) {
-                for (int k = 0; k < row_cnt; k++) {
-                    res._data[i * col_cnt + j] += _data[i * matrix_size + k * col_cnt + j];
-                }
-            }
-        }
-    }
-    return std::move(res);
-}
-
-
-template<typename T>
-Tensor<T> Tensor<T>::expandAlongRow(const base::Shape& shape) const {
-    if (!(shape.sumAlongRow() == _shape)) {
-        if (ENABLE_TENSOR_EXCEPTION) {
-            throw std::runtime_error(fmt::format("expand along row err: {}, {}", _shape.toString(), shape.toString()));
-        }
-        LOG(ERROR) << fmt::format("expand along row err: {}, {}", _shape.toString(), shape.toString());
-        return Tensor();
-    }
-    auto matrix_size = shape.subTensorSize(shape.dimCnt()-2);
-    auto row_cnt = shape.getDim(shape.dimCnt() - 2);
-    auto col_cnt = shape.getDim(shape.dimCnt() - 1);
-    Tensor<T> res(shape);
-    if (std::is_same<T, f64>::value && ENABLE_CUDA) {
-        cuda::expand_along_row(_data.data(), res._data.data(), row_cnt, col_cnt, shape.tensorSize()/matrix_size);
-    } else {
-        for (int i = 0; i < shape.tensorSize() / matrix_size; i++) {
-            for (int j = 0; j < row_cnt; j++) {
-                for (int k = 0; k < col_cnt; k++) {
-                    res._data[i * matrix_size + j * col_cnt + k] = _data[i * row_cnt + j];
-                }
-            }
-        }
-    }
-    return std::move(res);
-}
-
-template<typename T>
-Tensor<T> Tensor<T>::expandAlongCol(const base::Shape& shape) const {
-    if (!(shape.sumAlongCol() == _shape)) {
-        if (ENABLE_TENSOR_EXCEPTION) {
-            throw std::runtime_error(fmt::format("expand along col err: {}, {}", _shape.toString(), shape.toString()));
-        }
-        LOG(ERROR) << fmt::format("expand along col err: {}, {}", _shape.toString(), shape.toString());
-        return Tensor();
-    }
-    auto matrix_size = shape.subTensorSize(shape.dimCnt()-2);
-    auto row_cnt = shape.getDim(shape.dimCnt() - 2);
-    auto col_cnt = shape.getDim(shape.dimCnt() - 1);
-    Tensor<T> res(shape);
-    if (std::is_same<T, f64>::value && ENABLE_CUDA) {
-        cuda::expand_along_col(_data.data(), res._data.data(), row_cnt, col_cnt, shape.tensorSize()/matrix_size);
-    } else {
-        for (int i = 0; i < shape.tensorSize() / matrix_size; i++) {
-            for (int j = 0; j < col_cnt; j++) {
-                for (int k = 0; k < row_cnt; k++) {
-                    res._data[i * matrix_size + k * col_cnt + j] = _data[i * col_cnt + j];
-                }
-            }
-        }
-    }
-    return std::move(res);
-}
-
-template<typename T>
 Tensor<T> Tensor<T>::sum() const {
     Tensor<T> res(Shape({1}));
     if (std::is_same<T, f64>::value && ENABLE_CUDA) {
-        cuda::apply_sum(_data.data(), _data.size(), &res._data[0]);
+        cuda::sum(_data.data(), _data.size(), &res._data[0]);
     } else {
         for (int i = 0; i < _data.size(); i++) {
             res._data[0] += _data[i];
@@ -692,7 +577,7 @@ Tensor<T> Tensor<T>::expand(const base::Shape& shape) const {
     }
     Tensor<T> res(shape);
     if (std::is_same<T, f64>::value && ENABLE_CUDA) {
-        cuda::apply_expand(_data.data(), res._data.data(), res._data.size()); 
+        cuda::expand(_data.data(), res._data.data(), res._data.size()); 
     } else {
         res = Tensor<T>(shape, _data[0]);
     }

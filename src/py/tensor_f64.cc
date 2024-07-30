@@ -23,7 +23,7 @@
 #include "auto_engine/op/sub.h"
 #include "auto_engine/op/sub_n.h"
 #include "auto_engine/op/sum_expand.h"
-#include "auto_engine/tensor/shape.h"
+#include "auto_engine/shape/shape.h"
 #include "auto_engine/tensor/tensor.h"
 #include "pybind11/pybind11.h"
 #include "fmt/core.h"

@@ -3,7 +3,7 @@
 #include "auto_engine/op/mul.h"
 #include "auto_engine/op/sub.h"
 #include "auto_engine/op/sum_expand.h"
-#include "auto_engine/tensor/shape.h"
+#include "auto_engine/shape/shape.h"
 #include "auto_engine/tensor/tensor.h"
 #include <memory>
 

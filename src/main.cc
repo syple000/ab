@@ -17,7 +17,7 @@
 #include "auto_engine/op/sub_n.h"
 #include "auto_engine/op/sum_expand.h"
 #include "auto_engine/op/transpose.h"
-#include "auto_engine/tensor/shape.h"
+#include "auto_engine/shape/shape.h"
 #include "auto_engine/op/sub.h"
 #include "auto_engine/op/pow.h"
 #include "auto_engine/op/log.h"
@@ -243,10 +243,6 @@ TEST(Test_tensor, test) {
     ASSERT_TRUE(t6.inv() == base::Tensor<f64>(base::Shape({3, 3}), {-11.0/12, 1.0/3, 1.0/12, -1.0/6, 1.0/3, -1.0/6, 3.0/4, -1.0/3, 1.0/12}));
     base::Tensor<f64> t7(base::Shape({2, 3, 3}), {1, 2, 3, 4, 5, 6, 7, 2, 9, 0, 2, 3, 4, 5, 6, 7, 2, 9});
     ASSERT_TRUE(t7.inv() == base::Tensor<f64>(base::Shape({2, 3, 3}), {-11.0/12, 1.0/3, 1.0/12, -1.0/6, 1.0/3, -1.0/6, 3.0/4, -1.0/3, 1.0/12, -11.0/23, 4.0/23, 1.0/23, -2.0/23, 7.0/23, -4.0/23, 9.0/23, -14.0/69, 8.0/69}));
-    ASSERT_TRUE(t2.sumAlongRow() == base::Tensor<f64>(base::Shape({2, 2}), {6, 15, 6, 15}));
-    ASSERT_TRUE(t2.sumAlongRow().expandAlongRow(t2.shape()) == base::Tensor<f64>(base::Shape({2, 2, 3}), {6, 6, 6, 15, 15, 15, 6, 6, 6, 15, 15, 15}));
-    ASSERT_TRUE(t2.sumAlongCol() == base::Tensor<f64>(base::Shape({2, 3}), {5, 7, 9, 5, 7, 9}));
-    ASSERT_TRUE(t2.sumAlongCol().expandAlongCol(t2.shape()) == base::Tensor<f64>(base::Shape({2, 2, 3}), {5, 7, 9, 5, 7, 9, 5, 7, 9, 5, 7, 9}));
     ASSERT_TRUE(t2.sum() == base::Tensor<f64>(base::Shape({1}), 42));
     ASSERT_TRUE(t2.sum().expand(t2.shape()) == base::Tensor<f64>(base::Shape({2, 2, 3}), {42, 42, 42, 42, 42, 42, 42, 42, 42, 42, 42, 42}));
 

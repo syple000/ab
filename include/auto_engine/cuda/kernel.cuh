@@ -159,6 +159,7 @@ __global__ void apply_pow(T* data, T n, u32 size) {return apply<T>(data, n, size
 
 /* 重构实现，支持任意tensor维度进行加和&转置 */
 
+// 转置最后一个维度 & 任意其它维度
 template<typename T>
 __global__ void transpose(const T* src, T* dst, const u32* dims, const u32* strides, const u32* transpose_strides, u32 dim_cnt, u32 d) {
     __shared__ T shared_mem[cuda::sqrt_tcnt_per_block()][cuda::sqrt_tcnt_per_block() + 1];
@@ -198,6 +199,7 @@ __global__ void transpose(const T* src, T* dst, const u32* dims, const u32* stri
     dst[output_index] = shared_mem[threadIdx.x][threadIdx.y];
 }
 
+// 转置除最后一个维度的任意两个维度
 template<typename T>
 __global__ void transpose(const T* src, T* dst, const u32* dims, const u32* strides, const u32* transpose_strides, u32 dim_cnt, u32 d1, u32 d2) {
     u32 index = threadIdx.x + blockDim.x * blockIdx.x;
@@ -223,57 +225,16 @@ __global__ void transpose(const T* src, T* dst, const u32* dims, const u32* stri
     dst[output_index] = src[index];
 }
 
+// sum最后一个维度
 template<typename T>
-__global__ void sum_along_row(const T* srcs, T* dsts, u32 row, u32 col, u32 size) {
+__global__ void sum(const T* src, T* dst, const u32* dims, const u32* strides, u32 dim_cnt) {
     __shared__ T shared_mem[cuda::sqrt_tcnt_per_block()][cuda::sqrt_tcnt_per_block() + 1];
+    u32 lindex = threadIdx.x + blockDim.x * blockIdx.x; // 最后一个维度index
+    u32 uindex = threadIdx.y + blockDim.y * blockIdx.y;
 
-    u32 matrix_index = blockIdx.z;
-    if (matrix_index >= size) {return;}
-    u32 i = blockIdx.x * blockDim.x + threadIdx.x; 
-    u32 j = blockIdx.y * blockDim.y + threadIdx.y;
-    if (i >= row || j >= col) {
-        shared_mem[threadIdx.x][threadIdx.y] = 0;
-    } else {
-        shared_mem[threadIdx.x][threadIdx.y] = srcs[matrix_index * row * col + i * col + j];
-    }
-
-    __syncthreads();
-
-    for (u32 i = blockDim.y / 2; i > 0; i = i >> 1) {
-        if (threadIdx.y < i) {
-            shared_mem[threadIdx.x][threadIdx.y] += shared_mem[threadIdx.x][threadIdx.y + i];
-        }
-        __syncthreads();
-    }
-
-    if (threadIdx.y == 0) {
-        atomicAdd(dsts + matrix_index * row + i, shared_mem[threadIdx.x][0]);
-    }
-}
-
-template<typename T>
-__global__ void expand_along_row(const T* src, T* dst, u32 row, u32 col, u32 size) {
-    u32 matrix_index = blockIdx.z;
-    if (matrix_index >= size) {return;}
-    u32 i = blockIdx.x * blockDim.x + threadIdx.x; 
-    u32 j = blockIdx.y * blockDim.y + threadIdx.y;
-    if (i >= row || j >= col) {return;}
-    dst[matrix_index * row * col + i * col + j] = src[matrix_index * row + i];
-}
-
-template<typename T>
-__global__ void sum_along_col(const T* srcs, T* dsts, u32 row, u32 col, u32 size) {
-    __shared__ T shared_mem[cuda::sqrt_tcnt_per_block()][cuda::sqrt_tcnt_per_block() + 1];
-
-    u32 matrix_index = blockIdx.z;
-    if (matrix_index >= size) {return;}
-    u32 i = blockIdx.x * blockDim.x + threadIdx.x; 
-    u32 j = blockIdx.y * blockDim.y + threadIdx.y;
-    if (i >= row || j >= col) {
-        shared_mem[threadIdx.x][threadIdx.y] = 0;
-    } else {
-        shared_mem[threadIdx.x][threadIdx.y] = srcs[matrix_index * row * col + i * col + j];
-    }
+    if (lindex >= dims[dim_cnt - 1] || uindex >= strides[0]*dims[0]/dims[dim_cnt - 1]) { shared_mem[threadIdx.x][threadIdx.y] = 0; return;}
+    
+    shared_mem[threadIdx.x][threadIdx.y] = src[uindex * dims[dim_cnt - 1] + lindex];
 
     __syncthreads();
 
@@ -285,32 +246,69 @@ __global__ void sum_along_col(const T* srcs, T* dsts, u32 row, u32 col, u32 size
     }
 
     if (threadIdx.x == 0) {
-        atomicAdd(dsts + matrix_index * col + j, shared_mem[0][threadIdx.y]);
+        atomicAdd(dst + uindex, shared_mem[0][threadIdx.y]);
     }
 }
 
 template<typename T>
-__global__ void expand_along_col(const T* src, T* dst, u32 row, u32 col, u32 size) {
-    u32 matrix_index = blockIdx.z;
-    if (matrix_index >= size) {return;}
-    u32 i = blockIdx.x * blockDim.x + threadIdx.x; 
-    u32 j = blockIdx.y * blockDim.y + threadIdx.y;
-    if (i >= row || j >= col) {return;}
-    dst[matrix_index * row * col + i * col + j] = src[matrix_index * col + j];
+__global__ void expand(const T* src, T* dst, const u32* dims, const u32* strides, u32 dim_cnt, u32 expd) {
+    u32 lindex = threadIdx.x + blockDim.x * blockIdx.x; // 待扩展维度index
+    u32 uindex = threadIdx.y + blockDim.y * blockIdx.y;
+    if (uindex >= strides[0]*dims[0] || lindex >= expd) {return;}
+    dst[uindex * expd + lindex] = src[uindex];
+}
+
+// sum除最后一个维度以外的维度
+template<typename T>
+__global__ void sum(const T* src, T* dst, const u32* dims, const u32* strides, u32 dim_cnt, u32 d) {
+    __shared__ T shared_mem[cuda::sqrt_tcnt_per_block()][cuda::sqrt_tcnt_per_block() + 1];
+    u32 lindex = threadIdx.y + blockDim.y * blockIdx.y;
+    u32 index = threadIdx.z + blockDim.z * blockIdx.z;
+    u32 uindex = blockIdx.x;
+    
+    // 以2*2*3张量,d=1为例，strides=[6, 3, 1], uindex最大取2，lindex最大取3, index最大取2
+    if (lindex >= strides[d]) {shared_mem[threadIdx.x][threadIdx.y] = 0; return;}
+    if (index >= dims[d]) {shared_mem[threadIdx.x][threadIdx.y] = 0; return;}
+    if (uindex >= strides[0] * dims[0] / strides[d] / dims[d]) {shared_mem[threadIdx.x][threadIdx.y] = 0; return;}
+
+    shared_mem[threadIdx.y][threadIdx.z] = src[uindex * strides[d] * dims[d] + index * strides[d] + lindex];
+
+    __syncthreads();
+
+    for (u32 i = blockDim.z / 2; i > 0; i = i >> 1) {
+        if (threadIdx.z < i) {
+            shared_mem[threadIdx.y][threadIdx.z] += shared_mem[threadIdx.y][threadIdx.z + i];
+        }
+        __syncthreads();
+    }
+
+    if (threadIdx.z == 0) {
+        atomicAdd(dst + uindex * strides[d] + lindex, shared_mem[threadIdx.y][0]);
+    }
 }
 
 template<typename T>
-__global__ void apply_sum(const T* src, u32 size, T* dst) {
+__global__ void expand(const T* src, T* dst, const u32* dims, const u32* strides, u32 dim_cnt, u32 d, u32 expd) {
+    u32 lindex = threadIdx.y + blockDim.y * blockIdx.y;
+    u32 index = threadIdx.z + blockDim.z * blockIdx.z;
+    u32 uindex = blockIdx.x;
+    // 以2*3张量,d=1为例，strides=[3, 1], uindex最大取2，lindex最大取3, index最大取2
+    // 最后得到2*2*3
+    if (lindex >= strides[d] * dims[d]) {return;}
+    if (index >= expd) {return;}
+    if (uindex >= strides[0] * dims[0] / strides[d] * dims[d]) {return;}
+    dst[uindex * strides[d] * dims[d] * expd + expd * strides[d] * dims[d] + lindex] = src[uindex * strides[d] * dims[d] + lindex];
+}
+
+template<typename T>
+__global__ void sum(const T* src, u32 size, T* dst) {
     __shared__ T shared_mem[cuda::sqrt_tcnt_per_block()];
     
     u32 index = blockIdx.x * blockDim.x + threadIdx.x; 
     u32 shared_mem_index = threadIdx.x;
 
-    if (index < size) {
-        shared_mem[shared_mem_index] = src[index];
-    } else {
-        shared_mem[shared_mem_index] = 0;
-    }
+    if (index >= size) {shared_mem[shared_mem_index] = 0; return;}
+    shared_mem[shared_mem_index] = src[index];
 
     __syncthreads();
 
@@ -327,7 +325,7 @@ __global__ void apply_sum(const T* src, u32 size, T* dst) {
 }
 
 template<typename T>
-__global__ void apply_expand(const T* src, T* dst, u32 size) {
+__global__ void expand(const T* src, T* dst, u32 size) {
     u32 index = blockIdx.x * blockDim.x + threadIdx.x; 
     if (index >= size) {return;}
     dst[index] = src[0];
@@ -348,22 +346,6 @@ __global__ void one_hot(const T* src, u32 size, T* dst, u32 classes, u32* err_in
     dst[dst_index] = 1;
 }
 
-// 三维，第一&二维是矩阵行列，第三维是矩阵个数。blockDim<TILE_DIM, TILE_DIM>(根据每一个block线程个数确认)，grimDim<row, col, matrix cnt>
-template<typename T>
-__global__ void transpose(const T* srcs, T* dsts, u32 row, u32 col, u32 size) {
-    __shared__ T shared_mem[cuda::sqrt_tcnt_per_block()][cuda::sqrt_tcnt_per_block() + 1]; // 一个线程块内的共享内存，对应threadIdx.x * threadIdx.y * threadIdx.z
-
-    u32 matrix_index = blockIdx.z;
-    if (matrix_index >= size) {return;}
-    u32 i = blockIdx.x * blockDim.x + threadIdx.x;
-    u32 j = blockIdx.y * blockDim.y + threadIdx.y;
-    if (i >= row || j >= col) {return;}
-    shared_mem[threadIdx.x][threadIdx.y] = srcs[matrix_index * row * col + i * col + j];
-
-    __syncthreads();
-
-    dsts[matrix_index * row * col + j * row + i] = shared_mem[threadIdx.x][threadIdx.y];
-}
 
 }
 

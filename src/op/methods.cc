@@ -1,7 +1,7 @@
 #include "auto_engine/op/methods.h"
 #include "auto_engine/base/basic_types.h"
 #include "auto_engine/config/config.h"
-#include "auto_engine/tensor/shape.h"
+#include "auto_engine/shape/shape.h"
 #include "auto_engine/tensor/tensor.h"
 #include <cmath>
 #include <fmt/core.h>

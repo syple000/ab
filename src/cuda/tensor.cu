@@ -3,6 +3,7 @@
 #include "auto_engine/cuda/mem.h"
 #include "auto_engine/cuda/tensor.h"
 #include "auto_engine/cuda/kernel.cuh"
+#include "auto_engine/shape/shape.h"
 #include "auto_engine/utils/defer.h"
 #include "cublas_v2.h"
 #include <cstdlib>
@@ -22,20 +23,20 @@ namespace cuda {
     } \
 } \
 
-std::tuple<dim3, dim3> get_apply_dims(int size) {
-    int grid_dim = (size + sqrt_tcnt_per_block() - 1) / sqrt_tcnt_per_block();
+std::tuple<dim3, dim3> get_apply_dims(u32 size) {
+    u32 grid_dim = (size + sqrt_tcnt_per_block() - 1) / sqrt_tcnt_per_block();
     return std::tuple(dim3(grid_dim), dim3(sqrt_tcnt_per_block())); 
 }
 
-std::tuple<dim3, dim3> get_matrix_dims(int row, int col, int size) {
-    int grid_dim_x = (row + sqrt_tcnt_per_block() - 1) / sqrt_tcnt_per_block();
-    int grid_dim_y = (col + sqrt_tcnt_per_block() - 1) / sqrt_tcnt_per_block();
-    int grid_dim_z = size;
+std::tuple<dim3, dim3> get_matrix_dims(u32 row, u32 col, u32 size) {
+    u32 grid_dim_x = (row + sqrt_tcnt_per_block() - 1) / sqrt_tcnt_per_block();
+    u32 grid_dim_y = (col + sqrt_tcnt_per_block() - 1) / sqrt_tcnt_per_block();
+    u32 grid_dim_z = size;
     return std::tuple(dim3(grid_dim_x, grid_dim_y, grid_dim_z), dim3(sqrt_tcnt_per_block(), sqrt_tcnt_per_block()));
 }
 
 #define DEFINE_APPLY_1E(fn, T) \
-void fn(T* data, int size) { \
+void fn(T* data, u32 size) { \
     f64* m; \
     CHECK_MALLOC(Mem::malloc((void**)&m, sizeof(T) * size)); \
     utils::Defer free_m([&m]() {Mem::free(m);}); \
@@ -54,7 +55,7 @@ DEFINE_APPLY_1E(apply_sign, f64)
 DEFINE_APPLY_1E(apply_abs, f64)
 
 #define DEFINE_APPLY_2E(fn, T) \
-void fn(T* data1, const T* data2, int size) { \
+void fn(T* data1, const T* data2, u32 size) { \
     f64 *m1, *m2; \
     CHECK_MALLOC(Mem::malloc((void**)&m1, sizeof(T) * size)); \
     utils::Defer free_m1([&m1]() {Mem::free(m1);}); \
@@ -70,7 +71,7 @@ void fn(T* data1, const T* data2, int size) { \
 } \
 
 #define DEFINE_APPLY_1E_1T(fn, T) \
-void fn(T* data, T n, int size) { \
+void fn(T* data, T n, u32 size) { \
     f64 *m; \
     CHECK_MALLOC(Mem::malloc((void**)&m, sizeof(T) * size)); \
     utils::Defer free_m([&m]() {Mem::free(m);}); \
@@ -94,65 +95,7 @@ DEFINE_APPLY_1E_1T(apply_mul, f64)
 DEFINE_APPLY_1E_1T(apply_div, f64)
 DEFINE_APPLY_1E_1T(apply_pow, f64)
 
-void sum_along_row(const f64* srcs, f64* dsts, int row, int col, int size) {
-    f64 *m1, *m2;
-    CHECK_MALLOC(Mem::malloc((void**)&m1, sizeof(f64) * row * col * size));
-    utils::Defer free_m1([&m1]() {Mem::free(m1);});
-    CHECK_MALLOC(Mem::malloc((void**)&m2, sizeof(f64) * row * size));
-    utils::Defer free_m2([&m2]() {Mem::free(m2);});
-
-    CHECK_CUDA_CALL(cudaMemcpy(m1, srcs, sizeof(f64) * row * col * size, cudaMemcpyHostToDevice), "cuda_memcpy_h2d");
-    CHECK_CUDA_CALL(cudaMemset(m2, 0, sizeof(f64) * row * size), "cuda_memset");
-    auto dims = get_matrix_dims(row, col, size);
-    cuda_kernel::sum_along_row<<<std::get<0>(dims), std::get<1>(dims)>>>(m1, m2, row, col, size);
-    CHECK_CUDA_CALL(cudaPeekAtLastError(), "sum_along_row");
-    CHECK_CUDA_CALL(cudaMemcpy(dsts, m2, sizeof(f64) * row * size, cudaMemcpyDeviceToHost), "cuda_memcpy_d2h");
-}
-
-void expand_along_row(const f64* src, f64* dst, int row, int col, int size) {
-    f64 *m1, *m2;
-    CHECK_MALLOC(Mem::malloc((void**)&m1, sizeof(f64) * row * size));
-    utils::Defer free_m1([&m1]() {Mem::free(m1);});
-    CHECK_MALLOC(Mem::malloc((void**)&m2, sizeof(f64) * row * col * size));
-    utils::Defer free_m2([&m2]() {Mem::free(m2);});
-
-    CHECK_CUDA_CALL(cudaMemcpy(m1, src, sizeof(f64) * row * size, cudaMemcpyHostToDevice), "cuda_memcpy_h2d");
-    auto dims = get_matrix_dims(row, col, size);
-    cuda_kernel::expand_along_row<<<std::get<0>(dims), std::get<1>(dims)>>>(m1, m2, row, col, size);
-    CHECK_CUDA_CALL(cudaPeekAtLastError(), "expand_along_row");
-    CHECK_CUDA_CALL(cudaMemcpy(dst, m2, sizeof(f64) * row * col * size, cudaMemcpyDeviceToHost), "cuda_memcpy_d2h");
-}
-
-void sum_along_col(const f64* srcs, f64* dsts, int row, int col, int size) {
-    f64 *m1, *m2;
-    CHECK_MALLOC(Mem::malloc((void**)&m1, sizeof(f64) * row * col * size));
-    utils::Defer free_m1([&m1]() {Mem::free(m1);});
-    CHECK_MALLOC(Mem::malloc((void**)&m2, sizeof(f64) * col * size));
-    utils::Defer free_m2([&m2]() {Mem::free(m2);});
-
-    CHECK_CUDA_CALL(cudaMemcpy(m1, srcs, sizeof(f64) * row * col * size, cudaMemcpyHostToDevice), "cuda_memcpy_h2d");
-    CHECK_CUDA_CALL(cudaMemset(m2, 0, sizeof(f64) * col * size), "cuda_memset");
-    auto dims = get_matrix_dims(row, col, size);
-    cuda_kernel::sum_along_col<<<std::get<0>(dims), std::get<1>(dims)>>>(m1, m2, row, col, size);
-    CHECK_CUDA_CALL(cudaPeekAtLastError(), "sum_along_col");
-    CHECK_CUDA_CALL(cudaMemcpy(dsts, m2, sizeof(f64) * col * size, cudaMemcpyDeviceToHost), "cuda_memcpy_d2h");
-}
-
-void expand_along_col(const f64* src, f64* dst, int row, int col, int size) {
-    f64 *m1, *m2;
-    CHECK_MALLOC(Mem::malloc((void**)&m1, sizeof(f64) * col * size));
-    utils::Defer free_m1([&m1]() {Mem::free(m1);});
-    CHECK_MALLOC(Mem::malloc((void**)&m2, sizeof(f64) * row * col * size));
-    utils::Defer free_m2([&m2]() {Mem::free(m2);});
-
-    CHECK_CUDA_CALL(cudaMemcpy(m1, src, sizeof(f64) * col * size, cudaMemcpyHostToDevice), "cuda_memcpy_h2d");
-    auto dims = get_matrix_dims(row, col, size);
-    cuda_kernel::expand_along_col<<<std::get<0>(dims), std::get<1>(dims)>>>(m1, m2, row, col, size);
-    CHECK_CUDA_CALL(cudaPeekAtLastError(), "expand_along_col");
-    CHECK_CUDA_CALL(cudaMemcpy(dst, m2, sizeof(f64) * row * col * size, cudaMemcpyDeviceToHost), "cuda_memcpy_d2h");
-}
-
-void apply_sum(const f64* src, int size, f64* dst) {
+void sum(const f64* src, u32 size, f64* dst) {
     f64 *m1, *m2;
     CHECK_MALLOC(Mem::malloc((void**)&m1, sizeof(f64) * size));
     utils::Defer free_m1([&m1]() {Mem::free(m1);});
@@ -162,12 +105,12 @@ void apply_sum(const f64* src, int size, f64* dst) {
     CHECK_CUDA_CALL(cudaMemcpy(m1, src, sizeof(f64) * size, cudaMemcpyHostToDevice), "cuda_memcpy_h2d");
     CHECK_CUDA_CALL(cudaMemset(m2, 0, sizeof(f64)), "cuda_memset");
     auto dims = get_apply_dims(size);
-    cuda_kernel::apply_sum<<<std::get<0>(dims), std::get<1>(dims)>>>(m1, size, m2);
+    cuda_kernel::sum<<<std::get<0>(dims), std::get<1>(dims)>>>(m1, size, m2);
     CHECK_CUDA_CALL(cudaPeekAtLastError(), "apply_sum");
     CHECK_CUDA_CALL(cudaMemcpy(dst, m2, sizeof(f64), cudaMemcpyDeviceToHost), "cuda_memcpy_d2h");
 }
 
-void apply_expand(const f64* src, f64* dst, int size) {
+void expand(const f64* src, f64* dst, u32 size) {
     f64 *m1, *m2;
     CHECK_MALLOC(Mem::malloc((void**)&m1, sizeof(f64)));
     utils::Defer free_m1([&m1]() {Mem::free(m1);});
@@ -176,12 +119,12 @@ void apply_expand(const f64* src, f64* dst, int size) {
 
     CHECK_CUDA_CALL(cudaMemcpy(m1, src, sizeof(f64), cudaMemcpyHostToDevice), "cuda_memcpy_h2d");
     auto dims = get_apply_dims(size);
-    cuda_kernel::apply_expand<<<std::get<0>(dims), std::get<1>(dims)>>>(m1, m2, size);
+    cuda_kernel::expand<<<std::get<0>(dims), std::get<1>(dims)>>>(m1, m2, size);
     CHECK_CUDA_CALL(cudaPeekAtLastError(), "apply_expand");
     CHECK_CUDA_CALL(cudaMemcpy(dst, m2, sizeof(f64) * size, cudaMemcpyDeviceToHost), "cuda_memcpy_d2h");
 }
 
-int ont_hot(const f64* src, int size, f64* dst, int classes) {
+int ont_hot(const f64* src, u32 size, f64* dst, u32 classes) {
     int err_index = -1;
 
     f64 *m1, *m2; u32 *m3;
@@ -205,63 +148,76 @@ int ont_hot(const f64* src, int size, f64* dst, int classes) {
     return err_index;
 }
 
-void transpose(f64* data, const std::vector<u32>& dims, u32 d1, u32 d2) {
+
+void sum(const f64* src, f64* dst, const base::Shape& shape, u32 d) {
+// __global__ void sum(const T* src, T* dst, const u32* dims, const u32* strides, u32 dim_cnt) {
+    f64 *msrc, *mdst;
+    u32 *mds;
+    CHECK_MALLOC(Mem::malloc((void**)&msrc, sizeof(f64) * shape.tensorSize()));
+    utils::Defer free_msrc([&msrc]() {Mem::free(msrc);});
+    CHECK_MALLOC(Mem::malloc((void**)&mdst, sizeof(f64) * shape.tensorSize() / shape.getDim(d)));
+    utils::Defer free_mdst([&mdst]() {Mem::free(mdst);});
+    CHECK_MALLOC(Mem::malloc((void**)&mds, sizeof(u32) * shape.dimCnt() * 2));
+    utils::Defer free_mds([&mds]() {Mem::free(mds);});
+
+    CHECK_CUDA_CALL(cudaMemcpy(msrc, src, sizeof(f64) * shape.tensorSize(), cudaMemcpyHostToDevice), "cuda_memcpy_h2d");
+    CHECK_CUDA_CALL(cudaMemcpy(mds, shape.getDims().data(), sizeof(u32) * shape.dimCnt(), cudaMemcpyHostToDevice), "cuda_memcpy_h2d");
+    CHECK_CUDA_CALL(cudaMemcpy(mds + shape.dimCnt(), shape.getStrides().data(), sizeof(u32) * shape.dimCnt(), cudaMemcpyHostToDevice), "cuda_memcpy_h2d");
+    CHECK_CUDA_CALL(cudaMemset(mdst, 0, sizeof(f64) * shape.tensorSize() / shape.getDim(d)), "cuda_memset");
+
+    if (d == shape.dimCnt() - 1) {
+        u32 gridy_dim = (shape.tensorSize() / shape.getDim(shape.dimCnt() - 1) + sqrt_tcnt_per_block() - 1) / sqrt_tcnt_per_block();
+        u32 gridx_dim = (shape.getDim(shape.dimCnt() - 1) + sqrt_tcnt_per_block() - 1) / sqrt_tcnt_per_block();
+        cuda_kernel::sum<<<dim3(gridx_dim, gridy_dim), dim3(sqrt_tcnt_per_block(), sqrt_tcnt_per_block())>>>(msrc, mdst, mds, mds + shape.dimCnt(), shape.dimCnt());
+        CHECK_CUDA_CALL(cudaPeekAtLastError(), "sum1");
+    } else {
+        u32 gridy_dim = (shape.getStrides()[d] + sqrt_tcnt_per_block() - 1) / sqrt_tcnt_per_block();
+        u32 gridz_dim = (shape.getDim(d) + sqrt_tcnt_per_block() - 1) / sqrt_tcnt_per_block();
+        u32 gridx_dim = shape.tensorSize() / shape.getStrides()[d] / shape.getDim(d);
+        cuda_kernel::sum<<<dim3(gridx_dim, gridy_dim, gridz_dim), dim3(1, sqrt_tcnt_per_block(), sqrt_tcnt_per_block())>>>(msrc, mdst, mds, mds + shape.dimCnt(), shape.dimCnt(), d);
+        CHECK_CUDA_CALL(cudaPeekAtLastError(), "sum2");
+    }
+    CHECK_CUDA_CALL(cudaMemcpy(dst, mdst, sizeof(f64) * shape.tensorSize() / shape.getDim(d), cudaMemcpyDeviceToHost), "cuda_memcpy_d2h");
+}
+
+void expand(const f64* src, f64* dst, const base::Shape&, u32 d, u32 expd) {
+
+}
+
+void transpose(f64* data, const base::Shape& shape, u32 d1, u32 d2) {
     if (d1 > d2) {std::swap(d1, d2);}
 
-    auto transpose_dims = dims;
-    std::swap(transpose_dims[d1], transpose_dims[d2]);
-
-    std::vector<u32> strides(dims.size()), transpose_strides(transpose_dims.size());
-    strides[strides.size() - 1] = 1; transpose_strides[transpose_strides.size() - 1] = 1;
-    for (int i = dims.size() - 2; i >= 0; i--) {
-        strides[i] = strides[i + 1] * dims[i + 1];
-        transpose_strides[i] = transpose_strides[i + 1] * transpose_dims[i + 1];
-    }
+    auto transpose_shape = shape.transpose(d1, d2);
 
     f64 *msrc, *mdst;
     u32 *mds;
-    CHECK_MALLOC(Mem::malloc((void**)&msrc, sizeof(f64) * dims[0] * strides[0]));
+    CHECK_MALLOC(Mem::malloc((void**)&msrc, sizeof(f64) * shape.tensorSize()));
     utils::Defer free_msrc([&msrc]() {Mem::free(msrc);});
-    CHECK_MALLOC(Mem::malloc((void**)&mdst, sizeof(f64) * transpose_dims[0] * transpose_strides[0]));
+    CHECK_MALLOC(Mem::malloc((void**)&mdst, sizeof(f64) * transpose_shape.tensorSize()));
     utils::Defer free_mdst([&mdst]() {Mem::free(mdst);});
-    CHECK_MALLOC(Mem::malloc((void**)&mds, sizeof(u32) * dims.size() * 3));
+    CHECK_MALLOC(Mem::malloc((void**)&mds, sizeof(u32) * shape.dimCnt() * 3));
     utils::Defer free_mds([&mds]() {Mem::free(mds);});
 
-    CHECK_CUDA_CALL(cudaMemcpy(msrc, data, sizeof(f64) * dims[0] * strides[0], cudaMemcpyHostToDevice), "cuda_memcpy_h2d");
-    CHECK_CUDA_CALL(cudaMemcpy(mds, dims.data(), sizeof(u32) * dims.size(), cudaMemcpyHostToDevice), "cuda_memcpy_h2d");
-    CHECK_CUDA_CALL(cudaMemcpy(mds + dims.size(), strides.data(), sizeof(u32) * dims.size(), cudaMemcpyHostToDevice), "cuda_memcpy_h2d");
-    CHECK_CUDA_CALL(cudaMemcpy(mds + dims.size() * 2, transpose_strides.data(), sizeof(u32) * dims.size(), cudaMemcpyHostToDevice), "cuda_memcpy_h2d");
+    CHECK_CUDA_CALL(cudaMemcpy(msrc, data, sizeof(f64) * shape.tensorSize(), cudaMemcpyHostToDevice), "cuda_memcpy_h2d");
+    CHECK_CUDA_CALL(cudaMemcpy(mds, shape.getDims().data(), sizeof(u32) * shape.dimCnt(), cudaMemcpyHostToDevice), "cuda_memcpy_h2d");
+    CHECK_CUDA_CALL(cudaMemcpy(mds + shape.dimCnt(), shape.getStrides().data(), sizeof(u32) * shape.dimCnt(), cudaMemcpyHostToDevice), "cuda_memcpy_h2d");
+    CHECK_CUDA_CALL(cudaMemcpy(mds + shape.dimCnt() * 2, transpose_shape.getStrides().data(), sizeof(u32) * shape.dimCnt(), cudaMemcpyHostToDevice), "cuda_memcpy_h2d");
 
-    if (d2 == dims.size() - 1) {
-        u32 gridy_dim = (dims[0] * strides[0] / strides[d1] + sqrt_tcnt_per_block() - 1) / sqrt_tcnt_per_block();
-        u32 gridx_dim = (strides[d1] + sqrt_tcnt_per_block() - 1) / sqrt_tcnt_per_block();
-        cuda_kernel::transpose<<<dim3(gridx_dim, gridy_dim), dim3(sqrt_tcnt_per_block(), sqrt_tcnt_per_block())>>>(msrc, mdst, mds, mds + dims.size(), mds + dims.size() * 2, dims.size(), d1);
+    if (d2 == shape.dimCnt() - 1) {
+        u32 gridy_dim = (shape.tensorSize() / shape.getStrides()[d1] + sqrt_tcnt_per_block() - 1) / sqrt_tcnt_per_block();
+        u32 gridx_dim = (shape.getStrides()[d1] + sqrt_tcnt_per_block() - 1) / sqrt_tcnt_per_block();
+        cuda_kernel::transpose<<<dim3(gridx_dim, gridy_dim), dim3(sqrt_tcnt_per_block(), sqrt_tcnt_per_block())>>>(msrc, mdst, mds, mds + shape.dimCnt(), mds + shape.dimCnt() * 2, shape.dimCnt(), d1);
         CHECK_CUDA_CALL(cudaPeekAtLastError(), "tranpose1");
     } else {
-        u32 grid_dim = (dims[0] * strides[0] + sqrt_tcnt_per_block() - 1) / sqrt_tcnt_per_block();
-        cuda_kernel::transpose<<<dim3(grid_dim), dim3(sqrt_tcnt_per_block())>>>(msrc, mdst, mds, mds + dims.size(), mds + dims.size() * 2, dims.size(), d1, d2);
+        u32 grid_dim = (shape.tensorSize() + sqrt_tcnt_per_block() - 1) / sqrt_tcnt_per_block();
+        cuda_kernel::transpose<<<dim3(grid_dim), dim3(sqrt_tcnt_per_block())>>>(msrc, mdst, mds, mds + shape.dimCnt(), mds + shape.dimCnt() * 2, shape.dimCnt(), d1, d2);
         CHECK_CUDA_CALL(cudaPeekAtLastError(), "tranpose2");
     }
 
-    CHECK_CUDA_CALL(cudaMemcpy(data, mdst, sizeof(f64) * dims[0] * strides[0], cudaMemcpyDeviceToHost), "cuda_memcpy_d2h");
+    CHECK_CUDA_CALL(cudaMemcpy(data, mdst, sizeof(f64) * shape.tensorSize(), cudaMemcpyDeviceToHost), "cuda_memcpy_d2h");
 }
 
-void transpose(f64* ms, int row, int col, int size) {
-    int cnt = row * col * size;
-    f64 *m1, *m2;
-    CHECK_MALLOC(Mem::malloc((void**)&m1, sizeof(f64) * cnt));
-    utils::Defer free_m1([&m1]() {Mem::free(m1);});
-    CHECK_MALLOC(Mem::malloc((void**)&m2, sizeof(f64) * cnt));
-    utils::Defer free_m2([&m2]() {Mem::free(m2);});
-
-    CHECK_CUDA_CALL(cudaMemcpy(m1, ms, sizeof(f64) * cnt, cudaMemcpyHostToDevice), "cuda_memcpy_h2d");
-    auto dims = get_matrix_dims(row, col, size);
-    cuda_kernel::transpose<<<std::get<0>(dims), std::get<1>(dims)>>>(m1, m2, row, col, size);
-    CHECK_CUDA_CALL(cudaPeekAtLastError(), "transpose");
-    CHECK_CUDA_CALL(cudaMemcpy(ms, m2, sizeof(f64) * cnt, cudaMemcpyDeviceToHost), "cuda_memcpy_d2h");
-}
-
-void mmul(int m, int n, int k, const f64* data1, const f64* data2, f64* dst, int size) {
+void mmul(u32 m, u32 n, u32 k, const f64* data1, const f64* data2, f64* dst, u32 size) {
     cublasHandle_t handle; 
     CHECK_CUBLAS_CALL(cublasCreate(&handle), "create"); 
     utils::Defer destroy_handle([&handle]() {cublasDestroy(handle);});
@@ -278,7 +234,7 @@ void mmul(int m, int n, int k, const f64* data1, const f64* data2, f64* dst, int
     CHECK_CUDA_CALL(cudaMemcpy(cm + m * k * size, data2, sizeof(f64) * k * n * size, cudaMemcpyHostToDevice), "cuda_memcpy_h2d");
     // dst不需要拷贝
 
-    for (int i = 0; i < size; i++) {
+    for (u32 i = 0; i < size; i++) {
         hicm[i] = cm + i * m * k;
         hicm[i + size] = cm + size * m * k + i * k * n;
         hicm[i + 2 * size] = cm + size * m * k + size * k * n + i * m * n;
@@ -291,7 +247,7 @@ void mmul(int m, int n, int k, const f64* data1, const f64* data2, f64* dst, int
     CHECK_CUDA_CALL(cudaMemcpy(dst, cm + m * k * size + k * n * size, sizeof(f64) * m * n * size, cudaMemcpyDeviceToHost), "cuda_memcpy_d2h");
 }
 
-bool inv(int m, f64* data, int size) {
+bool inv(u32 m, f64* data, u32 size) {
     cublasHandle_t handle; 
     CHECK_CUBLAS_CALL(cublasCreate(&handle), "create"); 
     utils::Defer destroy_handle([&handle]() {cublasDestroy(handle);});
@@ -305,7 +261,7 @@ bool inv(int m, f64* data, int size) {
     utils::Defer destroy_hicm([&hicm]() {free(hicm);});
 
     CHECK_CUDA_CALL(cudaMemcpy(cm, data, sizeof(f64) * m * m * size, cudaMemcpyHostToDevice), "cuda_memcpy_h2d");
-    for (int i = 0; i < 2 * size; i++) {
+    for (u32 i = 0; i < 2 * size; i++) {
         hicm[i] = cm + i * m * m;
     }
     CHECK_CUDA_CALL(cudaMemcpy(icm, hicm, 2 * size * sizeof(f64*), cudaMemcpyHostToDevice), "cuda_memcpy_h2d");
@@ -322,7 +278,7 @@ bool inv(int m, f64* data, int size) {
 
     auto check_info = [&hinfo_arr, &info_arr, &size](const std::string& fn) -> bool {
         CHECK_CUDA_CALL(cudaMemcpy(hinfo_arr, info_arr, size * sizeof(int), cudaMemcpyDeviceToHost), "cuda_memcpy_d2h");
-        for (int i = 0; i < size; i++) {
+        for (u32 i = 0; i < size; i++) {
             if (hinfo_arr[i] != 0) {
                 LOG(ERROR) << __FUNCTION__ << " check info err: " << fn << " index: " << i << " code: " << hinfo_arr[i];
                 return false;
