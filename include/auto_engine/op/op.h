@@ -26,6 +26,15 @@ public:
             }
         }
     }
+    Op(const std::vector<Op<T>>& args) {
+        _args = args;
+        for (auto arg : _args) {
+            if (arg->getRequiresGrad()) {
+                setRequiresGrad(true);
+                break;
+            }
+        }
+    }
     Op(const T& data, bool requires_grad) {
         setOutput(data);
         setRequiresGrad(requires_grad);
@@ -142,6 +151,16 @@ struct GenOpFunc<0, T, Args...> {
 
 template<int N, typename T>
 using GenOpFuncT = typename GenOpFunc<N, T>::type;
+
+template<typename T>
+class VAOpFunc {
+public:
+    virtual T call(const std::vector<std::reference_wrapper<T>>&) = 0;
+    virtual T deriv(u32, const T&, const std::vector<std::reference_wrapper<T>>&) = 0;
+    virtual std::shared_ptr<Op<T>> derivFunc(u32, std::shared_ptr<Op<T>>, const std::vector<std::shared_ptr<Op<T>>>&) = 0;
+};
+
+
 
 }
 
