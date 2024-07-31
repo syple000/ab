@@ -31,6 +31,8 @@ public:
     Shape expand(int, u32) const;
     Shape sum() const;
     Shape expand(const Shape&) const;
+    Shape cat(const Shape&, int) const;
+    bool split(int d, u32 sd, Shape& shape1, Shape& shape2) const;
     Shape transpose(int, int) const;
     Shape mmul(const Shape&) const;
 private:

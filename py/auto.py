@@ -115,9 +115,27 @@ def ft4():
     print("sum 0: {}".format(x1.sum(0)))
     print("sum 0 and expand 0: {}".format(x1.sum(0).unsqueeze(0).expand(x1.shape)))
     print("sum -1 and expand -1: {}".format(x1.sum(-1).unsqueeze(-1).expand(x1.shape)))
+    x2 = torch.tensor([
+        [
+            [1],
+            [2]
+        ], 
+        [
+            [3],
+            [4]
+        ]
+    ])
+    x3 = torch.tensor([
+        [
+            [7, 8, 9],
+            [10, 11, 12]
+        ]
+    ])
+    print("cat x1 & x2: {}".format(torch.cat((x1, x2), dim=2)))
+    print("cat x1 & x3: {}".format(torch.cat((x1, x3), dim=0)))
 
 if __name__ == "__main__":
     # ft()
     # ft2()
-    ft3()
-    # ft4()
+    # ft3()
+    ft4()

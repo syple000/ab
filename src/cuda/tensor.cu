@@ -206,10 +206,66 @@ void expand(const f64* src, f64* dst, const base::Shape& shape, u32 d, u32 expd)
     CHECK_CUDA_CALL(cudaMemcpy(dst, mdst, sizeof(f64) * shape.tensorSize() * expd, cudaMemcpyDeviceToHost), "cuda_memcpy_d2h");
 }
 
-void transpose(f64* data, const base::Shape& shape, u32 d1, u32 d2) {
-    if (d1 > d2) {std::swap(d1, d2);}
 
-    auto transpose_shape = shape.transpose(d1, d2);
+void cat(const f64* src1, const base::Shape& shape1, const f64* src2, const base::Shape& shape2, f64* dst, const base::Shape& oshape, u32 d) {
+    f64 *msrc1, *msrc2, *mdst;
+    u32 *mds;
+
+    CHECK_MALLOC(Mem::malloc((void**)&msrc1, sizeof(f64) * shape1.tensorSize()));
+    utils::Defer free_msrc1([&msrc1]() {Mem::free(msrc1);});
+    CHECK_MALLOC(Mem::malloc((void**)&msrc2, sizeof(f64) * shape2.tensorSize()));
+    utils::Defer free_msrc2([&msrc2]() {Mem::free(msrc2);});
+    CHECK_MALLOC(Mem::malloc((void**)&mdst, sizeof(f64) * oshape.tensorSize()));
+    utils::Defer free_mdst([&mdst]() {Mem::free(mdst);});
+    CHECK_MALLOC(Mem::malloc((void**)&mds, sizeof(u32) * oshape.dimCnt() * 6));
+    utils::Defer free_mds([&mds]() {Mem::free(mds);});
+
+    CHECK_CUDA_CALL(cudaMemcpy(msrc1, src1, sizeof(f64) * shape1.tensorSize(), cudaMemcpyHostToDevice), "cuda_memcpy_h2d");
+    CHECK_CUDA_CALL(cudaMemcpy(msrc2, src2, sizeof(f64) * shape2.tensorSize(), cudaMemcpyHostToDevice), "cuda_memcpy_h2d");
+    CHECK_CUDA_CALL(cudaMemcpy(mds, shape1.getDims().data(), sizeof(u32) * shape1.dimCnt(), cudaMemcpyHostToDevice), "cuda_memcpy_h2d");
+    CHECK_CUDA_CALL(cudaMemcpy(mds + shape1.dimCnt(), shape1.getStrides().data(), sizeof(u32) * shape1.dimCnt(), cudaMemcpyHostToDevice), "cuda_memcpy_h2d");
+    CHECK_CUDA_CALL(cudaMemcpy(mds + 2 * shape2.dimCnt(), shape2.getDims().data(), sizeof(u32) * shape2.dimCnt(), cudaMemcpyHostToDevice), "cuda_memcpy_h2d");
+    CHECK_CUDA_CALL(cudaMemcpy(mds + 3 * shape2.dimCnt(), shape2.getStrides().data(), sizeof(u32) * shape2.dimCnt(), cudaMemcpyHostToDevice), "cuda_memcpy_h2d");
+    CHECK_CUDA_CALL(cudaMemcpy(mds + 4 * oshape.dimCnt(), oshape.getDims().data(), sizeof(u32) * oshape.dimCnt(), cudaMemcpyHostToDevice), "cuda_memcpy_h2d");
+    CHECK_CUDA_CALL(cudaMemcpy(mds + 5 * oshape.dimCnt(), oshape.getStrides().data(), sizeof(u32) * oshape.dimCnt(), cudaMemcpyHostToDevice), "cuda_memcpy_h2d");
+
+    auto gridx_dim = (oshape.tensorSize() + sqrt_tcnt_per_block() - 1) / sqrt_tcnt_per_block();
+    cuda_kernel::cat<<<dim3(gridx_dim), dim3(sqrt_tcnt_per_block())>>>(msrc1, mds, mds + shape1.dimCnt(), msrc2, mds + 2 * shape2.dimCnt(), mds + 3 * shape2.dimCnt(), mdst, mds + 4 * oshape.dimCnt(), mds + 5 * oshape.dimCnt(), oshape.dimCnt(), d);
+    CHECK_CUDA_CALL(cudaPeekAtLastError(), "cat");
+    CHECK_CUDA_CALL(cudaMemcpy(dst, mdst, sizeof(f64) * oshape.tensorSize(), cudaMemcpyDeviceToHost), "cuda_memcpy_d2h");
+}
+
+
+void split(const f64* src, const base::Shape& ishape, f64* dst1, const base::Shape& shape1, f64* dst2, const base::Shape& shape2, u32 d) {
+    f64 *msrc, *mdst1, *mdst2;
+    u32 *mds;
+
+    CHECK_MALLOC(Mem::malloc((void**)&msrc, sizeof(f64) * ishape.tensorSize()));
+    utils::Defer free_msrc([&msrc]() {Mem::free(msrc);});
+    CHECK_MALLOC(Mem::malloc((void**)&mdst1, sizeof(f64) * shape1.tensorSize()));
+    utils::Defer free_mdst1([&mdst1]() {Mem::free(mdst1);});
+    CHECK_MALLOC(Mem::malloc((void**)&mdst2, sizeof(f64) * shape2.tensorSize()));
+    utils::Defer free_mdst([&mdst2]() {Mem::free(mdst2);});
+    CHECK_MALLOC(Mem::malloc((void**)&mds, sizeof(u32) * ishape.dimCnt() * 6));
+    utils::Defer free_mds([&mds]() {Mem::free(mds);});
+
+    CHECK_CUDA_CALL(cudaMemcpy(msrc, src, sizeof(f64) * ishape.tensorSize(), cudaMemcpyHostToDevice), "cuda_memcpy_h2d");
+    CHECK_CUDA_CALL(cudaMemcpy(mds, ishape.getDims().data(), sizeof(u32) * ishape.dimCnt(), cudaMemcpyHostToDevice), "cuda_memcpy_h2d");
+    CHECK_CUDA_CALL(cudaMemcpy(mds + ishape.dimCnt(), ishape.getStrides().data(), sizeof(u32) * ishape.dimCnt(), cudaMemcpyHostToDevice), "cuda_memcpy_h2d");
+    CHECK_CUDA_CALL(cudaMemcpy(mds + 2 * shape1.dimCnt(), shape1.getDims().data(), sizeof(u32) * shape1.dimCnt(), cudaMemcpyHostToDevice), "cuda_memcpy_h2d");
+    CHECK_CUDA_CALL(cudaMemcpy(mds + 3 * shape1.dimCnt(), shape1.getStrides().data(), sizeof(u32) * shape1.dimCnt(), cudaMemcpyHostToDevice), "cuda_memcpy_h2d");
+    CHECK_CUDA_CALL(cudaMemcpy(mds + 4 * shape2.dimCnt(), shape2.getDims().data(), sizeof(u32) * shape2.dimCnt(), cudaMemcpyHostToDevice), "cuda_memcpy_h2d");
+    CHECK_CUDA_CALL(cudaMemcpy(mds + 5 * shape2.dimCnt(), shape2.getStrides().data(), sizeof(u32) * shape2.dimCnt(), cudaMemcpyHostToDevice), "cuda_memcpy_h2d");
+
+    auto gridx_dim = (ishape.tensorSize() + sqrt_tcnt_per_block() - 1) / sqrt_tcnt_per_block();
+    cuda_kernel::split<<<dim3(gridx_dim), dim3(sqrt_tcnt_per_block())>>>(msrc, mds, mds + ishape.dimCnt(), mdst1, mds + 2 * shape1.dimCnt(), mds + 3 * shape1.dimCnt(), mdst2, mds + 4 * shape2.dimCnt(), mds + 5 * shape2.dimCnt(), ishape.dimCnt(), d);
+    CHECK_CUDA_CALL(cudaPeekAtLastError(), "cat");
+    CHECK_CUDA_CALL(cudaMemcpy(dst1, mdst1, sizeof(f64) * shape1.tensorSize(), cudaMemcpyDeviceToHost), "cuda_memcpy_d2h");
+    CHECK_CUDA_CALL(cudaMemcpy(dst2, mdst2, sizeof(f64) * shape2.tensorSize(), cudaMemcpyDeviceToHost), "cuda_memcpy_d2h");
+}
+
+void transpose(f64* data, const base::Shape& shape, const base::Shape& transpose_shape, u32 d1, u32 d2) {
+    if (d1 > d2) {std::swap(d1, d2);}
 
     f64 *msrc, *mdst;
     u32 *mds;

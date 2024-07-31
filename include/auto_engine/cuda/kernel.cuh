@@ -5,7 +5,6 @@
 #include "auto_engine/base/exit_code.h"
 #include "auto_engine/cuda/info.h"
 #include "glog/logging.h"
-#include <__clang_cuda_runtime_wrapper.h>
 
 #define CHECK_CUDA_CALL(call, func_name) \
 { \
@@ -330,6 +329,88 @@ __global__ void expand(const T* src, T* dst, u32 size) {
     u32 index = blockIdx.x * blockDim.x + threadIdx.x; 
     if (index >= size) {return;}
     dst[index] = src[0];
+}
+
+template<typename T>
+__global__ void cat(const T* src1, const u32* src1_dims, const u32* src1_strides, 
+    const T* src2, const u32* src2_dims, const u32* src2_strides, 
+    T* dst, const u32* dst_dims, const u32* dst_strides, u32 dim_cnt, u32 d) {
+    u32 idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx >= dst_strides[0] * dst_dims[0]) {return;}
+
+    u32 di = idx;
+    u32 si1 = 0, si2 = 0;
+    bool f = false;
+    for (u32 i = 0; i < dim_cnt; i++) {
+        auto v = di / dst_strides[i];
+        if (i == d) {
+            if (v >= src1_dims[d]) {
+                si2 = si2 + (v - src1_dims[d]) * src2_strides[i];
+            } else {
+                si1 = si1 + v * src1_strides[i];
+                f = true;
+            }
+        }
+        if (i < d) {
+            si2 = si2 + v * src2_strides[i];
+            si1 = si1 + v * src1_strides[i];
+        }
+        if (i > d) {
+            if (f) {
+                si1 = si1 + v * src1_strides[i];
+            } else {
+                si2 = si2 + v * src2_strides[i];
+            }
+        }
+        di = di % dst_strides[i];
+    }
+
+    if (f) {
+        dst[idx] = src1[si1];
+    } else {
+        dst[idx] = src2[si2];
+    }
+}
+
+template<typename T>
+__global__ void split(const T* src, const u32* src_dims, const u32* src_strides, 
+    T* dst1, const u32* dst1_dims, const u32* dst1_strides, 
+    T* dst2, const u32* dst2_dims, const u32* dst2_strides, u32 dim_cnt, u32 d) {
+    u32 idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx >= src_strides[0] * src_dims[0]) {return;}
+
+    u32 si = idx;
+    u32 di1 = 0, di2 = 0;
+    bool f = false;
+    for (u32 i = 0; i < dim_cnt; i++) {
+        auto v = si / src_strides[i];
+        if (i == d) {
+            if (v >= dst1_dims[d]) {
+                di2 = di2 + (v - dst1_dims[d]) * dst2_strides[i];
+            } else {
+                di1 = di1 + v * dst1_strides[i];
+                f = true;
+            }
+        }
+        if (i < d) {
+            di2 = di2 + v * dst2_strides[i];
+            di1 = di1 + v * dst1_strides[i];
+        }
+        if (i > d) {
+            if (f) {
+                di1 = di1 + v * dst1_strides[i];
+            } else {
+                di2 = di2 + v * dst2_strides[i];
+            }
+        }
+        si = si % src_strides[i];
+    }
+
+    if (f) {
+        dst1[di1] = src[idx];
+    } else {
+        dst2[di2] = src[idx];
+    }
 }
 
 template<typename T>

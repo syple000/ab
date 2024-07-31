@@ -218,7 +218,6 @@ TEST(Test_grad_test4, test) {
     c.clearGradGraph();
     ASSERT_TRUE(cx1.call() == xgrad);
     cx1.deriv();
-    std::cout << "xgrad x1 2rd: " << x1->getGrad().toString() << std::endl;
     ASSERT_TRUE(x1->getGrad() == base::Tensor<f64>(base::Shape({2, 3, 3}), {
         5313.495600000, 5735.883600000, 6158.271600000,
         7938.414000000, 8512.304400000, 9086.194800000,
@@ -303,6 +302,27 @@ TEST(Test_tensor, test) {
         0, 0, 1, 0,
         0, 1, 0, 0
     }));
+    base::Tensor<f64> t8 = base::Tensor<f64>(base::Shape({2, 2, 1}), {1, 2, 3, 4});
+    base::Tensor<f64> t9 = base::Tensor<f64>(base::Shape({1, 2, 3}), {7, 8, 9, 10, 11, 12});
+    base::Tensor<f64> s1, s2;
+    ASSERT_TRUE(t2.cat(t8, -1) == base::Tensor<f64>(base::Shape({2, 2, 4}), {1, 2, 3, 1, 4, 5, 6, 2, 1, 2, 3, 3, 4, 5, 6, 4}));
+    t2.cat(t8, -1).split(-1, 3, s1, s2);
+    ASSERT_TRUE(s1 == t2);
+    ASSERT_TRUE(s2 == t8);
+    ASSERT_TRUE(t2.cat(t9, 0) == base::Tensor<f64>(base::Shape({3, 2, 3}), {1, 2, 3, 4, 5, 6, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12}));
+    t2.cat(t9, 0).split(0, 2, s1, s2);
+    ASSERT_TRUE(s1 == t2);
+    ASSERT_TRUE(s2 == t9);
+    // 测试多个cat/split
+    base::Tensor<f64> t10 = base::Tensor<f64>(base::Shape({1, 2}), {1, 2});
+    base::Tensor<f64> t11 = base::Tensor<f64>(base::Shape({2, 2}), {3, 4, 5, 6});
+    base::Tensor<f64> t12 = base::Tensor<f64>(base::Shape({1, 2}), {7, 8});
+    ASSERT_TRUE(base::Tensor<f64>::cat({t10, t11, t12}, 0) == base::Tensor<f64>(base::Shape({4, 2}), {1, 2, 3, 4, 5, 6, 7, 8}));
+    auto l = base::Tensor<f64>::split(base::Tensor<f64>::cat({t10, t11, t12}, 0), {1, 2}, 0);
+    ASSERT_TRUE(l.size() == 3);
+    ASSERT_TRUE(l[0] == base::Tensor<f64>(base::Shape({1, 2}), {1, 2}));
+    ASSERT_TRUE(l[1] == base::Tensor<f64>(base::Shape({2, 2}), {3, 4, 5, 6}));
+    ASSERT_TRUE(l[2] == base::Tensor<f64>(base::Shape({1, 2}), {7, 8}));
 }
 
 TEST(Test_grad_descent, test) {

@@ -150,6 +150,56 @@ Shape Shape::expand(const Shape& shape) const {
     return shape;
 }
 
+
+Shape Shape::cat(const Shape& t, int d) const {
+    if (_dims.size() != t._dims.size()) {
+        LOG(ERROR) << fmt::format("cat tensor dim cnt ne: {}, {}", _dims.size(), t._dims.size());
+        return Shape();
+    }
+    if (d < 0 || d >= _dims.size()) {
+        LOG(ERROR) << fmt::format("cat d invalid, {}, dim cnt: {}", d, _dims.size());
+        return Shape();
+    }
+    std::vector<u32> dims(_dims.size());
+    for (int i = 0; i < _dims.size(); i++) {
+        if (i == d) {
+            dims[i] = _dims[i] + t._dims[i];
+        } else {
+            if (_dims[i] != t._dims[i]) {
+                LOG(ERROR) << fmt::format("cat dim index: {}, val: {}, {} ne", i, _dims[i], t._dims[i]);
+                return Shape();
+            }
+            dims[i] = _dims[i];
+        }
+    }
+    return Shape(dims);
+}
+
+
+bool Shape::split(int d, u32 sd, Shape& shape1, Shape& shape2) const {
+    if (d < 0 || d >= _dims.size()) {
+        LOG(ERROR) << fmt::format("split d out of range: {}, dim cnt: {}", d, _dims.size());
+        return false;
+    }
+    if (sd == 0 || sd >= _dims[d]) {
+        LOG(ERROR) << fmt::format("split, sd: {}, dim: {}", sd, _dims[d]);
+        return false;
+    }
+    std::vector<u32> dims1(_dims.size()), dims2(_dims.size());
+    for (int i = 0; i < _dims.size(); i++) {
+        if (i == d) {
+            dims1[i] = sd;
+            dims2[i] = _dims[i] - sd;
+        } else {
+            dims1[i] = _dims[i];
+            dims2[i] = _dims[i];
+        }
+    }
+    shape1 = Shape(dims1);
+    shape2 = Shape(dims2);
+    return true;
+}
+
 Shape Shape::transpose(int d1, int d2) const {
     if (d1 < 0 || d2 < 0 || d1 == d2 || d1 >= _dims.size() || d2 >= _dims.size()) {
         LOG(ERROR) << fmt::format("transpose d1/d2 invalid: {}, {}. shape dim cnt: {}", d1, d2, _dims.size());
