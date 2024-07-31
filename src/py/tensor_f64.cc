@@ -22,6 +22,7 @@
 #include "auto_engine/op/sin_cos.h"
 #include "auto_engine/op/sub.h"
 #include "auto_engine/op/sub_n.h"
+#include "auto_engine/op/sum_d_expand_d.h"
 #include "auto_engine/op/sum_expand.h"
 #include "auto_engine/shape/shape.h"
 #include "auto_engine/tensor/tensor.h"
@@ -194,6 +195,12 @@ PYBIND11_MODULE(ae, m) {
         })
         .def("expand", [](std::shared_ptr<op::Op<base::Tensor<f64>>> op, const std::vector<u32>& dims) -> std::shared_ptr<op::Op<base::Tensor<f64>>> {
             return std::make_shared<op::Expand<base::Tensor<f64>, base::Shape>>(op, base::Shape(dims));
+        })
+        .def("sum", [](std::shared_ptr<op::Op<base::Tensor<f64>>> op, int d) -> std::shared_ptr<op::Op<base::Tensor<f64>>> {
+            return std::make_shared<op::SumD<base::Tensor<f64>, base::Shape>>(op, d);
+        })
+        .def("expand", [](std::shared_ptr<op::Op<base::Tensor<f64>>> op, int d, u32 expd) -> std::shared_ptr<op::Op<base::Tensor<f64>>> {
+            return std::make_shared<op::ExpandD<base::Tensor<f64>, base::Shape>>(op, d, expd);
         })
         .def("mm", [](std::shared_ptr<op::Op<base::Tensor<f64>>> op1, std::shared_ptr<op::Op<base::Tensor<f64>>> op2) -> std::shared_ptr<op::Op<base::Tensor<f64>>> {
             return std::make_shared<op::Mmul<base::Tensor<f64>>>(op1, op2);

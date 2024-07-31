@@ -1,6 +1,7 @@
 #ifndef OP_METHODS_H
 #define OP_METHODS_H
 
+#include "auto_engine/base/basic_types.h"
 namespace op {
 
 template<typename T>
@@ -37,22 +38,19 @@ template<typename T, typename SHAPE>
 T expand(const T&, const SHAPE&);
 
 template<typename T>
-T sum_along_col(const T&);
-
-template<typename T, typename SHAPE>
-T expand_along_col(const T&, const SHAPE&);
+T sum(const T&, int d);
 
 template<typename T>
-T sum_along_row(const T&);
-
-template<typename T, typename SHAPE>
-T expand_along_row(const T&, const SHAPE&);
+T expand(const T&, int d, u32 expd);
 
 template<typename T, typename SHAPE>
 T reshape(const T&, const SHAPE&);
 
 template<typename T, typename SHAPE>
 SHAPE shape(const T&);
+
+template<typename SHAPE>
+u32 shape_dim(const SHAPE&, int);
 
 template<typename T>
 T add_n(const T&, const T&);

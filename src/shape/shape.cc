@@ -101,8 +101,8 @@ Shape Shape::sum() const {
     return Shape({1});
 }
 
-Shape Shape::sum(u32 d) const {
-    if (d >= _dims.size()) {
+Shape Shape::sum(int d) const {
+    if (d < 0 || d >= _dims.size()) {
         LOG(ERROR) << fmt::format("sum dim out of range: {}, shape: {}", d, _dims.size());
         return Shape();
     }
@@ -115,7 +115,42 @@ Shape Shape::sum(u32 d) const {
     return Shape(dims);
 }
 
-Shape Shape::transpose(u32 d1, u32 d2) const {
+
+Shape Shape::expand(int d, u32 expd) const {
+    if (d < 0 || d > _dims.size() || expd == 0) {
+        LOG(ERROR) << fmt::format("expand dim out of range: {}, shape: {}, expd: {}", d, _dims.size(), expd);
+        return Shape();
+    }
+    if (d == _dims.size()) {
+        std::vector<u32> dims = _dims;
+        dims.emplace_back(expd);
+        return Shape(dims);
+    } else {
+        std::vector<u32> dims; dims.reserve(_dims.size() + 1);
+        for (int i = 0; i < d; i++) {
+            dims.emplace_back(_dims[i]);
+        }
+        dims.emplace_back(expd);
+        for (int i = d; i < _dims.size(); i++) {
+            dims.emplace_back(_dims[i]);
+        }
+        return Shape(dims);
+    }
+}
+
+Shape Shape::expand(const Shape& shape) const {
+    if (_size != 1) {
+        LOG(ERROR) << fmt::format("expand dim err tensor size ne 1: {}", _size);
+        return Shape();
+    }
+    if (shape.tensorSize() <= 0) {
+        LOG(ERROR) << "expand dim err target size eq 0";
+        return Shape();
+    }
+    return shape;
+}
+
+Shape Shape::transpose(int d1, int d2) const {
     if (d1 < 0 || d2 < 0 || d1 == d2 || d1 >= _dims.size() || d2 >= _dims.size()) {
         LOG(ERROR) << fmt::format("transpose d1/d2 invalid: {}, {}. shape dim cnt: {}", d1, d2, _dims.size());
         return Shape();

@@ -94,14 +94,37 @@ base::Tensor<f64> expand(const base::Tensor<f64>& t, const base::Shape& shape) {
 }
 
 template<>
+base::Tensor<f64> sum(const base::Tensor<f64>& t, int d) {
+    return t.sum(d);
+}
+
+template<>
+base::Tensor<f64> expand(const base::Tensor<f64>& t, int d, u32 expd) {
+    return t.expand(d, expd);
+}
+
+template<>
 base::Shape shape(const base::Tensor<f64>& t) {
     return t.shape();
 }
 
 template<>
+u32 shape_dim(const base::Shape& shape, int dim_index) {
+    if (dim_index < 0) {dim_index = dim_index + shape.dimCnt();}
+    if (dim_index < 0 || dim_index >= shape.dimCnt()) {
+        if (ENABLE_TENSOR_EXCEPTION) {
+            throw std::runtime_error(fmt::format("[{}] shape dim index out of range: {}, {}", __FUNCTION__, dim_index, shape.toString()));
+        }
+        LOG(ERROR) << fmt::format("[{}] shape dim index out of range: {}, {}", __FUNCTION__, dim_index, shape.toString());
+        return 0;
+    }
+    return shape.getDim(dim_index);
+}
+
+template<>
 base::Tensor<f64> add_n(const base::Tensor<f64>& t1, const base::Tensor<f64>& t2) {
     if (t2.shape().tensorSize() != 1) {
-        LOG(INFO) << fmt::format("[{}] t2 tensor size != 1", __FUNCTION__);
+        LOG(ERROR) << fmt::format("[{}] t2 tensor size != 1", __FUNCTION__);
         if (ENABLE_TENSOR_EXCEPTION) {
             throw std::runtime_error(fmt::format("[{}] t2 tensor size != 1", __FUNCTION__));
         }

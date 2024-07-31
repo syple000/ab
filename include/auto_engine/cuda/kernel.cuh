@@ -5,6 +5,7 @@
 #include "auto_engine/base/exit_code.h"
 #include "auto_engine/cuda/info.h"
 #include "glog/logging.h"
+#include <__clang_cuda_runtime_wrapper.h>
 
 #define CHECK_CUDA_CALL(call, func_name) \
 { \
@@ -192,11 +193,11 @@ __global__ void transpose(const T* src, T* dst, const u32* dims, const u32* stri
     output_index += lindex * transpose_strides[d];
 
     // 赋值给共享内存
-    shared_mem[threadIdx.x][threadIdx.y] = src[index];
+    shared_mem[threadIdx.y][threadIdx.x] = src[index];
 
     __syncthreads();
 
-    dst[output_index] = shared_mem[threadIdx.x][threadIdx.y];
+    dst[output_index] = shared_mem[threadIdx.y][threadIdx.x];
 }
 
 // 转置除最后一个维度的任意两个维度
@@ -232,21 +233,21 @@ __global__ void sum(const T* src, T* dst, const u32* dims, const u32* strides, u
     u32 lindex = threadIdx.x + blockDim.x * blockIdx.x; // 最后一个维度index
     u32 uindex = threadIdx.y + blockDim.y * blockIdx.y;
 
-    if (lindex >= dims[dim_cnt - 1] || uindex >= strides[0]*dims[0]/dims[dim_cnt - 1]) { shared_mem[threadIdx.x][threadIdx.y] = 0; return;}
+    if (lindex >= dims[dim_cnt - 1] || uindex >= strides[0]*dims[0]/dims[dim_cnt - 1]) { shared_mem[threadIdx.y][threadIdx.x] = 0; return;}
     
-    shared_mem[threadIdx.x][threadIdx.y] = src[uindex * dims[dim_cnt - 1] + lindex];
+    shared_mem[threadIdx.y][threadIdx.x] = src[uindex * dims[dim_cnt - 1] + lindex];
 
     __syncthreads();
 
     for (u32 i = blockDim.x / 2; i > 0; i = i >> 1) {
         if (threadIdx.x < i) {
-            shared_mem[threadIdx.x][threadIdx.y] += shared_mem[threadIdx.x + i][threadIdx.y];
+            shared_mem[threadIdx.y][threadIdx.x] += shared_mem[threadIdx.y][threadIdx.x + i];
         }
         __syncthreads();
     }
 
     if (threadIdx.x == 0) {
-        atomicAdd(dst + uindex, shared_mem[0][threadIdx.y]);
+        atomicAdd(dst + uindex, shared_mem[threadIdx.y][0]);
     }
 }
 
@@ -267,23 +268,23 @@ __global__ void sum(const T* src, T* dst, const u32* dims, const u32* strides, u
     u32 uindex = blockIdx.x;
     
     // 以2*2*3张量,d=1为例，strides=[6, 3, 1], uindex最大取2，lindex最大取3, index最大取2
-    if (lindex >= strides[d]) {shared_mem[threadIdx.x][threadIdx.y] = 0; return;}
-    if (index >= dims[d]) {shared_mem[threadIdx.x][threadIdx.y] = 0; return;}
-    if (uindex >= strides[0] * dims[0] / strides[d] / dims[d]) {shared_mem[threadIdx.x][threadIdx.y] = 0; return;}
+    if (lindex >= strides[d]) {shared_mem[threadIdx.z][threadIdx.y] = 0; return;}
+    if (index >= dims[d]) {shared_mem[threadIdx.z][threadIdx.y] = 0; return;}
+    if (uindex >= strides[0] * dims[0] / strides[d] / dims[d]) {shared_mem[threadIdx.z][threadIdx.y] = 0; return;}
 
-    shared_mem[threadIdx.y][threadIdx.z] = src[uindex * strides[d] * dims[d] + index * strides[d] + lindex];
+    shared_mem[threadIdx.z][threadIdx.y] = src[uindex * strides[d] * dims[d] + index * strides[d] + lindex];
 
     __syncthreads();
 
     for (u32 i = blockDim.z / 2; i > 0; i = i >> 1) {
         if (threadIdx.z < i) {
-            shared_mem[threadIdx.y][threadIdx.z] += shared_mem[threadIdx.y][threadIdx.z + i];
+            shared_mem[threadIdx.z][threadIdx.y] += shared_mem[threadIdx.z + i][threadIdx.y];
         }
         __syncthreads();
     }
 
     if (threadIdx.z == 0) {
-        atomicAdd(dst + uindex * strides[d] + lindex, shared_mem[threadIdx.y][0]);
+        atomicAdd(dst + uindex * strides[d] + lindex, shared_mem[0][threadIdx.y]);
     }
 }
 
@@ -296,8 +297,8 @@ __global__ void expand(const T* src, T* dst, const u32* dims, const u32* strides
     // 最后得到2*2*3
     if (lindex >= strides[d] * dims[d]) {return;}
     if (index >= expd) {return;}
-    if (uindex >= strides[0] * dims[0] / strides[d] * dims[d]) {return;}
-    dst[uindex * strides[d] * dims[d] * expd + expd * strides[d] * dims[d] + lindex] = src[uindex * strides[d] * dims[d] + lindex];
+    if (uindex >= strides[0] * dims[0] / strides[d] / dims[d]) {return;}
+    dst[uindex * strides[d] * dims[d] * expd + index * strides[d] * dims[d] + lindex] = src[uindex * strides[d] * dims[d] + lindex];
 }
 
 template<typename T>

@@ -15,6 +15,7 @@
 #include "auto_engine/op/mul_n.h"
 #include "auto_engine/op/pow_n.h"
 #include "auto_engine/op/sub_n.h"
+#include "auto_engine/op/sum_d_expand_d.h"
 #include "auto_engine/op/sum_expand.h"
 #include "auto_engine/op/transpose.h"
 #include "auto_engine/shape/shape.h"
@@ -190,6 +191,45 @@ TEST(Test_grad_tensor3, test) {
     cx2.clearGrad();
 }
 
+TEST(Test_grad_test4, test) {
+    auto t1 = base::Tensor<f64>(base::Shape({2, 3, 3}), {0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.7, 0.6, 0.5});
+    auto x1 = std::make_shared<op::DataOp<base::Tensor<f64>>>(t1, true);
+    auto item1 = std::make_shared<op::SumD<base::Tensor<f64>, base::Shape>>(x1, 0);
+    auto item2 = std::make_shared<op::SumD<base::Tensor<f64>, base::Shape>>(x1, 1);
+    auto item3 = std::make_shared<op::SumD<base::Tensor<f64>, base::Shape>>(x1, -1);
+    auto item4 = std::make_shared<op::Mmul<base::Tensor<f64>>>(std::make_shared<op::Transpose<base::Tensor<f64>>>(item2, 0, 1), item3);
+    auto item5 = std::make_shared<op::Mmul<base::Tensor<f64>>>(item1, item4);
+    auto item = std::make_shared<op::Sum<base::Tensor<f64>, base::Shape>>(std::make_shared<op::Mul<base::Tensor<f64>>>(item5, item5));
+    auto c = calc::Calculator<base::Tensor<f64>>(item);
+    ASSERT_TRUE(c.call() == base::Tensor<f64>(base::Shape({1}), {1189.891764000}));
+    c.deriv();
+    auto xgrad = x1->getGrad();
+    ASSERT_TRUE(xgrad == base::Tensor<f64>(base::Shape({2, 3, 3}), {
+        478.756440000, 521.930520000, 565.104600000,
+        800.181720000, 869.690520000, 939.199320000,
+        1067.947560000, 1158.458760000, 1248.969960000,
+        376.688280000, 412.719960000, 448.751640000,
+        648.119640000, 710.486040000, 772.852440000,
+        872.915400000, 956.284200000, 1039.653000000,
+    }));
+    c.clearGrad();
+    c.createGradGraph();
+    auto cx1 = calc::Calculator<base::Tensor<f64>>(x1->getGradGraph());
+    c.clearGradGraph();
+    ASSERT_TRUE(cx1.call() == xgrad);
+    cx1.deriv();
+    std::cout << "xgrad x1 2rd: " << x1->getGrad().toString() << std::endl;
+    ASSERT_TRUE(x1->getGrad() == base::Tensor<f64>(base::Shape({2, 3, 3}), {
+        5313.495600000, 5735.883600000, 6158.271600000,
+        7938.414000000, 8512.304400000, 9086.194800000,
+        10122.382800000, 10819.299600000, 11516.216400000,
+        4398.322800000, 4768.237200000, 5138.151600000,
+        6727.839600000, 7249.256400000, 7770.673200000,
+        8660.917200000, 9305.360400000, 9949.803600000,
+    }));
+    cx1.clearGrad();
+}
+
 TEST(Test_grad_tensor2, test) {
     // 测试：m1 = [[1, 2], [3, 4]], m2 = [[2, 3, 4], [5, 6, 7]]
     // f(m1, m2) = Transpose(inv(Transpose(m1*m2) * m2) * Transpose([1,1,1])) * Transpose([1, 1, 1])
@@ -245,7 +285,10 @@ TEST(Test_tensor, test) {
     ASSERT_TRUE(t7.inv() == base::Tensor<f64>(base::Shape({2, 3, 3}), {-11.0/12, 1.0/3, 1.0/12, -1.0/6, 1.0/3, -1.0/6, 3.0/4, -1.0/3, 1.0/12, -11.0/23, 4.0/23, 1.0/23, -2.0/23, 7.0/23, -4.0/23, 9.0/23, -14.0/69, 8.0/69}));
     ASSERT_TRUE(t2.sum() == base::Tensor<f64>(base::Shape({1}), 42));
     ASSERT_TRUE(t2.sum().expand(t2.shape()) == base::Tensor<f64>(base::Shape({2, 2, 3}), {42, 42, 42, 42, 42, 42, 42, 42, 42, 42, 42, 42}));
-
+    ASSERT_TRUE(t2.sum(0) == base::Tensor<f64>(base::Shape({2, 3}), {2, 4, 6, 8, 10, 12}));
+    ASSERT_TRUE(t2.sum(-1) == base::Tensor<f64>(base::Shape({2, 2}), {6, 15, 6, 15}));
+    ASSERT_TRUE(t2.sum(0).expand(0, 2) == base::Tensor<f64>(base::Shape({2, 2, 3}), {2, 4, 6, 8, 10, 12, 2, 4, 6, 8, 10, 12}));
+    ASSERT_TRUE(t2.sum(-1).expand(-1, 3) == base::Tensor<f64>(base::Shape({2, 2, 3}), {6, 6, 6, 15, 15, 15, 6, 6, 6, 15, 15, 15}));
     ASSERT_TRUE(t1 + 1 == base::Tensor<f64>(base::Shape({2, 3}), {2, 3, 4, 5, 6, 7}));
     ASSERT_TRUE(t1 - 1 == base::Tensor<f64>(base::Shape({2, 3}), {0, 1, 2, 3, 4, 5}));
     ASSERT_TRUE(t1 * 2 == base::Tensor<f64>(base::Shape({2, 3}), {2, 4, 6, 8, 10, 12}));

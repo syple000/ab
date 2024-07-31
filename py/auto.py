@@ -75,13 +75,26 @@ def ft2():
 
 def ft3():
     x1 = torch.tensor([
-        [2, 3],
-        [4, 5]
+        [
+            [0.1, 0.2, 0.3],
+            [0.4, 0.5, 0.6],
+            [0.7, 0.8, 0.9],
+        ],
+        [
+            [0, 0.1, 0.2],
+            [0.3, 0.4, 0.5],
+            [0.7, 0.6, 0.5],
+        ]
     ], dtype=float, requires_grad=True)
-    item1 = (x1 * x1).sum().sqrt()
-    item = x1 / item1
-    print("item: {}, pow2 sum: {}".format(item, (item * item).sum()))
-    xgrad = torch.autograd.grad(outputs=item.sum(), inputs=[x1], create_graph=True)
+    item1 = x1.sum(0) # 3 * 3
+    item2 = x1.sum(1) # 2 * 3
+    item3 = x1.sum(-1) # 2 * 3
+    item4 = item2.transpose(0, 1).mm(item3) # 3 * 3
+    item5 = item1.mm(item4) # 3 * 3
+    item = (item5 * item5).sum() # 1
+
+    print("item: {}".format(item))
+    xgrad = torch.autograd.grad(outputs=item, inputs=[x1], create_graph=True)
     print("xgrad: {}".format(xgrad))
     xgrad_x1_2rd = torch.autograd.grad(outputs=xgrad[0].sum(), inputs=[x1], create_graph=True)
     print("xgrad_x1_2rd: {}".format(xgrad_x1_2rd))
@@ -99,9 +112,12 @@ def ft4():
     ])
     print("transpose 0, 1: {}".format(x1.transpose(0, 1)))
     print("transpose 1, 2: {}".format(x1.transpose(1, 2)))
+    print("sum 0: {}".format(x1.sum(0)))
+    print("sum 0 and expand 0: {}".format(x1.sum(0).unsqueeze(0).expand(x1.shape)))
+    print("sum -1 and expand -1: {}".format(x1.sum(-1).unsqueeze(-1).expand(x1.shape)))
 
 if __name__ == "__main__":
     # ft()
     # ft2()
-    # ft3()
-    ft4()
+    ft3()
+    # ft4()

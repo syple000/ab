@@ -130,6 +130,8 @@ public:
 
     Tensor<T> sum() const;
     Tensor<T> expand(const base::Shape&) const;
+    Tensor<T> sum(int d) const;
+    Tensor<T> expand(int d, u32 expd) const;
 
     Tensor<T> oneHot(u32 classes) const;
 
@@ -164,7 +166,7 @@ public:
             stream << "[";
             if (dim_index == _shape.dimCnt() - 1) {
                 for (int i = 0; i < _shape.getDim(dim_index); i++) {
-                    stream << std::setprecision(12) << _data[offset];
+                    stream << std::fixed << std::setprecision(9) << _data[offset];
                     if (i != _shape.getDim(dim_index) - 1) {
                         stream << ", ";
                     }
@@ -471,18 +473,16 @@ Tensor<T> Tensor<T>::transpose(int d1, int d2) const {
         std::vector<u32> index(_shape.dimCnt());
         for (u32 i = 0; i < _shape.tensorSize(); i++) { 
             u32 ri = i;
-            for (int j = 0; j < _shape.dimCnt() - 1; j++) {
-                index[j] = ri / _shape.subTensorSize(j+1);
-                ri = ri % _shape.subTensorSize(j+1);
+            for (int j = 0; j < _shape.dimCnt(); j++) {
+                index[j] = ri / _shape.getStrides()[j];
+                ri = ri % _shape.getStrides()[j];
             }
-            index[_shape.dimCnt() - 1] = ri;
 
             std::swap(index[d1], index[d2]);
             u32 oi = 0;
-            for (int i = 0; i < shape.dimCnt() - 1; i++) {
-                oi += index[i] * shape.subTensorSize(i + 1);
+            for (int j = 0; j < shape.dimCnt(); j++) {
+                oi += index[j] * shape.getStrides()[j];
             }
-            oi += index[shape.dimCnt() - 1];
             rt._data[oi] = _data[i];
         }
     }
@@ -555,7 +555,15 @@ Tensor<T> Tensor<T>::inv() const {
 
 template<typename T>
 Tensor<T> Tensor<T>::sum() const {
-    Tensor<T> res(Shape({1}));
+    auto shape = _shape.sum();
+    if (shape.tensorSize() <= 0) {
+        if (ENABLE_TENSOR_EXCEPTION) {
+            throw std::runtime_error(fmt::format("tensor sum fail, shape: {}", _shape.toString()));
+        }
+        LOG(ERROR) << fmt::format("tensor sum fail, shape: {}", _shape.toString());
+        return Tensor();
+    }
+    Tensor<T> res(shape);
     if (std::is_same<T, f64>::value && ENABLE_CUDA) {
         cuda::sum(_data.data(), _data.size(), &res._data[0]);
     } else {
@@ -568,18 +576,93 @@ Tensor<T> Tensor<T>::sum() const {
 
 template<typename T>
 Tensor<T> Tensor<T>::expand(const base::Shape& shape) const {
-    if (_shape.tensorSize() != 1) {
+    auto sp = _shape.expand(shape);
+    if (sp.tensorSize() <= 0) {
         if (ENABLE_TENSOR_EXCEPTION) {
-            throw std::runtime_error("expand tensor size != 1");
+            throw std::runtime_error(fmt::format("expand tensor fail: {}, {}", _shape.toString(), shape.toString()));
         }
-        LOG(ERROR) << "expand tensor size != 1";
+        LOG(ERROR) << fmt::format("expand tensor fail: {}, {}", _shape.toString(), shape.toString());
+        return Tensor();
+    }
+    Tensor<T> res(sp);
+    if (std::is_same<T, f64>::value && ENABLE_CUDA) {
+        cuda::expand(_data.data(), res._data.data(), res._data.size()); 
+    } else {
+        res = Tensor<T>(sp, _data[0]);
+    }
+    return std::move(res);
+}
+
+template<typename T>
+Tensor<T> Tensor<T>::sum(int d) const {
+    if (d < 0) {d = d + _shape.dimCnt();}
+
+    auto shape = _shape.sum(d);
+    if (shape.tensorSize() <= 0) {
+        if (ENABLE_TENSOR_EXCEPTION) {
+            throw std::runtime_error(fmt::format("tensor sum fail, shape: {}, d: {}", _shape.toString(), d));
+        }
+        LOG(ERROR) << fmt::format("tensor sum fail, shape: {}, d: {}", _shape.toString(), d);
         return Tensor();
     }
     Tensor<T> res(shape);
     if (std::is_same<T, f64>::value && ENABLE_CUDA) {
-        cuda::expand(_data.data(), res._data.data(), res._data.size()); 
+        cuda::sum(_data.data(), res._data.data(), _shape, d);
     } else {
-        res = Tensor<T>(shape, _data[0]);
+        std::vector<u32> index(shape.dimCnt());
+        for (int i = 0; i < _data.size(); i++) {
+            u32 ri = i;
+            for (int j = 0; j < _shape.dimCnt(); j++) {
+                if (j < d) {
+                    index[j] = ri / _shape.getStrides()[j];
+                } else if (j > d) {
+                    index[j - 1] = ri / _shape.getStrides()[j];
+                }
+                ri = ri % _shape.getStrides()[j];
+            }
+            u32 oi = 0;
+            for (int j = 0; j < shape.dimCnt(); j++) {
+                oi = oi + shape.getStrides()[j] * index[j];
+            }
+            res._data[oi] += _data[i]; 
+        }
+    }
+    return std::move(res);
+}
+
+template<typename T>    
+Tensor<T> Tensor<T>::expand(int d, u32 expd) const {
+    if (d < 0) {d = d + _shape.dimCnt() + 1;}
+
+    auto shape = _shape.expand(d, expd);
+    if (shape.tensorSize() <= 0) {
+        if (ENABLE_TENSOR_EXCEPTION) {
+            throw std::runtime_error(fmt::format("tensor expand fail, shape: {}, d: {}, expd: {}", _shape.toString(), d, expd));
+        }
+        LOG(ERROR) << fmt::format("tensor expand fail, shape: {}, d: {}, expd: {}", _shape.toString(), d, expd);
+        return Tensor();
+    }
+    Tensor<T> res(shape);
+    if (std::is_same<T, f64>::value && ENABLE_CUDA) {
+        cuda::expand(_data.data(), res._data.data(), _shape, d, expd);
+    } else {
+        std::vector<u32> index(_shape.dimCnt());
+        for (int i = 0; i < res._data.size(); i++) {
+            u32 ri = i;
+            for (int j = 0; j < res._shape.dimCnt(); j++) {
+                if (j < d) {
+                    index[j] = ri / res._shape.getStrides()[j];
+                } else if (j > d) {
+                    index[j - 1] = ri / res._shape.getStrides()[j];
+                }
+                ri = ri % res._shape.getStrides()[j];
+            }
+            u32 ii = 0;
+            for (int j = 0; j < _shape.dimCnt(); j++) {
+                ii = ii + _shape.getStrides()[j] * index[j];
+            }
+            res._data[i] += _data[ii]; 
+        }
     }
     return std::move(res);
 }

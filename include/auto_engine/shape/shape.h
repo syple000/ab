@@ -27,9 +27,11 @@ public:
     u32 dimCnt() const {return _dims.size();}
     const std::vector<u32>& getStrides() const {return _strides;}
 
-    Shape sum(u32) const;
+    Shape sum(int) const;
+    Shape expand(int, u32) const;
     Shape sum() const;
-    Shape transpose(u32, u32) const;
+    Shape expand(const Shape&) const;
+    Shape transpose(int, int) const;
     Shape mmul(const Shape&) const;
 private:
     void calcStrides();

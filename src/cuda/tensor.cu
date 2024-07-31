@@ -5,7 +5,9 @@
 #include "auto_engine/cuda/kernel.cuh"
 #include "auto_engine/shape/shape.h"
 #include "auto_engine/utils/defer.h"
+#include "auto_engine/utils/maths.h"
 #include "cublas_v2.h"
+#include <algorithm>
 #include <cstdlib>
 #include <fmt/core.h>
 #include <tuple>
@@ -26,13 +28,6 @@ namespace cuda {
 std::tuple<dim3, dim3> get_apply_dims(u32 size) {
     u32 grid_dim = (size + sqrt_tcnt_per_block() - 1) / sqrt_tcnt_per_block();
     return std::tuple(dim3(grid_dim), dim3(sqrt_tcnt_per_block())); 
-}
-
-std::tuple<dim3, dim3> get_matrix_dims(u32 row, u32 col, u32 size) {
-    u32 grid_dim_x = (row + sqrt_tcnt_per_block() - 1) / sqrt_tcnt_per_block();
-    u32 grid_dim_y = (col + sqrt_tcnt_per_block() - 1) / sqrt_tcnt_per_block();
-    u32 grid_dim_z = size;
-    return std::tuple(dim3(grid_dim_x, grid_dim_y, grid_dim_z), dim3(sqrt_tcnt_per_block(), sqrt_tcnt_per_block()));
 }
 
 #define DEFINE_APPLY_1E(fn, T) \
@@ -104,8 +99,9 @@ void sum(const f64* src, u32 size, f64* dst) {
 
     CHECK_CUDA_CALL(cudaMemcpy(m1, src, sizeof(f64) * size, cudaMemcpyHostToDevice), "cuda_memcpy_h2d");
     CHECK_CUDA_CALL(cudaMemset(m2, 0, sizeof(f64)), "cuda_memset");
-    auto dims = get_apply_dims(size);
-    cuda_kernel::sum<<<std::get<0>(dims), std::get<1>(dims)>>>(m1, size, m2);
+    auto blockx_dim = utils::nextPowerOfTwo(std::min(tcnt_per_block(), size));
+    auto gridx_dim = (size + blockx_dim - 1) / blockx_dim;
+    cuda_kernel::sum<<<dim3(gridx_dim), dim3(blockx_dim)>>>(m1, size, m2);
     CHECK_CUDA_CALL(cudaPeekAtLastError(), "apply_sum");
     CHECK_CUDA_CALL(cudaMemcpy(dst, m2, sizeof(f64), cudaMemcpyDeviceToHost), "cuda_memcpy_d2h");
 }
@@ -118,8 +114,9 @@ void expand(const f64* src, f64* dst, u32 size) {
     utils::Defer free_m2([&m2]() {Mem::free(m2);});
 
     CHECK_CUDA_CALL(cudaMemcpy(m1, src, sizeof(f64), cudaMemcpyHostToDevice), "cuda_memcpy_h2d");
-    auto dims = get_apply_dims(size);
-    cuda_kernel::expand<<<std::get<0>(dims), std::get<1>(dims)>>>(m1, m2, size);
+    auto blockx_dim = utils::nextPowerOfTwo(std::min(tcnt_per_block(), size));
+    auto gridx_dim = (size + blockx_dim - 1) / blockx_dim;
+    cuda_kernel::expand<<<dim3(gridx_dim), dim3(blockx_dim)>>>(m1, m2, size);
     CHECK_CUDA_CALL(cudaPeekAtLastError(), "apply_expand");
     CHECK_CUDA_CALL(cudaMemcpy(dst, m2, sizeof(f64) * size, cudaMemcpyDeviceToHost), "cuda_memcpy_d2h");
 }
@@ -150,7 +147,6 @@ int ont_hot(const f64* src, u32 size, f64* dst, u32 classes) {
 
 
 void sum(const f64* src, f64* dst, const base::Shape& shape, u32 d) {
-// __global__ void sum(const T* src, T* dst, const u32* dims, const u32* strides, u32 dim_cnt) {
     f64 *msrc, *mdst;
     u32 *mds;
     CHECK_MALLOC(Mem::malloc((void**)&msrc, sizeof(f64) * shape.tensorSize()));
@@ -180,8 +176,34 @@ void sum(const f64* src, f64* dst, const base::Shape& shape, u32 d) {
     CHECK_CUDA_CALL(cudaMemcpy(dst, mdst, sizeof(f64) * shape.tensorSize() / shape.getDim(d), cudaMemcpyDeviceToHost), "cuda_memcpy_d2h");
 }
 
-void expand(const f64* src, f64* dst, const base::Shape&, u32 d, u32 expd) {
+void expand(const f64* src, f64* dst, const base::Shape& shape, u32 d, u32 expd) {
+    f64 *msrc, *mdst;
+    u32 *mds;
+    CHECK_MALLOC(Mem::malloc((void**)&msrc, sizeof(f64) * shape.tensorSize()));
+    utils::Defer free_msrc([&msrc]() {Mem::free(msrc);});
+    CHECK_MALLOC(Mem::malloc((void**)&mdst, sizeof(f64) * shape.tensorSize() * expd));
+    utils::Defer free_mdst([&mdst]() {Mem::free(mdst);});
+    CHECK_MALLOC(Mem::malloc((void**)&mds, sizeof(u32) * shape.dimCnt() * 2));
+    utils::Defer free_mds([&mds]() {Mem::free(mds);});
 
+    CHECK_CUDA_CALL(cudaMemcpy(msrc, src, sizeof(f64) * shape.tensorSize(), cudaMemcpyHostToDevice), "cuda_memcpy_h2d");
+    CHECK_CUDA_CALL(cudaMemcpy(mds, shape.getDims().data(), sizeof(u32) * shape.dimCnt(), cudaMemcpyHostToDevice), "cuda_memcpy_h2d");
+    CHECK_CUDA_CALL(cudaMemcpy(mds + shape.dimCnt(), shape.getStrides().data(), sizeof(u32) * shape.dimCnt(), cudaMemcpyHostToDevice), "cuda_memcpy_h2d");
+    CHECK_CUDA_CALL(cudaMemset(mdst, 0, sizeof(f64) * shape.tensorSize() * expd), "cuda_memset");
+
+    if (d == shape.dimCnt()) {
+        u32 gridy_dim = (shape.tensorSize() + sqrt_tcnt_per_block() - 1) / sqrt_tcnt_per_block();
+        u32 gridx_dim = (expd + sqrt_tcnt_per_block() - 1) / sqrt_tcnt_per_block();
+        cuda_kernel::expand<<<dim3(gridx_dim, gridy_dim), dim3(sqrt_tcnt_per_block(), sqrt_tcnt_per_block())>>>(msrc, mdst, mds, mds + shape.dimCnt(), shape.dimCnt(), expd);
+        CHECK_CUDA_CALL(cudaPeekAtLastError(), "expand1");
+    } else {
+        u32 gridy_dim = (shape.getStrides()[d] * shape.getDim(d) + sqrt_tcnt_per_block() - 1) / sqrt_tcnt_per_block();
+        u32 gridz_dim = (expd + sqrt_tcnt_per_block() - 1) / sqrt_tcnt_per_block();
+        u32 gridx_dim = shape.tensorSize() / shape.getStrides()[d] / shape.getDim(d);
+        cuda_kernel::expand<<<dim3(gridx_dim, gridy_dim, gridz_dim), dim3(1, sqrt_tcnt_per_block(), sqrt_tcnt_per_block())>>>(msrc, mdst, mds, mds + shape.dimCnt(), shape.dimCnt(), d, expd);
+        CHECK_CUDA_CALL(cudaPeekAtLastError(), "expand2");
+    }
+    CHECK_CUDA_CALL(cudaMemcpy(dst, mdst, sizeof(f64) * shape.tensorSize() * expd, cudaMemcpyDeviceToHost), "cuda_memcpy_d2h");
 }
 
 void transpose(f64* data, const base::Shape& shape, u32 d1, u32 d2) {

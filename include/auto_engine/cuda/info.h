@@ -1,6 +1,7 @@
 #ifndef CUDA_INFO_H
 #define CUDA_INFO_H
 
+#include "auto_engine/base/basic_types.h"
 #define GPU_DEVICE_ID 0
 // #define GPU_DEBUG_MODE // 缩减gpu并行度
 
@@ -21,11 +22,11 @@ namespace cuda {
 #endif
 
 void init();
-constexpr int grid_cnt_x() {return GRID_CNT_X;}
-constexpr int grid_cnt_y() {return GRID_CNT_Y;}
-constexpr int grid_cnt_z() {return GRID_CNT_Z;}
-constexpr int tcnt_per_block() {return THREAD_CNT_PER_BLOCK;}
-constexpr int sqrt_tcnt_per_block() {return SQRT_THREAD_CNT_PER_BLOCK;}
+constexpr u32 grid_cnt_x() {return GRID_CNT_X;}
+constexpr u32 grid_cnt_y() {return GRID_CNT_Y;}
+constexpr u32 grid_cnt_z() {return GRID_CNT_Z;}
+constexpr u32 tcnt_per_block() {return THREAD_CNT_PER_BLOCK;}
+constexpr u32 sqrt_tcnt_per_block() {return SQRT_THREAD_CNT_PER_BLOCK;}
 
 }
 
