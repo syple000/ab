@@ -69,6 +69,11 @@ base::Tensor<f64> transpose(const base::Tensor<f64>& t, int d1, int d2) {
 }
 
 template<>
+base::Tensor<f64> permute(const base::Tensor<f64>& t, const std::vector<u32>& pl) {
+    return t.permute(pl);
+}
+
+template<>
 base::Tensor<f64> mmul(const base::Tensor<f64>& t1, const base::Tensor<f64>& t2) {
     return t1.mmul(t2);
 }
@@ -99,8 +104,8 @@ base::Tensor<f64> sum(const base::Tensor<f64>& t, int d) {
 }
 
 template<>
-base::Tensor<f64> expand(const base::Tensor<f64>& t, int d, u32 expd) {
-    return t.expand(d, expd);
+base::Tensor<f64> expand(const base::Tensor<f64>& t, const base::Shape& shape, int d) {
+    return t.expand(shape, d);
 }
 
 template<>
@@ -108,18 +113,6 @@ base::Shape shape(const base::Tensor<f64>& t) {
     return t.shape();
 }
 
-template<>
-u32 shape_dim(const base::Shape& shape, int dim_index) {
-    if (dim_index < 0) {dim_index = dim_index + shape.dimCnt();}
-    if (dim_index < 0 || dim_index >= shape.dimCnt()) {
-        if (ENABLE_TENSOR_EXCEPTION) {
-            throw std::runtime_error(fmt::format("[{}] shape dim index out of range: {}, {}", __FUNCTION__, dim_index, shape.toString()));
-        }
-        LOG(ERROR) << fmt::format("[{}] shape dim index out of range: {}, {}", __FUNCTION__, dim_index, shape.toString());
-        return 0;
-    }
-    return shape.getDim(dim_index);
-}
 
 template<>
 base::Tensor<f64> add_n(const base::Tensor<f64>& t1, const base::Tensor<f64>& t2) {

@@ -81,6 +81,11 @@ PYBIND11_MODULE(ae, m) {
             }
             return data[0];
         })
+        .def("shape", [](std::shared_ptr<op::Op<base::Tensor<f64>>> op) -> const std::vector<u32>& {
+            calc::Calculator<base::Tensor<f64>> c(op);
+            c.call();
+            return op->getOutput().shape().getDims();
+        })
         .def("tolist", [](std::shared_ptr<op::Op<base::Tensor<f64>>> op) -> py::list {
             calc::Calculator<base::Tensor<f64>> c(op);
             c.call();
@@ -199,8 +204,8 @@ PYBIND11_MODULE(ae, m) {
         .def("sum", [](std::shared_ptr<op::Op<base::Tensor<f64>>> op, int d) -> std::shared_ptr<op::Op<base::Tensor<f64>>> {
             return std::make_shared<op::SumD<base::Tensor<f64>, base::Shape>>(op, d);
         })
-        .def("expand", [](std::shared_ptr<op::Op<base::Tensor<f64>>> op, int d, u32 expd) -> std::shared_ptr<op::Op<base::Tensor<f64>>> {
-            return std::make_shared<op::ExpandD<base::Tensor<f64>, base::Shape>>(op, d, expd);
+        .def("expand", [](std::shared_ptr<op::Op<base::Tensor<f64>>> op, const std::vector<u32>& dims, int d) -> std::shared_ptr<op::Op<base::Tensor<f64>>> {
+            return std::make_shared<op::ExpandD<base::Tensor<f64>, base::Shape>>(op, base::Shape(dims), d);
         })
         .def("mm", [](std::shared_ptr<op::Op<base::Tensor<f64>>> op1, std::shared_ptr<op::Op<base::Tensor<f64>>> op2) -> std::shared_ptr<op::Op<base::Tensor<f64>>> {
             return std::make_shared<op::Mmul<base::Tensor<f64>>>(op1, op2);

@@ -2,6 +2,7 @@
 #define OP_METHODS_H
 
 #include "auto_engine/base/basic_types.h"
+#include <vector>
 namespace op {
 
 template<typename T>
@@ -26,6 +27,9 @@ template<typename T>
 T transpose(const T&, int, int);
 
 template<typename T>
+T permute(const T&, const std::vector<u32>&);
+
+template<typename T>
 T mmul(const T&, const T&);
 
 template<typename T>
@@ -40,17 +44,14 @@ T expand(const T&, const SHAPE&);
 template<typename T>
 T sum(const T&, int d);
 
-template<typename T>
-T expand(const T&, int d, u32 expd);
+template<typename T, typename SHAPE>
+T expand(const T&, const SHAPE&, int d);
 
 template<typename T, typename SHAPE>
 T reshape(const T&, const SHAPE&);
 
 template<typename T, typename SHAPE>
 SHAPE shape(const T&);
-
-template<typename SHAPE>
-u32 shape_dim(const SHAPE&, int);
 
 template<typename T>
 T add_n(const T&, const T&);

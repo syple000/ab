@@ -28,11 +28,12 @@ public:
     const std::vector<u32>& getStrides() const {return _strides;}
 
     Shape sum(int) const;
-    Shape expand(int, u32) const;
+    bool expand(const Shape&, int) const;
     Shape sum() const;
-    Shape expand(const Shape&) const;
+    bool expand(const Shape&) const;
     Shape cat(const Shape&, int) const;
     bool split(int d, u32 sd, Shape& shape1, Shape& shape2) const;
+    Shape permute(const std::vector<u32>&) const;
     Shape transpose(int, int) const;
     Shape mmul(const Shape&) const;
 private:

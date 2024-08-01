@@ -16,7 +16,7 @@ public:
     }
 
     T deriv(u32 _, const T& grad, const T& arg) override {
-        return expand(grad, _d, shape_dim(shape<T, SHAPE>(arg), _d));
+        return expand(grad, shape<T, SHAPE>(arg), _d);
     }
 
     std::shared_ptr<Op<T>> derivFunc(u32 _, std::shared_ptr<Op<T>> grad, std::shared_ptr<Op<T>> arg) override;
@@ -29,10 +29,10 @@ private:
 template<typename T, typename SHAPE>
 class ExpandD: public UOP<T> {
 public:
-    ExpandD(std::shared_ptr<Op<T>> arg, int d, u32 expd): UOP<T>(arg), _d(d), _expd(expd) {}
+    ExpandD(std::shared_ptr<Op<T>> arg, const SHAPE& shape, int d): UOP<T>(arg), _shape(shape), _d(d) {}
 
     T call(const T& arg) override {
-        return expand(arg, _d, _expd);
+        return expand(arg, _shape, _d);
     }
 
     T deriv(u32 index, const T& grad, const T& arg) override {
@@ -43,13 +43,13 @@ public:
 
     std::string name() const override {return "ExpandD";}
 private:
+    SHAPE _shape;
     int _d;
-    u32 _expd;
 };
 
 template<typename T, typename SHAPE>
 std::shared_ptr<Op<T>> SumD<T, SHAPE>::derivFunc(u32 _, std::shared_ptr<Op<T>> grad, std::shared_ptr<Op<T>> arg) {
-    return std::make_shared<ExpandD<T, SHAPE>>(grad, _d, shape_dim(shape<T, SHAPE>(arg->template getOutput()), _d));
+    return std::make_shared<ExpandD<T, SHAPE>>(grad, shape<T, SHAPE>(arg->template getOutput()), _d);
 }
 
 template<typename T, typename SHAPE>

@@ -6,5 +6,6 @@
 #define ENABLE_GRAD_DESCENT_ECHO_GRAD true
 #define ENABLE_GRAD_DESCENNT_RAND_STEP true // 梯度下降中随机大步长，跳出局部最优
 #define ENABLE_GRAD_DESCENNT_RAND_STEP_RATIO 0.1
+#define MAX_TENSOR_DIM_CNT 16 // 最大维数限制，超过会影响计算正确性
 
 #endif

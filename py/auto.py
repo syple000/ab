@@ -86,11 +86,14 @@ def ft3():
             [0.7, 0.6, 0.5],
         ]
     ], dtype=float, requires_grad=True)
-    item1 = x1.sum(0) # 3 * 3
+    item1_1 = x1.permute(2, 0, 1)
+    item1_2 = item1_1.permute(1, 0, 2)
+    item1 = item1_2.sum(0) # 3 * 3
     item2 = x1.sum(1) # 2 * 3
     item3 = x1.sum(-1) # 2 * 3
     item4 = item2.transpose(0, 1).mm(item3) # 3 * 3
-    item5 = item1.mm(item4) # 3 * 3
+    item5_ = item1.mm(item4) # 3 * 3
+    item5 = item5_.permute(1, 0)
     item = (item5 * item5).sum() # 1
 
     print("item: {}".format(item))
@@ -110,6 +113,9 @@ def ft4():
             [4, 5, 6]
         ]
     ])
+    print("x1 permute [2, 1, 0]: {}".format(x1.permute(2, 1, 0)))
+    print("x1 permute [1, 0, 2]: {}".format(x1.permute(1, 0, 2)))
+    print("x1 permute [2, 0, 1]: {}".format(x1.permute(2, 0, 1)))
     print("transpose 0, 1: {}".format(x1.transpose(0, 1)))
     print("transpose 1, 2: {}".format(x1.transpose(1, 2)))
     print("sum 0: {}".format(x1.sum(0)))
@@ -137,5 +143,5 @@ def ft4():
 if __name__ == "__main__":
     # ft()
     # ft2()
-    # ft3()
-    ft4()
+    ft3()
+    # ft4()

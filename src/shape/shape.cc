@@ -1,10 +1,12 @@
 #include "auto_engine/shape/shape.h"
 #include "auto_engine/base/exit_code.h"
+#include "auto_engine/config/config.h"
 #include "glog/logging.h"
 #include <cstdlib>
 #include <fmt/core.h>
 #include <sstream>
 #include <string>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -31,6 +33,10 @@ void Shape::calcStrides() {
 }
 
 Shape::Shape(const std::vector<u32>& dims) {
+    if (dims.size() > MAX_TENSOR_DIM_CNT) {
+        LOG(ERROR) << __FUNCTION__ << " dims size out of range";
+        exit(SHAPE_DIM_SIZE_LIMIT);
+    }
     _dims = dims;
     calcStrides();
 }
@@ -116,38 +122,43 @@ Shape Shape::sum(int d) const {
 }
 
 
-Shape Shape::expand(int d, u32 expd) const {
-    if (d < 0 || d > _dims.size() || expd == 0) {
-        LOG(ERROR) << fmt::format("expand dim out of range: {}, shape: {}, expd: {}", d, _dims.size(), expd);
-        return Shape();
+bool Shape::expand(const Shape& shape, int d) const {
+    if (shape.tensorSize() <= 0) {
+        LOG(ERROR) << "expand target shape 0";
+        return false;
     }
-    if (d == _dims.size()) {
-        std::vector<u32> dims = _dims;
-        dims.emplace_back(expd);
-        return Shape(dims);
-    } else {
-        std::vector<u32> dims; dims.reserve(_dims.size() + 1);
-        for (int i = 0; i < d; i++) {
-            dims.emplace_back(_dims[i]);
-        }
-        dims.emplace_back(expd);
-        for (int i = d; i < _dims.size(); i++) {
-            dims.emplace_back(_dims[i]);
-        }
-        return Shape(dims);
+    if (d < 0 || d >= shape._dims.size()) {
+        LOG(ERROR) << fmt::format("expand d: {} out of range: {}", d, shape._dims.size());
+        return false;
     }
+    if (shape._dims.size() != _dims.size() + 1) {
+        LOG(ERROR) << fmt::format("expand fail due to size unmatch, shape: {}, org shape: {}, d: {}", shape.toString(), toString(), d);
+        return false;
+    }
+    u32 idiff = 0;
+    for (u32 i = 0; i < _dims.size(); i++) {
+        if (i == d) {
+            idiff += 1;
+        }
+        if (_dims[i] != shape._dims[i + idiff]) {
+            LOG(ERROR) << fmt::format("expand fail due to dim unmatch, shape: {}, org shape: {}, d: {}", shape.toString(), toString(), d);
+            return false;
+        }
+    }
+
+    return true;
 }
 
-Shape Shape::expand(const Shape& shape) const {
+bool Shape::expand(const Shape& shape) const {
     if (_size != 1) {
         LOG(ERROR) << fmt::format("expand dim err tensor size ne 1: {}", _size);
-        return Shape();
+        return false;
     }
     if (shape.tensorSize() <= 0) {
         LOG(ERROR) << "expand dim err target size eq 0";
-        return Shape();
+        return false;
     }
-    return shape;
+    return true;
 }
 
 
@@ -198,6 +209,28 @@ bool Shape::split(int d, u32 sd, Shape& shape1, Shape& shape2) const {
     shape1 = Shape(dims1);
     shape2 = Shape(dims2);
     return true;
+}
+
+Shape Shape::permute(const std::vector<u32>& pl) const {
+    if (pl.size() != _dims.size()) {
+        LOG(ERROR) << fmt::format("permute pl len != dim cnt: {}, {}", pl.size(), _dims.size());
+        return Shape();
+    }
+    std::vector<u32> dims(pl.size());
+    std::unordered_set<u32> pl_set; pl_set.reserve(pl.size());
+    for (u32 i = 0; i < pl.size(); i++) {
+        if (pl[i] >= _dims.size()) {
+            LOG(ERROR) << fmt::format("permute index out of range: {}, {}", i, pl[i]);
+            return Shape();
+        }
+        if (pl_set.find(pl[i]) != pl_set.end()) {
+            LOG(ERROR) << fmt::format("permute index dup: {}, {}", i, pl[i]);
+            return Shape();
+        }
+        pl_set.insert(pl[i]);
+        dims[i] = _dims[pl[i]];
+    }
+    return Shape(dims);
 }
 
 Shape Shape::transpose(int d1, int d2) const {
