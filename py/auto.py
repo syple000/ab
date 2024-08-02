@@ -140,8 +140,45 @@ def ft4():
     print("cat x1 & x2: {}".format(torch.cat((x1, x2), dim=2)))
     print("cat x1 & x3: {}".format(torch.cat((x1, x3), dim=0)))
 
+def ft5():
+    x1 = torch.tensor([
+        [
+            [1, 2]
+        ],
+        [
+            [3, 4]
+        ]
+    ])
+    x2 = torch.tensor([
+        [
+            [5, 6]
+        ],
+        [
+            [7, 8]
+        ]
+    ])
+    x3 = torch.tensor([
+        [
+            [9, 10]
+        ]
+    ])
+    x4 = torch.tensor([
+        [
+            [11, 12],
+            [13, 14]
+        ],
+        [
+            [15, 16],
+            [17, 18]
+        ]
+    ])
+    print(x1.shape, x2.shape, x3.shape, x4.shape)
+    print("cat 1/2/3 on 0: {}".format(torch.cat((x1, x2, x3), 0)))
+    print("cat 1/2/4 on 1: {}".format(torch.cat((x1, x2, x4), 1)))
+
 if __name__ == "__main__":
     # ft()
     # ft2()
-    ft3()
+    # ft3()
     # ft4()
+    ft5()

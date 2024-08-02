@@ -9,6 +9,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <fmt/core.h>
+#include <iostream>
 #include <tuple>
 #include <vector>
 
@@ -188,6 +189,29 @@ void expand(const f64* src, f64* dst, const base::Shape& shape, u32 d) {
     CHECK_CUDA_CALL(cudaMemcpy(dst, mdst, sizeof(f64) * shape.tensorSize(), cudaMemcpyDeviceToHost), "cuda_memcpy_d2h");
 }
 
+void cat(const f64* src, const base::Shape& src_shape, f64* dst, const base::Shape& dst_shape, u32 d, u32 d_offset) {
+    f64 *msrc, *mdst;
+    u32 *mds;
+    CHECK_MALLOC(Mem::malloc((void**)&msrc, sizeof(f64) * src_shape.tensorSize()));
+    utils::Defer free_msrc([&msrc]() {Mem::free(msrc);});
+    CHECK_MALLOC(Mem::malloc((void**)&mdst, sizeof(f64) * dst_shape.tensorSize()));
+    utils::Defer free_mdst([&mdst]() {Mem::free(mdst);});
+    CHECK_MALLOC(Mem::malloc((void**)&mds, sizeof(u32) * src_shape.dimCnt() * 4));
+    utils::Defer free_mds([&mds]() {Mem::free(mds);});
+
+    CHECK_CUDA_CALL(cudaMemcpy(msrc, src, sizeof(f64) * src_shape.tensorSize(), cudaMemcpyHostToDevice), "cuda_memcpy_h2d");
+    CHECK_CUDA_CALL(cudaMemcpy(mdst, dst, sizeof(f64) * dst_shape.tensorSize(), cudaMemcpyHostToDevice), "cuda_memcpy_h2d");
+    CHECK_CUDA_CALL(cudaMemcpy(mds, src_shape.getDims().data(), sizeof(u32) * src_shape.dimCnt(), cudaMemcpyHostToDevice), "cuda_memcpy_h2d");
+    CHECK_CUDA_CALL(cudaMemcpy(mds + src_shape.dimCnt(), src_shape.getStrides().data(), sizeof(u32) * src_shape.dimCnt(), cudaMemcpyHostToDevice), "cuda_memcpy_h2d");
+    CHECK_CUDA_CALL(cudaMemcpy(mds + 2* dst_shape.dimCnt(), dst_shape.getDims().data(), sizeof(u32) * dst_shape.dimCnt(), cudaMemcpyHostToDevice), "cuda_memcpy_h2d");
+    CHECK_CUDA_CALL(cudaMemcpy(mds + 3 * dst_shape.dimCnt(), dst_shape.getStrides().data(), sizeof(u32) * dst_shape.dimCnt(), cudaMemcpyHostToDevice), "cuda_memcpy_h2d");
+
+    auto gridx_dim = (src_shape.tensorSize() + sqrt_tcnt_per_block() - 1) / sqrt_tcnt_per_block();
+    cuda_kernel::cat<<<dim3(gridx_dim), dim3(sqrt_tcnt_per_block())>>>(msrc, mds, mds + src_shape.dimCnt(), mdst, mds + 2 * dst_shape.dimCnt(), mds + 3 * dst_shape.dimCnt(), src_shape.dimCnt(), d, d_offset);
+    CHECK_CUDA_CALL(cudaPeekAtLastError(), "cat");
+    CHECK_CUDA_CALL(cudaMemcpy(dst, mdst, sizeof(f64) * dst_shape.tensorSize(), cudaMemcpyDeviceToHost), "cuda_memcpy_d2h");
+}
+
 void cat(const std::vector<const f64*>& srcs, const std::vector<std::reference_wrapper<base::Shape>>& srcs_shapes, f64* dst, const base::Shape& dst_shape, u32 d) {
     // 先全部赋值到内存中，后进行一次拷贝，最后进行index梳理
     u32 total_size = 0;
@@ -221,7 +245,7 @@ void cat(const std::vector<const f64*>& srcs, const std::vector<std::reference_w
     CHECK_CUDA_CALL(cudaMemcpy(m, lm, total_size, cudaMemcpyHostToDevice), "cuda_memcpy_h2d");
 
     auto lm_index = (void**)malloc(srcs_shapes.size() * sizeof(void*) * 3);
-    utils::Defer free_lm_index([&lm_index] {Mem::free(lm_index);});
+    utils::Defer free_lm_index([&lm_index] {free(lm_index);});
     auto rm = m;
     for (u32 i = 0; i < srcs_shapes.size(); i++) {
         auto shape = srcs_shapes[i].get();
@@ -244,11 +268,33 @@ void cat(const std::vector<const f64*>& srcs, const std::vector<std::reference_w
     auto dst_strides_m = (const u32*)rm;
 
     auto gridx_dim = (dst_shape.tensorSize() + sqrt_tcnt_per_block() - 1) / sqrt_tcnt_per_block();
-    cuda_kernel::cat<<<dim3(gridx_dim), dim3(sqrt_tcnt_per_block())>>>((const f64**)lm_index, (const u32**)lm_index + srcs_shapes.size(), (const u32**)lm_index + 2 * srcs_shapes.size(), srcs_shapes.size(), dst_m, dst_dims_m, dst_strides_m, dst_shape.dimCnt(), d);
+    cuda_kernel::cat<<<dim3(gridx_dim), dim3(sqrt_tcnt_per_block())>>>((const f64**)m_index, (const u32**)m_index + srcs_shapes.size(), (const u32**)m_index + 2 * srcs_shapes.size(), srcs_shapes.size(), dst_m, dst_dims_m, dst_strides_m, dst_shape.dimCnt(), d);
     CHECK_CUDA_CALL(cudaPeekAtLastError(), "cat");
     CHECK_CUDA_CALL(cudaMemcpy(dst, dst_m, sizeof(f64) * dst_shape.tensorSize(), cudaMemcpyDeviceToHost), "cuda_memcpy_d2h");
 }
 
+void split(const f64* src, const base::Shape& src_shape, f64* dst, const base::Shape& dst_shape, u32 d, u32 d_offset) {
+    f64 *msrc, *mdst;
+    u32 *mds;
+    CHECK_MALLOC(Mem::malloc((void**)&msrc, sizeof(f64) * src_shape.tensorSize()));
+    utils::Defer free_msrc([&msrc]() {Mem::free(msrc);});
+    CHECK_MALLOC(Mem::malloc((void**)&mdst, sizeof(f64) * dst_shape.tensorSize()));
+    utils::Defer free_mdst([&mdst]() {Mem::free(mdst);});
+    CHECK_MALLOC(Mem::malloc((void**)&mds, sizeof(u32) * src_shape.dimCnt() * 4));
+    utils::Defer free_mds([&mds]() {Mem::free(mds);});
+
+    CHECK_CUDA_CALL(cudaMemcpy(msrc, src, sizeof(f64) * src_shape.tensorSize(), cudaMemcpyHostToDevice), "cuda_memcpy_h2d");
+    CHECK_CUDA_CALL(cudaMemcpy(mdst, dst, sizeof(f64) * dst_shape.tensorSize(), cudaMemcpyHostToDevice), "cuda_memcpy_h2d");
+    CHECK_CUDA_CALL(cudaMemcpy(mds, src_shape.getDims().data(), sizeof(u32) * src_shape.dimCnt(), cudaMemcpyHostToDevice), "cuda_memcpy_h2d");
+    CHECK_CUDA_CALL(cudaMemcpy(mds + src_shape.dimCnt(), src_shape.getStrides().data(), sizeof(u32) * src_shape.dimCnt(), cudaMemcpyHostToDevice), "cuda_memcpy_h2d");
+    CHECK_CUDA_CALL(cudaMemcpy(mds + 2* dst_shape.dimCnt(), dst_shape.getDims().data(), sizeof(u32) * dst_shape.dimCnt(), cudaMemcpyHostToDevice), "cuda_memcpy_h2d");
+    CHECK_CUDA_CALL(cudaMemcpy(mds + 3 * dst_shape.dimCnt(), dst_shape.getStrides().data(), sizeof(u32) * dst_shape.dimCnt(), cudaMemcpyHostToDevice), "cuda_memcpy_h2d");
+
+    auto gridx_dim = (dst_shape.tensorSize() + sqrt_tcnt_per_block() - 1) / sqrt_tcnt_per_block();
+    cuda_kernel::split<<<dim3(gridx_dim), dim3(sqrt_tcnt_per_block())>>>(msrc, mds, mds + src_shape.dimCnt(), mdst, mds + 2 * dst_shape.dimCnt(), mds + 3 * dst_shape.dimCnt(), src_shape.dimCnt(), d, d_offset);
+    CHECK_CUDA_CALL(cudaPeekAtLastError(), "split");
+    CHECK_CUDA_CALL(cudaMemcpy(dst, mdst, sizeof(f64) * dst_shape.tensorSize(), cudaMemcpyDeviceToHost), "cuda_memcpy_d2h");
+}
 
 void split(const f64* src, const base::Shape& src_shape, const std::vector<f64*>& dst, const std::vector<std::reference_wrapper<base::Shape>>& dsts_shapes, u32 d) {
     // 先全部赋值到内存中，后进行一次拷贝，最后进行index梳理
@@ -284,7 +330,7 @@ void split(const f64* src, const base::Shape& src_shape, const std::vector<f64*>
     CHECK_CUDA_CALL(cudaMemcpy(m, lm, total_size, cudaMemcpyHostToDevice), "cuda_memcpy_h2d");
 
     auto lm_index = (void**)malloc(dsts_shapes.size() * sizeof(void*) * 3);
-    utils::Defer free_lm_index([&lm_index] {Mem::free(lm_index);});
+    utils::Defer free_lm_index([&lm_index] {free(lm_index);});
     auto rm = m;
     for (u32 i = 0; i < dsts_shapes.size(); i++) {
         auto shape = dsts_shapes[i].get();
@@ -307,7 +353,7 @@ void split(const f64* src, const base::Shape& src_shape, const std::vector<f64*>
     auto src_strides_m = (const u32*)rm;
 
     auto gridx_dim = (src_shape.tensorSize() + sqrt_tcnt_per_block() - 1) / sqrt_tcnt_per_block();
-    cuda_kernel::split<<<dim3(gridx_dim), dim3(sqrt_tcnt_per_block())>>>(src_m, src_dims_m, src_strides_m, (f64**)lm_index, (const u32**)lm_index + dsts_shapes.size(), (const u32**)lm_index + 2 * dsts_shapes.size(), dsts_shapes.size(), src_shape.dimCnt(), d);
+    cuda_kernel::split<<<dim3(gridx_dim), dim3(sqrt_tcnt_per_block())>>>(src_m, src_dims_m, src_strides_m, (f64**)m_index, (const u32**)m_index + dsts_shapes.size(), (const u32**)m_index + 2 * dsts_shapes.size(), dsts_shapes.size(), src_shape.dimCnt(), d);
     CHECK_CUDA_CALL(cudaPeekAtLastError(), "split");
     CHECK_CUDA_CALL(cudaMemcpy(lm, m, total_size - src_shape.tensorSize() * sizeof(f64) - src_shape.dimCnt() * sizeof(u32) * 2, cudaMemcpyDeviceToHost), "cuda_memcpy_d2h");
     rlm = lm;

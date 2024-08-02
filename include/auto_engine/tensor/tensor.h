@@ -29,53 +29,19 @@ template<typename T>
 struct Tensor {
 public:
     Tensor() {}
-    Tensor(const Shape& shape): _shape(shape), _data(std::vector<T>(shape.tensorSize())) {
-        if (_shape.tensorSize() == 0) {
-            if (ENABLE_TENSOR_EXCEPTION) {
-                throw std::runtime_error("tensor size 0");
-            }
-            LOG(ERROR) << "tensor size 0";
-            _shape = Shape();
-            _data = std::vector<T>();
-        }
-    }
+    Tensor(const Shape& shape): _shape(shape), _data(std::vector<T>(shape.tensorSize())) {}
     Tensor(const Shape& shape, const std::function<T()>& f): _shape(shape), _data(std::vector<T>(shape.tensorSize())) {
-        if (_shape.tensorSize() == 0) {
-            if (ENABLE_TENSOR_EXCEPTION) {
-                throw std::runtime_error("tensor size 0");
-            }
-            LOG(ERROR) << "tensor size 0";
-            _shape = Shape();
-            _data = std::vector<T>();
-        }
         for (auto& d : _data) {
             d = f();
         }
     }
-    Tensor(const Shape& shape, const T& e): _shape(shape), _data(std::vector<T>(shape.tensorSize(), e)) {
-        if (_shape.tensorSize() == 0) {
-            if (ENABLE_TENSOR_EXCEPTION) {
-                throw std::runtime_error("tensor size 0");
-            }
-            LOG(ERROR) << "tensor size 0";
-            _shape = Shape();
-            _data = std::vector<T>();
-        }
-    }
+    Tensor(const Shape& shape, const T& e): _shape(shape), _data(std::vector<T>(shape.tensorSize(), e)) {}
     Tensor(const Shape& shape, const std::vector<T>& data): _shape(shape), _data(std::vector<T>(data)) {
         if (_shape.tensorSize() != _data.size()) {
             if (ENABLE_TENSOR_EXCEPTION) {
                 throw std::runtime_error(fmt::format("tensor size invalid, shape size: {}, data size: {}", shape.tensorSize(), data.size()));
             }
             LOG(ERROR) << "tensor size invalid";
-            _shape = Shape();
-            _data = std::vector<T>();
-        }
-        if (_shape.tensorSize() == 0) {
-            if (ENABLE_TENSOR_EXCEPTION) {
-                throw std::runtime_error("tensor size 0");
-            }
-            LOG(ERROR) << "tensor size 0";
             _shape = Shape();
             _data = std::vector<T>();
         }
@@ -134,14 +100,16 @@ public:
     Tensor<T> sum(int d) const;
     Tensor<T> expand(const base::Shape&, int d) const;
     
-    static Tensor<T> cat(const std::vector<std::reference_wrapper<Tensor<T>>>& ts, int d);
-    static std::vector<Tensor<T>> split(const Tensor<T>&, const std::vector<u32>& sl, int d);
+    static Tensor<T> cat(const std::vector<std::reference_wrapper<Tensor<T>>>& ts, u32 d);
+    static bool cat(const Tensor<T>& src, Tensor<T>& dst, u32 d, u32 d_offset);
+    static std::vector<Tensor<T>> split(const Tensor<T>&, const std::vector<u32>& sl, u32 d);
+    static bool split(const Tensor<T>& src, Tensor<T>& dst, u32 d, u32 d_offset);
 
     Tensor<T> oneHot(u32 classes) const;
 
     Tensor<T> reshape(const std::vector<u32>& dims) const {
-        auto shape = _shape.reshape(dims);
-        if (shape.tensorSize() != _shape.tensorSize()) {
+        Shape shape;
+        if (!_shape.reshape(dims, shape)) {
             if (ENABLE_TENSOR_EXCEPTION) {
                 throw std::runtime_error(fmt::format("tensor reshape err, orig shape: {}, target shape: {}", _shape.toString(), shape.toString()));
             }
@@ -218,6 +186,7 @@ Tensor<T> Tensor<T>::operator+(const Tensor<T>& t) const {
         LOG(ERROR) << "tensor + fail, shape diff";
         return Tensor();
     }
+    if (_shape.tensorSize() == 0) {return *this;}
     auto ret = *this;
     if (std::is_same<T, f64>::value && ENABLE_CUDA) {
         cuda::apply_add(ret._data.data(), t._data.data(), ret._data.size());
@@ -231,6 +200,7 @@ Tensor<T> Tensor<T>::operator+(const Tensor<T>& t) const {
 
 template<typename T>
 Tensor<T> Tensor<T>::operator+(T t) const {
+    if (_shape.tensorSize() == 0) {return *this;}
     auto ret = *this;
     if (std::is_same<T, f64>::value && ENABLE_CUDA) {
         cuda::apply_add(ret._data.data(), t, ret._data.size());
@@ -251,6 +221,7 @@ Tensor<T> Tensor<T>::operator-(const Tensor<T>& t) const {
         LOG(ERROR) << "tensor - fail, shape diff";
         return Tensor();
     }
+    if (_shape.tensorSize() == 0) {return *this;}
     auto ret = *this;
     if (std::is_same<T, f64>::value && ENABLE_CUDA) {
         cuda::apply_sub(ret._data.data(), t._data.data(), ret._data.size());
@@ -264,6 +235,7 @@ Tensor<T> Tensor<T>::operator-(const Tensor<T>& t) const {
 
 template<typename T>
 Tensor<T> Tensor<T>::operator-(T t) const {
+    if (_shape.tensorSize() == 0) {return *this;}
     auto ret = *this;
     if (std::is_same<T, f64>::value && ENABLE_CUDA) {
         cuda::apply_sub(ret._data.data(), t, ret._data.size());
@@ -284,6 +256,7 @@ Tensor<T> Tensor<T>::operator*(const Tensor<T>& t) const {
         LOG(ERROR) << "tensor * fail, shape diff";
         return Tensor();
     }
+    if (_shape.tensorSize() == 0) {return *this;}
     auto ret = *this;
     if (std::is_same<T, f64>::value && ENABLE_CUDA) {
         cuda::apply_mul(ret._data.data(), t._data.data(), ret._data.size());
@@ -297,6 +270,7 @@ Tensor<T> Tensor<T>::operator*(const Tensor<T>& t) const {
 
 template<typename T>
 Tensor<T> Tensor<T>::operator*(T t) const {
+    if (_shape.tensorSize() == 0) {return *this;}
     auto ret = *this;
     if (std::is_same<T, f64>::value && ENABLE_CUDA) {
         cuda::apply_mul(ret._data.data(), t, ret._data.size());
@@ -317,6 +291,7 @@ Tensor<T> Tensor<T>::operator/(const Tensor<T>& t) const {
         LOG(ERROR) << "tensor / fail, shape diff";
         return Tensor();
     }
+    if (_shape.tensorSize() == 0) {return *this;}
     auto ret = *this;
     if (std::is_same<T, f64>::value && ENABLE_CUDA) {
         cuda::apply_div(ret._data.data(), t._data.data(), ret._data.size());
@@ -330,6 +305,7 @@ Tensor<T> Tensor<T>::operator/(const Tensor<T>& t) const {
 
 template<typename T>
 Tensor<T> Tensor<T>::operator/(T t) const {
+    if (_shape.tensorSize() == 0) {return *this;}
     auto ret = *this;
     if (std::is_same<T, f64>::value && ENABLE_CUDA) {
         cuda::apply_div(ret._data.data(), t, ret._data.size());
@@ -350,6 +326,7 @@ Tensor<T> Tensor<T>::pow(const Tensor<T>& t) const {
         LOG(ERROR) << "tensor pow fail, shape diff";
         return Tensor();
     }
+    if (_shape.tensorSize() == 0) {return *this;}
     auto ret = *this;
     if (std::is_same<T, f64>::value && ENABLE_CUDA) {
         cuda::apply_pow(ret._data.data(), t._data.data(), ret._data.size());
@@ -363,6 +340,7 @@ Tensor<T> Tensor<T>::pow(const Tensor<T>& t) const {
 
 template<typename T>
 Tensor<T> Tensor<T>::pow(T t) const {
+    if (_shape.tensorSize() == 0) {return *this;}
     auto ret = *this;
     if (std::is_same<T, f64>::value && ENABLE_CUDA) {
         cuda::apply_pow(ret._data.data(), t, ret._data.size());
@@ -376,6 +354,7 @@ Tensor<T> Tensor<T>::pow(T t) const {
 
 template<typename T>
 Tensor<T> Tensor<T>::neg() const {
+    if (_shape.tensorSize() == 0) {return *this;}
     auto ret = *this;
     if (std::is_same<T, f64>::value && ENABLE_CUDA) {
         cuda::apply_neg(ret._data.data(), ret._data.size());
@@ -389,6 +368,7 @@ Tensor<T> Tensor<T>::neg() const {
 
 template<typename T>
 Tensor<T> Tensor<T>::log() const {
+    if (_shape.tensorSize() == 0) {return *this;}
     auto ret = *this;
     if (std::is_same<T, f64>::value && ENABLE_CUDA) {
         cuda::apply_log(ret._data.data(), ret._data.size());
@@ -402,6 +382,7 @@ Tensor<T> Tensor<T>::log() const {
 
 template<typename T>
 Tensor<T> Tensor<T>::sign() const {
+    if (_shape.tensorSize() == 0) {return *this;}
     auto ret = *this;
     if (std::is_same<T, f64>::value && ENABLE_CUDA) {
         cuda::apply_sign(ret._data.data(), ret._data.size());
@@ -419,6 +400,7 @@ Tensor<T> Tensor<T>::sign() const {
 
 template<typename T>
 Tensor<T> Tensor<T>::abs() const {
+    if (_shape.tensorSize() == 0) {return *this;}
     auto ret = *this;
     if (std::is_same<T, f64>::value && ENABLE_CUDA) {
         cuda::apply_abs(ret._data.data(), ret._data.size());
@@ -432,6 +414,7 @@ Tensor<T> Tensor<T>::abs() const {
 
 template<typename T>
 Tensor<T> Tensor<T>::sin() const {
+    if (_shape.tensorSize() == 0) {return *this;}
     auto ret = *this;
     if (std::is_same<T, f64>::value && ENABLE_CUDA) {
         cuda::apply_sin(ret._data.data(), ret._data.size());
@@ -445,6 +428,7 @@ Tensor<T> Tensor<T>::sin() const {
 
 template<typename T>
 Tensor<T> Tensor<T>::cos() const {
+    if (_shape.tensorSize() == 0) {return *this;}
     auto ret = *this;
     if (std::is_same<T, f64>::value && ENABLE_CUDA) {
         cuda::apply_cos(ret._data.data(), ret._data.size());
@@ -458,13 +442,14 @@ Tensor<T> Tensor<T>::cos() const {
 
 template<typename T>
 Tensor<T> Tensor<T>::permute(const std::vector<u32>& pl) const {
-    auto shape = _shape.permute(pl);
-    if (shape.tensorSize() <= 0) {
+    Shape shape;
+    if (!_shape.permute(pl, shape)) {
         if (ENABLE_TENSOR_EXCEPTION) {
             throw std::runtime_error("tensor permute fail");
         }
         return Tensor();
     }
+    if (shape.tensorSize() == 0) {return Tensor<T>(shape);}
     // pl重映射，由原下标获取新下标
     std::vector<u32> npl(pl.size());
     for (u32 i = 0; i < pl.size(); i++) {
@@ -491,13 +476,14 @@ Tensor<T> Tensor<T>::transpose(int d1, int d2) const {
     if (d1 < 0) {d1 = _shape.dimCnt() + d1;}
     if (d2 < 0) {d2 = _shape.dimCnt() + d2;}
 
-    auto shape = _shape.transpose(d1, d2);
-    if (shape.tensorSize() <= 0) {
+    Shape shape;
+    if (!_shape.transpose(d1, d2, shape)) {
         if (ENABLE_TENSOR_EXCEPTION) {
             throw std::runtime_error(fmt::format("tensor transpose fail: {}", _shape.toString()));
         }
         return Tensor();
     }
+    if (shape.tensorSize() == 0) {return Tensor(shape);}
 
     std::vector<u32> pl(shape.dimCnt());
     for (u32 i = 0; i < pl.size(); i++) {pl[i] = i;}
@@ -529,13 +515,15 @@ Tensor<T> Tensor<T>::transpose(int d1, int d2) const {
 
 template<typename T>
 Tensor<T> Tensor<T>::mmul(const Tensor<T>& t) const {
-    auto shape = _shape.mmul(t._shape);
-    if (shape.tensorSize() <= 0) {
+    Shape shape;
+    if (!_shape.mmul(t._shape, shape)) {
         if (ENABLE_TENSOR_EXCEPTION) {
             throw std::runtime_error(fmt::format("tensor mmul fail, shape1: {}, shape2: {}", _shape.toString(), t._shape.toString()));
         }
         return Tensor();
     }
+    if (shape.tensorSize() == 0) {return Tensor(shape);}
+
     auto rt = Tensor(shape);
 
     auto row_cnt = _shape.getDim(_shape.dimCnt() - 2);
@@ -569,6 +557,7 @@ Tensor<T> Tensor<T>::inv() const {
         LOG(ERROR) << "not a square matrix";
         return Tensor();
     }
+    if (_shape.tensorSize() == 0) {return Tensor(_shape);}
     auto rt = *this;
     auto row_col_cnt = _shape.getDim(_shape.dimCnt() - 1);
     auto matrix_size = _shape.subTensorSize(_shape.dimCnt() - 2);
@@ -593,8 +582,8 @@ Tensor<T> Tensor<T>::inv() const {
 
 template<typename T>
 Tensor<T> Tensor<T>::sum() const {
-    auto shape = _shape.sum();
-    if (shape.tensorSize() <= 0) {
+    Shape shape;
+    if (!_shape.sum(shape)) {
         if (ENABLE_TENSOR_EXCEPTION) {
             throw std::runtime_error(fmt::format("tensor sum fail, shape: {}", _shape.toString()));
         }
@@ -634,14 +623,15 @@ template<typename T>
 Tensor<T> Tensor<T>::sum(int d) const {
     if (d < 0) {d = d + _shape.dimCnt();}
 
-    auto shape = _shape.sum(d);
-    if (shape.tensorSize() <= 0) {
+    Shape shape;
+    if (!_shape.sum(d, shape)) {
         if (ENABLE_TENSOR_EXCEPTION) {
             throw std::runtime_error(fmt::format("tensor sum fail, shape: {}, d: {}", _shape.toString(), d));
         }
         LOG(ERROR) << fmt::format("tensor sum fail, shape: {}, d: {}", _shape.toString(), d);
         return Tensor();
     }
+    if (shape.tensorSize() == 0) {return Tensor(shape);}
     Tensor<T> res(shape);
     if (std::is_same<T, f64>::value && ENABLE_CUDA) {
         cuda::sum(_data.data(), _shape, res._data.data(), d);
@@ -678,6 +668,7 @@ Tensor<T> Tensor<T>::expand(const Shape& shape, int d) const {
         LOG(ERROR) << fmt::format("tensor expand fail, shape: {}, org shape: {}", shape.toString(), _shape.toString());
         return Tensor();
     }
+    if (shape.tensorSize() == 0) {return Tensor(shape);}
     Tensor<T> res(shape);
     if (std::is_same<T, f64>::value && ENABLE_CUDA) {
         cuda::expand(_data.data(), res._data.data(), shape, d);
@@ -704,6 +695,176 @@ Tensor<T> Tensor<T>::expand(const Shape& shape, int d) const {
 }
 
 template<typename T>
+bool Tensor<T>::cat(const Tensor<T>& src, Tensor<T>& dst, u32 d, u32 d_offset) {
+    if (!Shape::cat(src.shape(), dst.shape(), d, d_offset)) {
+        if (ENABLE_TENSOR_EXCEPTION) {
+            throw std::runtime_error("cat src to dst fail");
+        }
+        LOG(ERROR) << "cat src to dst fail";
+        return false;
+    }
+    if (src.shape().tensorSize() == 0) {return true;}
+    if (std::is_same<T, f64>::value && ENABLE_CUDA) {
+        cuda::cat(src._data.data(), src.shape(), dst._data.data(), dst.shape(), d, d_offset);
+    } else {
+        std::vector<u32> indexs(dst.shape().dimCnt());
+        for (u32 i = 0; i < src._data.size(); i++) {
+            u32 ri = i;
+            for (u32 j = 0; j < dst.shape().dimCnt(); j++) {
+                auto dim_index = ri / src.shape().getStrides()[j];
+                if (j == d) {
+                    dim_index += d_offset;
+                }
+                ri = ri % src.shape().getStrides()[j];
+                indexs[j] = dim_index;
+            }
+            auto didx = 0;
+            for (u32 j = 0; j < dst.shape().dimCnt(); j++) {
+                didx += indexs[j] * dst.shape().getStrides()[j];
+            }
+            dst._data[didx] = src._data[i];
+        }
+    }
+    return true;
+}
+
+template<typename T>    
+bool Tensor<T>::split(const Tensor<T>& src, Tensor<T>& dst, u32 d, u32 d_offset) {
+    if (!Shape::split(src.shape(), dst.shape(), d, d_offset)) {
+        if (ENABLE_TENSOR_EXCEPTION) {
+            throw std::runtime_error("split src to dst fail");
+        }
+        LOG(ERROR) << "split src to dst fail";
+    }
+    if (dst.shape().tensorSize() == 0) {return true;}
+    if (std::is_same<T, f64>::value && ENABLE_CUDA) {
+        cuda::split(src._data.data(), src.shape(), dst._data.data(), dst.shape(), d, d_offset);
+    } else {
+        std::vector<u32> indexs(dst.shape().dimCnt());
+        for (u32 i = 0; i < dst._data.size(); i++) {
+            u32 ri = i;
+            for (u32 j = 0; j < dst.shape().dimCnt(); j++) {
+                auto dim_index = ri / dst.shape().getStrides()[j];
+                if (j == d) {
+                    dim_index += d_offset;
+                }
+                ri = ri % dst.shape().getStrides()[j];
+                indexs[j] = dim_index;
+            }
+            u32 sidx = 0;
+            for (u32 j = 0; j < src.shape().dimCnt(); j++) {
+                sidx += indexs[j] * src.shape().getStrides()[j];
+            }
+            dst._data[i] = src._data[sidx];
+        }
+    }
+    return true;
+}
+
+template<typename T>
+Tensor<T> Tensor<T>::cat(const std::vector<std::reference_wrapper<Tensor<T>>>& ts, u32 d) {
+    std::vector<std::reference_wrapper<Shape>> ss; ss.reserve(ts.size());
+    std::vector<const f64*> srcs; srcs.reserve(ts.size());
+    for (u32 i = 0; i < ts.size(); i++) {
+        ss.emplace_back(ts[i].get()._shape);
+        srcs.emplace_back(ts[i].get()._data.data());
+    }
+    Shape shape;
+    if (!Shape::cat(ss, d, shape)) {
+        if (ENABLE_TENSOR_EXCEPTION) {
+            throw std::runtime_error("cat tensor fail");
+        }
+        LOG(ERROR) << "cat tensor fail";
+        return Tensor();
+    }
+    if (shape.tensorSize() == 0) {return Tensor(shape);}
+
+    Tensor<T> res(shape);
+    if (std::is_same<T, f64>::value && ENABLE_CUDA) {
+        cuda::cat(srcs, ss, res._data.data(), res._shape, d);  
+    } else {
+        std::vector<u32> indexs(res._shape.dimCnt());
+        u32 src_index = 0;
+        for (u32 i = 0; i < res._data.size(); i++) {
+            auto ri = i;
+            for (u32 j = 0; j < res._shape.dimCnt(); j++) {
+                auto dim_index = ri / res._shape.getStrides()[j];
+                if (j == d) {
+                    for (u32 k = 0; k < ts.size(); k++) {
+                        if (dim_index >= ts[k].get()._shape.getDim(d)) {
+                            dim_index -= ts[k].get()._shape.getDim(d);
+                        } else {
+                            src_index = k;
+                            break;
+                        }
+                    }
+                }
+                indexs[j] = dim_index;
+                ri = ri % res._shape.getStrides()[j];
+            }
+            u32 sidx = 0;
+            for (u32 j = 0; j < res._shape.dimCnt(); j++) {
+                sidx += indexs[j] * ts[src_index].get()._shape.getStrides()[j];
+            }
+            res._data[i] = ts[src_index].get()._data[sidx];
+        }
+    }
+    return std::move(res);
+}
+
+template<typename T>
+std::vector<Tensor<T>> Tensor<T>::split(const Tensor<T>& t, const std::vector<u32>& sl, u32 d) {
+    std::vector<Shape> ss;
+    if (!Shape::split(t._shape, sl, d, ss)) {
+        if (ENABLE_TENSOR_EXCEPTION) {
+            throw std::runtime_error("split tensor fail");
+        }
+        LOG(ERROR) << "split tensor fail";
+        return {};
+    }
+    std::vector<Tensor<T>> dts; dts.reserve(ss.size());
+    std::vector<f64*> dsts; dsts.reserve(ss.size());
+    std::vector<std::reference_wrapper<Shape>> dtss; dtss.reserve(ss.size());
+    for (u32 i = 0; i < ss.size(); i++) {
+        dts.emplace_back(Tensor(ss[i]));
+        dsts.emplace_back(dts[i]._data.data());
+        dtss.emplace_back(ss[i]);
+    }
+    if (t.shape().tensorSize() == 0) {return std::move(dts);}
+
+    if (std::is_same<T, f64>::value && ENABLE_CUDA) {
+        cuda::split(t._data.data(), t.shape(), dsts, dtss, d);  
+    } else {
+        std::vector<u32> indexs(t._shape.dimCnt());
+        u32 dst_index = 0;
+        for (u32 i = 0; i < t._data.size(); i++) {
+            auto ri = i;
+            for (u32 j = 0; j < t._shape.dimCnt(); j++) {
+                auto dim_index = ri / t._shape.getStrides()[j];
+                if (j == d) {
+                    for (u32 k = 0; k < ss.size(); k++) {
+                        if (dim_index >= ss[k].getDim(d)) {
+                            dim_index -= ss[k].getDim(d);
+                        } else {
+                            dst_index = k;
+                            break;
+                        }
+                    }
+                }
+                indexs[j] = dim_index;
+                ri = ri % t._shape.getStrides()[j];
+            }
+            u32 didx = 0;
+            for (u32 j = 0; j < t._shape.dimCnt(); j++) {
+                didx += indexs[j] * ss[dst_index].getStrides()[j];
+            }
+            dts[dst_index]._data[didx] = t._data[i];
+        }
+    }
+    return std::move(dts);
+}
+
+template<typename T>
 Tensor<T> Tensor<T>::oneHot(u32 classes) const {
     if (_shape.dimCnt() != 1) {
         if (ENABLE_TENSOR_EXCEPTION) {
@@ -713,6 +874,7 @@ Tensor<T> Tensor<T>::oneHot(u32 classes) const {
         return Tensor();
     }
     auto res = Tensor<T>(base::Shape({_shape.getDim(0), classes}));
+    if (res.shape().tensorSize() == 0) {return res;}
     u32 err_occur = 0, err_index = 0;
     if (std::is_same<T, f64>::value && ENABLE_CUDA) {
         u32 err_occur = 0, err_index = 0;

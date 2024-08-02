@@ -77,13 +77,13 @@ bool Shape::operator==(const Shape& shape) const {
     return _dims == shape._dims;
 }
 
-Shape Shape::reshape(const std::vector<u32>& dims) const {
-    auto shape = Shape(dims);
+bool Shape::reshape(const std::vector<u32>& dims, Shape& shape) const {
+    shape = Shape(dims);
     if (_size != shape._size) {
         LOG(ERROR) << "check reshapeable fail";
-        return Shape();
+        return false;
     }
-    return Shape(dims);
+    return true;
 }
 
 std::string Shape::toString() const {
@@ -99,18 +99,19 @@ std::string Shape::toString() const {
     return stream.str();
 }
 
-Shape Shape::sum() const {
+bool Shape::sum(Shape& shape) const { // 必须至少有一个元素返回
     if (_size == 0) {
         LOG(ERROR) << "sum null tensor";
-        return Shape();
+        return false;
     }
-    return Shape({1});
+    shape = Shape({1});
+    return true;
 }
 
-Shape Shape::sum(int d) const {
+bool Shape::sum(int d, Shape& shape) const {
     if (d < 0 || d >= _dims.size()) {
         LOG(ERROR) << fmt::format("sum dim out of range: {}, shape: {}", d, _dims.size());
-        return Shape();
+        return false;
     }
     std::vector<u32> dims;
     dims.reserve(_dims.size() - 1);
@@ -118,7 +119,8 @@ Shape Shape::sum(int d) const {
         if (i == d) {continue;}
         dims.emplace_back(_dims[i]);
     }
-    return Shape(dims);
+    shape = Shape(dims);
+    return true;
 }
 
 
@@ -161,107 +163,162 @@ bool Shape::expand(const Shape& shape) const {
     return true;
 }
 
-
-Shape Shape::cat(const Shape& t, int d) const {
-    if (_dims.size() != t._dims.size()) {
-        LOG(ERROR) << fmt::format("cat tensor dim cnt ne: {}, {}", _dims.size(), t._dims.size());
-        return Shape();
+bool Shape::cat(const std::vector<std::reference_wrapper<Shape>>& ss, u32 d, Shape& shape) {
+    if (ss.size() == 0) {
+        LOG(ERROR) << "cat tensor list size 0";
+        return false;
     }
-    if (d < 0 || d >= _dims.size()) {
-        LOG(ERROR) << fmt::format("cat d invalid, {}, dim cnt: {}", d, _dims.size());
-        return Shape();
+    auto s = ss[0].get();
+    if (d >= s.dimCnt()) {
+        LOG(ERROR) << fmt::format("cat tensor d: {} out of range: {}", d, s.dimCnt());
+        return false;
     }
-    std::vector<u32> dims(_dims.size());
-    for (int i = 0; i < _dims.size(); i++) {
-        if (i == d) {
-            dims[i] = _dims[i] + t._dims[i];
-        } else {
-            if (_dims[i] != t._dims[i]) {
-                LOG(ERROR) << fmt::format("cat dim index: {}, val: {}, {} ne", i, _dims[i], t._dims[i]);
-                return Shape();
+    auto dims = s.getDims();
+    for (u32 i = 1; i < ss.size(); i++) {
+        auto e = ss[i].get();
+        if (e.dimCnt() != s.dimCnt()) {
+            LOG(ERROR) << fmt::format("cat {}th tensor dim cnt: {} not matched, target: {}", i, e.dimCnt(), s.dimCnt());
+            return false;
+        }
+        for (u32 j = 0; j < s.dimCnt(); j++) {
+            if (j == d) {dims[j] += e.getDim(j); continue;}
+            if (s.getDim(j) != e.getDim(j)) {
+                LOG(ERROR) << fmt::format("cat {}th tensor {}th dim not matched", i, j);
+                return false;
             }
-            dims[i] = _dims[i];
         }
     }
-    return Shape(dims);
-}
-
-
-bool Shape::split(int d, u32 sd, Shape& shape1, Shape& shape2) const {
-    if (d < 0 || d >= _dims.size()) {
-        LOG(ERROR) << fmt::format("split d out of range: {}, dim cnt: {}", d, _dims.size());
-        return false;
-    }
-    if (sd == 0 || sd >= _dims[d]) {
-        LOG(ERROR) << fmt::format("split, sd: {}, dim: {}", sd, _dims[d]);
-        return false;
-    }
-    std::vector<u32> dims1(_dims.size()), dims2(_dims.size());
-    for (int i = 0; i < _dims.size(); i++) {
-        if (i == d) {
-            dims1[i] = sd;
-            dims2[i] = _dims[i] - sd;
-        } else {
-            dims1[i] = _dims[i];
-            dims2[i] = _dims[i];
-        }
-    }
-    shape1 = Shape(dims1);
-    shape2 = Shape(dims2);
+    shape = Shape(dims);
     return true;
 }
 
-Shape Shape::permute(const std::vector<u32>& pl) const {
+
+bool Shape::cat(const Shape& src, const Shape& dst, u32 d, u32 d_offset) {
+    if (d >= dst.dimCnt()) {
+        LOG(ERROR) << fmt::format("cat d: {} out of range: {}", d, dst.dimCnt());
+        return false;
+    }
+    if (src.dimCnt() != dst.dimCnt()) {
+        LOG(ERROR) << fmt::format("cat dim cnt ne: {}, {}", src.dimCnt(), dst.dimCnt());
+        return false;
+    }
+    for (u32 i = 0; i < dst.dimCnt(); i++) {
+        if (i == d) {
+            if (d_offset + src.getDim(d) > dst.getDim(d)) {
+                LOG(ERROR) << fmt::format("cat d: {} fail, dim limit", d);
+                return false;
+            }
+        } else {
+            if (src.getDim(i) != dst.getDim(i)) {
+                LOG(ERROR) << fmt::format("split dim: {} not eq: {}, {}", i, src.getDim(i), dst.getDim(i));
+                return false;
+            }               
+        }
+    }
+    return true;
+}
+
+bool Shape::split(const Shape& shape, const std::vector<u32>& sl, u32 d, std::vector<Shape>& ss) {
+    if (d >= shape.dimCnt()) {
+        LOG(ERROR) << fmt::format("split tensor d: {} out of range: {}", d, shape.dimCnt());
+        return false;
+    }
+    auto dims = shape.getDims();
+    ss = std::vector<Shape>(sl.size());
+    for (u32 i = 0; i < sl.size(); i++) {
+        if (dims[d] >= sl[i]) {
+            dims[d] -= sl[i];
+        } else {
+            LOG(ERROR) << fmt::format("split fail: {} due to neg", d);
+            return false;
+        }
+        auto sd = dims; sd[d] = sl[i];
+        ss[i] = Shape(sd);
+    }
+    return true;
+}
+
+bool Shape::split(const Shape& src, const Shape& dst, u32 d, u32 d_offset) {
+    if (d >= dst.dimCnt()) {
+        LOG(ERROR) << fmt::format("split d: {} out of range: {}", d, dst.dimCnt());
+        return false;
+    }
+    if (src.dimCnt() != dst.dimCnt()) {
+        LOG(ERROR) << fmt::format("split dim cnt ne: {}, {}", src.dimCnt(), dst.dimCnt());
+        return false;
+    }
+    for (u32 i = 0; i < dst.dimCnt(); i++) {
+        if (i == d) {
+            if (d_offset + dst.getDim(d) > src.getDim(d)) {
+                LOG(ERROR) << fmt::format("split d: {} fail, dim limit", d);
+                return false;
+            }
+        } else {
+            if (src.getDim(i) != dst.getDim(i)) {
+                LOG(ERROR) << fmt::format("split dim: {} not eq: {}, {}", i, src.getDim(i), dst.getDim(i));
+                return false;
+            }               
+        }
+    }
+    return true;
+}
+
+
+
+bool Shape::permute(const std::vector<u32>& pl, Shape& shape) const {
     if (pl.size() != _dims.size()) {
         LOG(ERROR) << fmt::format("permute pl len != dim cnt: {}, {}", pl.size(), _dims.size());
-        return Shape();
+        return false;
     }
     std::vector<u32> dims(pl.size());
     std::unordered_set<u32> pl_set; pl_set.reserve(pl.size());
     for (u32 i = 0; i < pl.size(); i++) {
         if (pl[i] >= _dims.size()) {
             LOG(ERROR) << fmt::format("permute index out of range: {}, {}", i, pl[i]);
-            return Shape();
+            return false;
         }
         if (pl_set.find(pl[i]) != pl_set.end()) {
             LOG(ERROR) << fmt::format("permute index dup: {}, {}", i, pl[i]);
-            return Shape();
+            return false;
         }
         pl_set.insert(pl[i]);
         dims[i] = _dims[pl[i]];
     }
-    return Shape(dims);
+    shape = Shape(dims);
+    return true;
 }
 
-Shape Shape::transpose(int d1, int d2) const {
+bool Shape::transpose(int d1, int d2, Shape& shape) const {
     if (d1 < 0 || d2 < 0 || d1 == d2 || d1 >= _dims.size() || d2 >= _dims.size()) {
         LOG(ERROR) << fmt::format("transpose d1/d2 invalid: {}, {}. shape dim cnt: {}", d1, d2, _dims.size());
-        return Shape();
+        return false;
     }
     auto dims = _dims;
     std::swap(dims[d1], dims[d2]);
-    return Shape(dims);
+    shape =  Shape(dims);
+    return true;
 }
 
-Shape Shape::mmul(const Shape& s) const {
+bool Shape::mmul(const Shape& s, Shape& shape) const {
     if (_dims.size() < 2 || s._dims.size() < 2) {
         LOG(ERROR) << "dim cnt lt 2";
-        return Shape();
+        return false;
     }
     if (_dims[_dims.size() - 1] != s._dims[s._dims.size() - 2]) {
         LOG(ERROR) << "can not mul, col cnt != row cnt";
-        return Shape();
+        return false;
     }
     std::vector<u32> dims1(_dims.begin(), _dims.end() - 2);
     std::vector<u32> dims2(s._dims.begin(), s._dims.end() - 2);
     if (dims1 != dims2) {
         LOG(ERROR) << "matrix not equal";
-        return Shape();
+        return false;
     }
 
     dims1.push_back(_dims[_dims.size() - 2]);
     dims1.push_back(s._dims[s._dims.size() - 1]);
-    return Shape(dims1);
+    shape =  Shape(dims1);
+    return true;
 }
 
 }

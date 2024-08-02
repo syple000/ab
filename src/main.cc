@@ -77,32 +77,23 @@ TEST(Test_grad_f64, Test){
 
     auto c = calc::Calculator<f64>(item);
     ASSERT_TRUE(isEq(c.call(), 65530.39539744));
-    // std::cout << c.call() << std::endl;
     c.deriv();
     ASSERT_TRUE(isEq(x1->getGrad(), 90860.14165895));
-    // std::cout << x1->getGrad() << std::endl;
     ASSERT_TRUE(isEq(x2->getGrad(), 221915.35278516));
-    // std::cout << x2->getGrad() << std::endl;
     c.clearGrad();
     c.createGradGraph();
     auto cx1 = calc::Calculator<f64>(x1->getGradGraph());
     auto cx2 = calc::Calculator<f64>(x2->getGradGraph());
     c.clearGradGraph();
     ASSERT_TRUE(isEq(cx1.call(), 90860.14165895));
-    // std::cout << cx1.call() << std::endl;
     ASSERT_TRUE(isEq(cx2.call(), 221915.35278516));
-    // std::cout << cx2.call() << std::endl;
     cx1.deriv();
     ASSERT_TRUE(isEq(x1->getGrad(), 125952.59694293));
-    // std::cout << x1->getGrad() << std::endl;
     ASSERT_TRUE(isEq(x2->getGrad(), 324039.04543274));
-    // std::cout << x2->getGrad() << std::endl;
     cx1.clearGrad();
     cx2.deriv();
     ASSERT_TRUE(isEq(x1->getGrad(), 324039.04543274));
-    // std::cout << x1->getGrad() << std::endl;
     ASSERT_TRUE(isEq(x2->getGrad(), 751501.54782524));
-    // std::cout << x2->getGrad() << std::endl;
     cx2.clearGrad();
 }
 
@@ -309,27 +300,37 @@ TEST(Test_tensor, test) {
     ASSERT_TRUE(t2.permute({2, 0, 1}) == base::Tensor<f64>(base::Shape({3, 2, 2}), {1, 4, 1, 4, 2, 5, 2, 5, 3, 6, 3, 6}));
     ASSERT_TRUE(t2.permute({2, 1, 0}) == base::Tensor<f64>(base::Shape({3, 2, 2}), {1, 1, 4, 4, 2, 2, 5, 5, 3, 3, 6, 6}));
     ASSERT_TRUE(t2.permute({1, 0, 2}) == base::Tensor<f64>(base::Shape({2, 2, 3}), {1, 2, 3, 1, 2, 3, 4, 5, 6, 4, 5, 6}));
-//    base::Tensor<f64> t8 = base::Tensor<f64>(base::Shape({2, 2, 1}), {1, 2, 3, 4});
-//    base::Tensor<f64> t9 = base::Tensor<f64>(base::Shape({1, 2, 3}), {7, 8, 9, 10, 11, 12});
-//    base::Tensor<f64> s1, s2;
-//    ASSERT_TRUE(t2.cat(t8, -1) == base::Tensor<f64>(base::Shape({2, 2, 4}), {1, 2, 3, 1, 4, 5, 6, 2, 1, 2, 3, 3, 4, 5, 6, 4}));
-//    t2.cat(t8, -1).split(-1, 3, s1, s2);
-//    ASSERT_TRUE(s1 == t2);
-//    ASSERT_TRUE(s2 == t8);
-//    ASSERT_TRUE(t2.cat(t9, 0) == base::Tensor<f64>(base::Shape({3, 2, 3}), {1, 2, 3, 4, 5, 6, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12}));
-//    t2.cat(t9, 0).split(0, 2, s1, s2);
-//    ASSERT_TRUE(s1 == t2);
-//    ASSERT_TRUE(s2 == t9);
-//    // 测试多个cat/split
-//    base::Tensor<f64> t10 = base::Tensor<f64>(base::Shape({1, 2}), {1, 2});
-//    base::Tensor<f64> t11 = base::Tensor<f64>(base::Shape({2, 2}), {3, 4, 5, 6});
-//    base::Tensor<f64> t12 = base::Tensor<f64>(base::Shape({1, 2}), {7, 8});
-//    ASSERT_TRUE(base::Tensor<f64>::cat({t10, t11, t12}, 0) == base::Tensor<f64>(base::Shape({4, 2}), {1, 2, 3, 4, 5, 6, 7, 8}));
-//    auto l = base::Tensor<f64>::split(base::Tensor<f64>::cat({t10, t11, t12}, 0), {1, 2}, 0);
-//    ASSERT_TRUE(l.size() == 3);
-//    ASSERT_TRUE(l[0] == base::Tensor<f64>(base::Shape({1, 2}), {1, 2}));
-//    ASSERT_TRUE(l[1] == base::Tensor<f64>(base::Shape({2, 2}), {3, 4, 5, 6}));
-//    ASSERT_TRUE(l[2] == base::Tensor<f64>(base::Shape({1, 2}), {7, 8}));
+    base::Tensor<f64> t10 = base::Tensor<f64>(base::Shape({2, 1, 2}), {1, 2, 3, 4});
+    base::Tensor<f64> t11 = base::Tensor<f64>(base::Shape({2, 1, 2}), {5, 6, 7, 8});
+    base::Tensor<f64> t12 = base::Tensor<f64>(base::Shape({1, 1, 2}), {9, 10});
+    base::Tensor<f64> t13 = base::Tensor<f64>(base::Shape({2, 2, 2}), {11, 12, 13, 14, 15, 16, 17, 18});
+    auto t14 = base::Tensor<f64>::cat({t10, t11, t12}, 0);
+    auto t15 = base::Tensor<f64>::cat({t10, t11, t13}, 1);
+    std::cout << t14.toString() << std::endl;
+    ASSERT_TRUE(t14 == base::Tensor<f64>(base::Tensor<f64>(base::Shape({5, 1, 2}), {1, 2, 3, 4, 5, 6, 7, 8, 9, 10})));
+    ASSERT_TRUE(t15 == base::Tensor<f64>(base::Shape({2, 4, 2}), {1, 2, 5, 6, 11, 12, 13, 14, 3, 4, 7, 8, 15, 16, 17, 18}));
+
+    auto v1 = base::Tensor<f64>::split(t14, {2, 2, 1}, 0);
+    std::vector<base::Tensor<f64>> v11;
+    for (u32 i = 0; i < v1.size(); i++) {
+        v11.emplace_back(base::Tensor<f64>(v1[i].shape()));
+    }
+    auto v2 = base::Tensor<f64>::split(t15, {1, 1, 2}, 1);
+    std::vector<base::Tensor<f64>> v22;
+    for (u32 i = 0; i < v2.size(); i++) {
+        v22.emplace_back(base::Tensor<f64>(v2[i].shape()));
+    }
+
+    auto t16 = base::Tensor<f64>(t14.shape());
+    auto t17 = base::Tensor<f64>(t15.shape());
+    base::Tensor<f64>::cat(v1[1], t16, 0, 2);
+    base::Tensor<f64>::cat(v1[0], t16, 0, 0);
+    base::Tensor<f64>::cat(v1[2], t16, 0, 4);
+    base::Tensor<f64>::cat(v2[1], t17, 1, 1);
+    base::Tensor<f64>::cat(v2[0], t17, 1, 0);
+    base::Tensor<f64>::cat(v2[2], t17, 1, 2);
+    ASSERT_TRUE(t16 == base::Tensor<f64>(base::Tensor<f64>(base::Shape({5, 1, 2}), {1, 2, 3, 4, 5, 6, 7, 8, 9, 10})));
+    ASSERT_TRUE(t17 == base::Tensor<f64>(base::Shape({2, 4, 2}), {1, 2, 5, 6, 11, 12, 13, 14, 3, 4, 7, 8, 15, 16, 17, 18}));
 }
 
 TEST(Test_grad_descent, test) {

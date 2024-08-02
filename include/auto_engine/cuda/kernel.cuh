@@ -11,7 +11,7 @@
 { \
     auto err = call; \
     if (err != cudaSuccess) { \
-        LOG(ERROR) << __FUNCTION__ << " call " << func_name << " err: " << err; \
+        LOG(ERROR) << __FUNCTION__ << " call " << func_name << " err: " << cudaGetErrorString(err); \
         exit(CUDA_ERR); \
     } \
 } \
@@ -343,6 +343,27 @@ __global__ void expand(const T* src, T* dst, u32 size) {
 }
 
 template<typename T>
+__global__ void cat(const T* src, const u32* src_dims, const u32* src_strides,
+    T* dst, const u32* dst_dims, const u32* dst_strides, 
+    u32 dim_cnt, u32 d, u32 d_offset) {
+    u32 idx = blockIdx.x * blockDim.x + threadIdx.x; 
+    if (idx >= src_strides[0] * src_dims[0]) {return;}
+    
+    u32 dst_index = 0;
+    u32 ridx = idx;
+    for (u32 i = 0; i < dim_cnt; i++) {
+        auto dim_index = ridx / src_strides[i];
+        if (i == d) {
+            dim_index += d_offset;
+        }
+        dst_index += dim_index * dst_strides[i];
+        ridx = ridx % src_strides[i];
+    }
+
+    dst[dst_index] = src[idx];
+}
+
+template<typename T>
 __global__ void cat(const T** srcs, const u32** srcs_dims, const u32** srcs_strides, u32 src_cnt,
     T* dst, const u32* dst_dims, const u32* dst_strides, 
     u32 dim_cnt, u32 d) {
@@ -374,6 +395,27 @@ __global__ void cat(const T** srcs, const u32** srcs_dims, const u32** srcs_stri
     }
 
     dst[idx] = srcs[src_index][iidx];
+}
+
+template<typename T>
+__global__ void split(const T* src, const u32* src_dims, const u32* src_strides,
+    T* dst, const u32* dst_dims, const u32* dst_strides, 
+    u32 dim_cnt, u32 d, u32 d_offset) {
+    u32 idx = blockIdx.x * blockDim.x + threadIdx.x; 
+    if (idx >= dst_strides[0] * dst_dims[0]) {return;}
+    
+    u32 src_index = 0;
+    u32 ridx = idx;
+    for (u32 i = 0; i < dim_cnt; i++) {
+        auto dim_index = ridx / dst_strides[i];
+        if (i == d) {
+            dim_index += d_offset;
+        }
+        src_index += dim_index * src_strides[i];
+        ridx = ridx % dst_strides[i];
+    }
+
+    dst[idx] = src[src_index];
 }
 
 template<typename T>
