@@ -9,8 +9,12 @@ namespace op {
 
 template<typename T, typename SHAPE>
 class Sum: public UOP<T> {
-public:
+protected:
     Sum(std::shared_ptr<Op<T>> arg): UOP<T>(arg) {}
+public:
+    static std::shared_ptr<Op<T>> op(std::shared_ptr<Op<T>> arg) {
+        return std::shared_ptr<Sum<T, SHAPE>>(new Sum<T, SHAPE>(arg));
+    }
 
     T call(const T& arg) override {
         return sum(arg);
@@ -27,8 +31,12 @@ public:
 
 template<typename T, typename SHAPE>
 class Expand: public UOP<T> {
-public:
+protected:
     Expand(std::shared_ptr<Op<T>> arg, const SHAPE& shape): UOP<T>(arg), _shape(shape) {}
+public:
+    static std::shared_ptr<Op<T>> op(std::shared_ptr<Op<T>> arg, const SHAPE& shape) {
+        return std::shared_ptr<Expand<T, SHAPE>>(new Expand<T, SHAPE>(arg, shape));
+    }
 
     T call(const T& arg) override {
         return expand(arg, _shape);
@@ -47,12 +55,12 @@ private:
 
 template<typename T, typename SHAPE>
 std::shared_ptr<Op<T>> Sum<T, SHAPE>::derivFunc(u32 _, std::shared_ptr<Op<T>> grad, std::shared_ptr<Op<T>> arg) {
-    return std::make_shared<Expand<T, SHAPE>>(grad, shape<T, SHAPE>(arg->template getOutput()));
+    return Expand<T, SHAPE>::op(grad, shape<T, SHAPE>(arg->template getOutput()));
 }
 
 template<typename T, typename SHAPE>
 std::shared_ptr<Op<T>> Expand<T, SHAPE>::derivFunc(u32 _, std::shared_ptr<Op<T>> grad, std::shared_ptr<Op<T>> arg) {
-    return std::make_shared<Sum<T, SHAPE>>(grad);
+    return Sum<T, SHAPE>::op(grad);
 }
 
 }

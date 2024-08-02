@@ -12,8 +12,12 @@ namespace op {
 
 template<typename T>
 class Div: public BOP<T> {
-public:
+protected:
     Div(std::shared_ptr<Op<T>> arg1, std::shared_ptr<Op<T>> arg2): BOP<T>(arg1, arg2) {}
+public:
+    static std::shared_ptr<Op<T>> op(std::shared_ptr<Op<T>> arg1, std::shared_ptr<Op<T>> arg2) {
+        return std::shared_ptr<Div<T>>(new Div<T>(arg1, arg2));
+    }
 
     T call(const T& arg1, const T& arg2) override {
         return arg1 / arg2;
@@ -29,12 +33,12 @@ public:
 
     std::shared_ptr<Op<T>> derivFunc(u32 index, std::shared_ptr<Op<T>> grad, std::shared_ptr<Op<T>> arg1, std::shared_ptr<Op<T>> arg2) override {
         if (index == 0) {
-            return std::make_shared<Div<T>>(grad, arg2);
+            return Div<T>::op(grad, arg2);
         } else {
-            auto item1 = std::make_shared<Mul<T>>(arg2, arg2);
-            auto item2 = std::make_shared<Div<T>>(arg1, item1);
-            auto item3 = std::make_shared<Mul<T>>(grad, item2);
-            return std::make_shared<Sub<T>>(std::make_shared<DataOp<T>>(zero<T>(arg1->template getOutput())), item3);
+            auto item1 = Mul<T>::op(arg2, arg2);
+            auto item2 = Div<T>::op(arg1, item1);
+            auto item3 = Mul<T>::op(grad, item2);
+            return Sub<T>::op(DataOp<T>::op(zero<T>(arg1->template getOutput())), item3);
         }
     }
 

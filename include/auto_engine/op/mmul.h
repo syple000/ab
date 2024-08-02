@@ -10,8 +10,12 @@ namespace op {
 
 template<typename T>
 class Mmul: public BOP<T> {
-public:
+protected:
     Mmul(std::shared_ptr<Op<T>> arg1, std::shared_ptr<Op<T>> arg2): BOP<T>(arg1, arg2) {}
+public:
+    static std::shared_ptr<Op<T>> op(std::shared_ptr<Op<T>> arg1, std::shared_ptr<Op<T>> arg2) {
+        return std::shared_ptr<Mmul<T>>(new Mmul<T>(arg1, arg2));
+    }
 
     T call(const T& arg1, const T& arg2) override {
         return mmul(arg1, arg2);
@@ -27,9 +31,9 @@ public:
 
     std::shared_ptr<Op<T>> derivFunc(u32 index, std::shared_ptr<Op<T>> grad, std::shared_ptr<Op<T>> arg1, std::shared_ptr<Op<T>> arg2) override {
         if (index == 0) {
-            return std::make_shared<Mmul<T>>(grad, std::make_shared<Transpose<T>>(arg2, -2, -1));
+            return Mmul<T>::op(grad, Transpose<T>::op(arg2, -2, -1));
         } else {
-            return std::make_shared<Mmul<T>>(std::make_shared<Transpose<T>>(arg1, -2, -1), grad);
+            return Mmul<T>::op(Transpose<T>::op(arg1, -2, -1), grad);
         }
     }
 

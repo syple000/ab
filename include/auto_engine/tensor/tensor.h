@@ -474,7 +474,6 @@ Tensor<T> Tensor<T>::permute(const std::vector<u32>& pl) const {
     if (std::is_same<T, f64>::value && ENABLE_CUDA) {
         cuda::permute(_data.data(), _shape, rt._data.data(), rt._shape, npl);
     } else {
-        LOG(ERROR) << "rt shape: " << rt.shape().toString();
         for (u32 i = 0; i < _shape.tensorSize(); i++) { 
             u32 ri = i, oi = 0;
             for (int j = 0; j < _shape.dimCnt(); j++) {

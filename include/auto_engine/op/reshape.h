@@ -9,8 +9,12 @@ namespace op {
 
 template<typename T, typename SHAPE>
 class Reshape: public UOP<T> {
-public:
+protected:
     Reshape(std::shared_ptr<Op<T>> arg, const SHAPE& shape): UOP<T>(arg), _shape(shape) {}
+public:
+    static std::shared_ptr<Op<T>> op(std::shared_ptr<Op<T>> arg, const SHAPE& shape) {
+        return std::shared_ptr<Reshape<T, SHAPE>>(new Reshape<T, SHAPE>(arg, shape));
+    }
 
     T call(const T& arg) override {
         return reshape(arg, _shape);
@@ -21,7 +25,7 @@ public:
     }
 
     std::shared_ptr<Op<T>> derivFunc(u32 _, std::shared_ptr<Op<T>> grad, std::shared_ptr<Op<T>> arg) override {
-        return std::make_shared<Reshape<T, SHAPE>>(grad, shape<T, SHAPE>(arg->template getOutput()));
+        return Reshape<T, SHAPE>::op(grad, shape<T, SHAPE>(arg->template getOutput()));
     }
 
     std::string name() const override {return "Reshape";}

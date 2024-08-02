@@ -10,8 +10,12 @@ namespace op {
 
 template<typename T>
 class Log: public UOP<T> {
-public:
+protected:
     Log(std::shared_ptr<Op<T>> arg): UOP<T>(arg) {}
+public:
+    static std::shared_ptr<Op<T>> op(std::shared_ptr<Op<T>> arg) {
+        return std::shared_ptr<Log<T>>(new Log<T>(arg));
+    }
 
     T call(const T& arg) override {
         return log(arg);
@@ -22,7 +26,7 @@ public:
     }
 
     std::shared_ptr<Op<T>> derivFunc(u32 _, std::shared_ptr<Op<T>> grad, std::shared_ptr<Op<T>> arg) override {
-        return std::make_shared<Div<T>>(grad, arg);
+        return Div<T>::op(grad, arg);
     }
 
     std::string name() const override {return "Log";}

@@ -12,8 +12,12 @@ namespace op {
 
 template<typename T, typename SHAPE>
 class MulN: public BOP<T> {
-public:
+protected:
     MulN(std::shared_ptr<Op<T>> arg1, std::shared_ptr<Op<T>> arg2): op::BOP<T>(arg1, arg2) {}
+public:
+    static std::shared_ptr<Op<T>> op(std::shared_ptr<Op<T>> arg1, std::shared_ptr<Op<T>> arg2) {
+        return std::shared_ptr<MulN<T, SHAPE>>(new MulN<T, SHAPE>(arg1, arg2));
+    }
 
     T call(const T& arg1, const T& arg2) override {
         return mul_n(arg1, arg2);
@@ -27,11 +31,11 @@ public:
     }
     std::shared_ptr<Op<T>> derivFunc(u32 index, std::shared_ptr<Op<T>> grad, std::shared_ptr<Op<T>> arg1, std::shared_ptr<Op<T>> arg2) override {
         if (index == 0) {
-            return std::make_shared<MulN<T, SHAPE>>(grad, arg2);
+            return MulN<T, SHAPE>::op(grad, arg2);
         } else {
-            auto item1 = std::make_shared<Mul<T>>(grad, arg1);
-            auto item2 = std::make_shared<Sum<T, SHAPE>>(item1);
-            return std::make_shared<Reshape<T, SHAPE>>(item2, shape<T, SHAPE>(arg2->template getOutput()));
+            auto item1 = Mul<T>::op(grad, arg1);
+            auto item2 = Sum<T, SHAPE>::op(item1);
+            return Reshape<T, SHAPE>::op(item2, shape<T, SHAPE>(arg2->template getOutput()));
         }
     }
     std::string name() const override {return "MulN";}

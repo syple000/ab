@@ -43,7 +43,7 @@ public:
     void createGradGraph() {
         call();
 
-        _op->template setGradGraph(std::make_shared<op::DataOp<T>>(op::one<T>(_op->template getOutput())));
+        _op->template setGradGraph(op::DataOp<T>::op(op::one<T>(_op->template getOutput())));
         _op->template createGradGraph();
         const auto& a = _op->template exec_queue();
         for (int i = a.size() - 1; i >= 0; i--) {

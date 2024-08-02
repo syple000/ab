@@ -13,8 +13,12 @@ namespace op {
 
 template<typename T, typename SHAPE>
 class SubN: public BOP<T> {
-public:
+protected:
     SubN(std::shared_ptr<Op<T>> arg1, std::shared_ptr<Op<T>> arg2): BOP<T>(arg1, arg2) {}
+public:
+    static std::shared_ptr<Op<T>> op(std::shared_ptr<Op<T>> arg1, std::shared_ptr<Op<T>> arg2) {
+        return std::shared_ptr<SubN<T, SHAPE>>(new SubN<T, SHAPE>(arg1, arg2));
+    }
 
     T call(const T& arg1, const T& arg2) override {
         return sub_n(arg1, arg2);
@@ -32,10 +36,10 @@ public:
         if (index == 0) {
             return grad;
         } else {
-            auto zeros = std::make_shared<DataOp<T>>(zero(arg1->template getOutput()));
-            auto neg_grad = std::make_shared<Sub<T>>(zeros, grad);
-            auto item = std::make_shared<Sum<T, SHAPE>>(neg_grad);
-            return std::make_shared<Reshape<T, SHAPE>>(item, shape<T, SHAPE>(arg2->template getOutput()));
+            auto zeros = DataOp<T>::op(zero(arg1->template getOutput()));
+            auto neg_grad = Sub<T>::op(zeros, grad);
+            auto item = Sum<T, SHAPE>::op(neg_grad);
+            return Reshape<T, SHAPE>::op(item, shape<T, SHAPE>(arg2->template getOutput()));
         }
     }
 

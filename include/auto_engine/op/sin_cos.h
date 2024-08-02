@@ -13,8 +13,12 @@ namespace op {
 
 template<typename T>
 class Sin: public UOP<T> {
-public:
+protected:
     Sin(std::shared_ptr<Op<T>> arg): UOP<T>(arg) {}
+public:
+    static std::shared_ptr<Op<T>> op(std::shared_ptr<Op<T>> arg) {
+        return std::shared_ptr<Sin<T>>(new Sin<T>(arg));
+    }
 
     T call(const T& arg) override {
         return sin(arg);
@@ -31,8 +35,12 @@ public:
 
 template<typename T>
 class Cos: public UOP<T> {
-public:
+protected:
     Cos(std::shared_ptr<Op<T>> arg): UOP<T>(arg) {}
+public:
+    static std::shared_ptr<Op<T>> op(std::shared_ptr<Op<T>> arg) {
+        return std::shared_ptr<Cos<T>>(new Cos<T>(arg));
+    }
 
     T call(const T& arg) override {
         return cos(arg);
@@ -49,17 +57,17 @@ public:
 
 template<typename T>
 std::shared_ptr<Op<T>> Sin<T>::derivFunc(u32 _, std::shared_ptr<Op<T>> grad, std::shared_ptr<Op<T>> arg) {
-    auto item = std::make_shared<Cos<T>>(arg);
-    return std::make_shared<Mul<T>>(grad, item);
+    auto item = Cos<T>::op(arg);
+    return Mul<T>::op(grad, item);
 }
 
 template<typename T>
 std::shared_ptr<Op<T>> Cos<T>::derivFunc(u32 _, std::shared_ptr<Op<T>> grad, std::shared_ptr<Op<T>> arg) {
-    auto item = std::make_shared<Sub<T>>(
-        std::make_shared<DataOp<T>>(zero<T>(arg->template getOutput())),
-        std::make_shared<Sin<T>>(arg)
+    auto item = Sub<T>::op(
+        DataOp<T>::op(zero<T>(arg->template getOutput())),
+        Sin<T>::op(arg)
     );
-    return std::make_shared<Mul<T>>(grad, item);
+    return Mul<T>::op(grad, item);
 }
 
 }

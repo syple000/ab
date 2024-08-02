@@ -55,7 +55,7 @@ public:
             if (!this->arg1()->template hasGradGraph()) {
                 this->arg1()->template setGradGraph(item);
             } else {
-                this->arg1()->template setGradGraph(std::make_shared<Add<T>>(this->arg1()->template getGradGraph(), item));
+                this->arg1()->template setGradGraph(Add<T>::op(this->arg1()->template getGradGraph(), item));
             }
         }
         if (this->arg2()->template getRequiresGrad()) {
@@ -63,7 +63,7 @@ public:
             if (!this->arg2()->template hasGradGraph()) {
                 this->arg2()->template setGradGraph(item);
             } else {
-                this->arg2()->template setGradGraph(std::make_shared<Add<T>>(this->arg2()->template getGradGraph(), item));
+                this->arg2()->template setGradGraph(Add<T>::op(this->arg2()->template getGradGraph(), item));
             }
         }
     }

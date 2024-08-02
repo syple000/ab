@@ -13,8 +13,12 @@ namespace op {
 
 template<typename T, typename SHAPE>
 class PowN: public BOP<T> {
-public:
+protected:
     PowN(std::shared_ptr<Op<T>> arg1, std::shared_ptr<Op<T>> arg2): BOP<T>(arg1, arg2) {}
+public:
+    static std::shared_ptr<Op<T>> op(std::shared_ptr<Op<T>> arg1, std::shared_ptr<Op<T>> arg2) {
+        return std::shared_ptr<PowN<T, SHAPE>>(new PowN<T, SHAPE>(arg1, arg2));
+    }
 
     T call(const T& arg1, const T& arg2) override {
         return pow_n(arg1, arg2);
@@ -28,17 +32,17 @@ public:
     }
     std::shared_ptr<Op<T>> derivFunc(u32 index, std::shared_ptr<Op<T>> grad, std::shared_ptr<Op<T>> arg1, std::shared_ptr<Op<T>> arg2) override {
         if (index == 0) {
-            auto item1 = std::make_shared<Sub<T>>(arg2, std::make_shared<DataOp<T>>(one<T>(arg2->template getOutput())));
-            auto item2 = std::make_shared<PowN<T, SHAPE>>(arg1, item1);
-            auto item3 = std::make_shared<MulN<T, SHAPE>>(item2, arg2);
-            return std::make_shared<Mul<T>>(grad, item3);
+            auto item1 = Sub<T>::op(arg2, DataOp<T>::op(one<T>(arg2->template getOutput())));
+            auto item2 = PowN<T, SHAPE>::op(arg1, item1);
+            auto item3 = MulN<T, SHAPE>::op(item2, arg2);
+            return Mul<T>::op(grad, item3);
         } else {
-            auto item1 = std::make_shared<Log<T>>(arg1);
-            auto item2 = std::make_shared<PowN<T, SHAPE>>(arg1, arg2);
-            auto item3 = std::make_shared<Mul<T>>(item1, item2); 
-            auto item4 = std::make_shared<Mul<T>>(grad, item3);
-            auto item5 = std::make_shared<Sum<T, SHAPE>>(item4);
-            return std::make_shared<Reshape<T, SHAPE>>(item5, shape<T, SHAPE>(arg2->template getOutput()));
+            auto item1 = Log<T>::op(arg1);
+            auto item2 = PowN<T, SHAPE>::op(arg1, arg2);
+            auto item3 = Mul<T>::op(item1, item2); 
+            auto item4 = Mul<T>::op(grad, item3);
+            auto item5 = Sum<T, SHAPE>::op(item4);
+            return Reshape<T, SHAPE>::op(item5, shape<T, SHAPE>(arg2->template getOutput()));
         }
     }
 

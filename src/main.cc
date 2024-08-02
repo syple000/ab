@@ -51,29 +51,29 @@ TEST(Test_grad_f64, Test){
     std::cout.precision(8);
     std::cout << std::fixed;
     // 测试函数f(x1, x2) = (2 * x1 + x2) * (x1 - x2) + x2/x1 + x2^(x2 + x1 + 1) + log(x2 + x1) + sin(x2-x1)/cos(x2+x1)
-    auto x1 = std::make_shared<op::DataOp<f64>>(3, true);
-    auto x2 = std::make_shared<op::DataOp<f64>>(4, true);
-    auto c1 = std::make_shared<op::DataOp<f64>>(1);
-    auto c2 = std::make_shared<op::DataOp<f64>>(2);
-    auto item1 = std::make_shared<op::Mul<f64>>(c2, x1);
-    auto item2 = std::make_shared<op::Add<f64>>(item1, x2);
-    auto item3 = std::make_shared<op::Sub<f64>>(x1, x2);
-    auto item4 = std::make_shared<op::Mul<f64>>(item2, item3);
-    auto item5 = std::make_shared<op::Div<f64>>(x2, x1);
-    auto item6 = std::make_shared<op::Add<f64>>(item4, item5);
-    auto item7 = std::make_shared<op::Add<f64>>(x2, x1);
-    auto item8 = std::make_shared<op::Add<f64>>(item7, c1);
-    auto item9 = std::make_shared<op::Pow<f64>>(x2, item8);
-    auto item10 = std::make_shared<op::Add<f64>>(item6, item9);
-    auto item11 = std::make_shared<op::Log<f64>>(item7);
-    auto item12 = std::make_shared<op::Add<f64>>(item10, item11);
+    auto x1 = op::DataOp<f64>::op(3, true);
+    auto x2 = op::DataOp<f64>::op(4, true);
+    auto c1 = op::DataOp<f64>::op(1);
+    auto c2 = op::DataOp<f64>::op(2);
+    auto item1 = op::Mul<f64>::op(c2, x1);
+    auto item2 = op::Add<f64>::op(item1, x2);
+    auto item3 = op::Sub<f64>::op(x1, x2);
+    auto item4 = op::Mul<f64>::op(item2, item3);
+    auto item5 = op::Div<f64>::op(x2, x1);
+    auto item6 = op::Add<f64>::op(item4, item5);
+    auto item7 = op::Add<f64>::op(x2, x1);
+    auto item8 = op::Add<f64>::op(item7, c1);
+    auto item9 = op::Pow<f64>::op(x2, item8);
+    auto item10 = op::Add<f64>::op(item6, item9);
+    auto item11 = op::Log<f64>::op(item7);
+    auto item12 = op::Add<f64>::op(item10, item11);
 
-    auto item13 = std::make_shared<op::Sub<f64>>(x2, x1);
-    auto item14 = std::make_shared<op::Sin<f64>>(item13);
-    auto item15 = std::make_shared<op::Cos<f64>>(item7);
-    auto item16 = std::make_shared<op::Div<f64>>(item14, item15);
+    auto item13 = op::Sub<f64>::op(x2, x1);
+    auto item14 = op::Sin<f64>::op(item13);
+    auto item15 = op::Cos<f64>::op(item7);
+    auto item16 = op::Div<f64>::op(item14, item15);
 
-    auto item = std::make_shared<op::Add<f64>>(item12, item16);
+    auto item = op::Add<f64>::op(item12, item16);
 
     auto c = calc::Calculator<f64>(item);
     ASSERT_TRUE(isEq(c.call(), 65530.39539744));
@@ -114,29 +114,29 @@ TEST(Test_grad_tensor, Test){
     auto t2 = base::Tensor<f64>(base::Shape({2}), {4, 2});
     auto ct1 = base::Tensor<f64>(base::Shape({2}), 1);
     auto ct2 = base::Tensor<f64>(base::Shape({2}), 2);
-    auto x1 = std::make_shared<op::DataOp<base::Tensor<f64>>>(t1, true);
-    auto x2 = std::make_shared<op::DataOp<base::Tensor<f64>>>(t2, true);
-    auto c1 = std::make_shared<op::DataOp<base::Tensor<f64>>>(ct1);
-    auto c2 = std::make_shared<op::DataOp<base::Tensor<f64>>>(ct2);
-    auto item1 = std::make_shared<op::Mul<base::Tensor<f64>>>(c2, x1);
-    auto item2 = std::make_shared<op::Add<base::Tensor<f64>>>(item1, x2);
-    auto item3 = std::make_shared<op::Sub<base::Tensor<f64>>>(x1, x2);
-    auto item4 = std::make_shared<op::Mul<base::Tensor<f64>>>(item2, item3);
-    auto item5 = std::make_shared<op::Div<base::Tensor<f64>>>(x2, x1);
-    auto item6 = std::make_shared<op::Add<base::Tensor<f64>>>(item4, item5);
-    auto item7 = std::make_shared<op::Add<base::Tensor<f64>>>(x2, x1);
-    auto item8 = std::make_shared<op::Add<base::Tensor<f64>>>(item7, c1);
-    auto item9 = std::make_shared<op::Pow<base::Tensor<f64>>>(x2, item8);
-    auto item10 = std::make_shared<op::Add<base::Tensor<f64>>>(item6, item9);
-    auto item11 = std::make_shared<op::Log<base::Tensor<f64>>>(item7);
-    auto item12 = std::make_shared<op::Add<base::Tensor<f64>>>(item10, item11);
+    auto x1 = op::DataOp<base::Tensor<f64>>::op(t1, true);
+    auto x2 = op::DataOp<base::Tensor<f64>>::op(t2, true);
+    auto c1 = op::DataOp<base::Tensor<f64>>::op(ct1);
+    auto c2 = op::DataOp<base::Tensor<f64>>::op(ct2);
+    auto item1 = op::Mul<base::Tensor<f64>>::op(c2, x1);
+    auto item2 = op::Add<base::Tensor<f64>>::op(item1, x2);
+    auto item3 = op::Sub<base::Tensor<f64>>::op(x1, x2);
+    auto item4 = op::Mul<base::Tensor<f64>>::op(item2, item3);
+    auto item5 = op::Div<base::Tensor<f64>>::op(x2, x1);
+    auto item6 = op::Add<base::Tensor<f64>>::op(item4, item5);
+    auto item7 = op::Add<base::Tensor<f64>>::op(x2, x1);
+    auto item8 = op::Add<base::Tensor<f64>>::op(item7, c1);
+    auto item9 = op::Pow<base::Tensor<f64>>::op(x2, item8);
+    auto item10 = op::Add<base::Tensor<f64>>::op(item6, item9);
+    auto item11 = op::Log<base::Tensor<f64>>::op(item7);
+    auto item12 = op::Add<base::Tensor<f64>>::op(item10, item11);
 
-    auto item13 = std::make_shared<op::Sub<base::Tensor<f64>>>(x2, x1);
-    auto item14 = std::make_shared<op::Sin<base::Tensor<f64>>>(item13);
-    auto item15 = std::make_shared<op::Cos<base::Tensor<f64>>>(item7);
-    auto item16 = std::make_shared<op::Div<base::Tensor<f64>>>(item14, item15);
+    auto item13 = op::Sub<base::Tensor<f64>>::op(x2, x1);
+    auto item14 = op::Sin<base::Tensor<f64>>::op(item13);
+    auto item15 = op::Cos<base::Tensor<f64>>::op(item7);
+    auto item16 = op::Div<base::Tensor<f64>>::op(item14, item15);
 
-    auto item = std::make_shared<op::Add<base::Tensor<f64>>>(item12, item16);
+    auto item = op::Add<base::Tensor<f64>>::op(item12, item16);
 
     auto c = calc::Calculator<base::Tensor<f64>>(item);
     ASSERT_TRUE(isEq(c.call(), base::Tensor<f64>(base::Shape({2}), {65530.39539744, 14.24863515})));
@@ -163,13 +163,13 @@ TEST(Test_grad_tensor, Test){
 TEST(Test_grad_tensor3, test) {
     auto t1 = base::Tensor<f64>(base::Shape({2, 2}), {1, 2, 3, 4});
     auto t2 = base::Tensor<f64>(base::Shape({1, 1}), {2});
-    auto x1 = std::make_shared<op::DataOp<base::Tensor<f64>>>(t1, true);
-    auto x2 = std::make_shared<op::DataOp<base::Tensor<f64>>>(t2, true);
-    auto item1 = std::make_shared<op::AddN<base::Tensor<f64>, base::Shape>>(x1, x2);
-    auto item2 = std::make_shared<op::MulN<base::Tensor<f64>, base::Shape>>(item1, x2);
-    auto item3 = std::make_shared<op::PowN<base::Tensor<f64>, base::Shape>>(item2, x2);
-    auto item4 = std::make_shared<op::DivN<base::Tensor<f64>, base::Shape>>(item3, x2);
-    auto item = std::make_shared<op::SubN<base::Tensor<f64>, base::Shape>>(item4, x2);
+    auto x1 = op::DataOp<base::Tensor<f64>>::op(t1, true);
+    auto x2 = op::DataOp<base::Tensor<f64>>::op(t2, true);
+    auto item1 = op::AddN<base::Tensor<f64>, base::Shape>::op(x1, x2);
+    auto item2 = op::MulN<base::Tensor<f64>, base::Shape>::op(item1, x2);
+    auto item3 = op::PowN<base::Tensor<f64>, base::Shape>::op(item2, x2);
+    auto item4 = op::DivN<base::Tensor<f64>, base::Shape>::op(item3, x2);
+    auto item = op::SubN<base::Tensor<f64>, base::Shape>::op(item4, x2);
     auto c = calc::Calculator<base::Tensor<f64>>(item);
     ASSERT_TRUE(c.call() == base::Tensor<f64>(base::Shape({2, 2}), {16, 30, 48, 70}));
     c.deriv();
@@ -194,16 +194,16 @@ TEST(Test_grad_tensor3, test) {
 
 TEST(Test_grad_test4, test) {
     auto t1 = base::Tensor<f64>(base::Shape({2, 3, 3}), {0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.7, 0.6, 0.5});
-    auto x1 = std::make_shared<op::DataOp<base::Tensor<f64>>>(t1, true);
-    auto item1_1 = std::make_shared<op::Permute<base::Tensor<f64>>>(x1, std::vector<u32>{2, 0, 1});
-    auto item1_2 = std::make_shared<op::Permute<base::Tensor<f64>>>(item1_1, std::vector<u32>{1, 0, 2});
-    auto item1 = std::make_shared<op::SumD<base::Tensor<f64>, base::Shape>>(item1_2, 0);
-    auto item2 = std::make_shared<op::SumD<base::Tensor<f64>, base::Shape>>(x1, 1);
-    auto item3 = std::make_shared<op::SumD<base::Tensor<f64>, base::Shape>>(x1, -1);
-    auto item4 = std::make_shared<op::Mmul<base::Tensor<f64>>>(std::make_shared<op::Transpose<base::Tensor<f64>>>(item2, 0, 1), item3);
-    auto item5_ = std::make_shared<op::Mmul<base::Tensor<f64>>>(item1, item4);
-    auto item5 = std::make_shared<op::Permute<base::Tensor<f64>>>(item5_, std::vector<u32>{1, 0});
-    auto item = std::make_shared<op::Sum<base::Tensor<f64>, base::Shape>>(std::make_shared<op::Mul<base::Tensor<f64>>>(item5, item5));
+    auto x1 = op::DataOp<base::Tensor<f64>>::op(t1, true);
+    auto item1_1 = op::Permute<base::Tensor<f64>>::op(x1, std::vector<u32>{2, 0, 1});
+    auto item1_2 = op::Permute<base::Tensor<f64>>::op(item1_1, std::vector<u32>{1, 0, 2});
+    auto item1 = op::SumD<base::Tensor<f64>, base::Shape>::op(item1_2, 0);
+    auto item2 = op::SumD<base::Tensor<f64>, base::Shape>::op(x1, 1);
+    auto item3 = op::SumD<base::Tensor<f64>, base::Shape>::op(x1, -1);
+    auto item4 = op::Mmul<base::Tensor<f64>>::op(op::Transpose<base::Tensor<f64>>::op(item2, 0, 1), item3);
+    auto item5_ = op::Mmul<base::Tensor<f64>>::op(item1, item4);
+    auto item5 = op::Permute<base::Tensor<f64>>::op(item5_, std::vector<u32>{1, 0});
+    auto item = op::Sum<base::Tensor<f64>, base::Shape>::op(op::Mul<base::Tensor<f64>>::op(item5, item5));
     auto c = calc::Calculator<base::Tensor<f64>>(item);
     ASSERT_TRUE(c.call() == base::Tensor<f64>(base::Shape({1}), {1062.682578000}));
     c.deriv();
@@ -239,15 +239,15 @@ TEST(Test_grad_tensor2, test) {
     auto t1 = base::Tensor<f64>(base::Shape({2, 2, 2}), {1, 2, 3, 4, 1, 2, 2, 1});
     auto t2 = base::Tensor<f64>(base::Shape({2, 3, 2}), {1, 2, 3, 4, 5, 6, 6, 5, 4, 3, 2, 1});
     auto t3 = base::Tensor<f64>(base::Shape({2, 1, 3}), {1, 1, 1, 1, 1, 1});
-    auto x1_ = std::make_shared<op::DataOp<base::Tensor<f64>>>(t1, true);
-    auto x1 = std::make_shared<op::Inv<base::Tensor<f64>>>(x1_);
-    auto x2_ = std::make_shared<op::DataOp<base::Tensor<f64>>>(t2, true);
-    auto x2 = std::make_shared<op::Reshape<base::Tensor<f64>, base::Shape>>(x2_, base::Shape({2, 2, 3}));
-    auto ct = std::make_shared<op::DataOp<base::Tensor<f64>>>(t3);
-    auto item1 = std::make_shared<op::Mmul<base::Tensor<f64>>>(x1, x2);
-    auto item2 = std::make_shared<op::Transpose<base::Tensor<f64>>>(item1, -2, -1);
-    auto item3 = std::make_shared<op::Mmul<base::Tensor<f64>>>(item2, x2);
-    auto item = std::make_shared<op::Sum<base::Tensor<f64>, base::Shape>>(item3);
+    auto x1_ = op::DataOp<base::Tensor<f64>>::op(t1, true);
+    auto x1 = op::Inv<base::Tensor<f64>>::op(x1_);
+    auto x2_ = op::DataOp<base::Tensor<f64>>::op(t2, true);
+    auto x2 = op::Reshape<base::Tensor<f64>, base::Shape>::op(x2_, base::Shape({2, 2, 3}));
+    auto ct = op::DataOp<base::Tensor<f64>>::op(t3);
+    auto item1 = op::Mmul<base::Tensor<f64>>::op(x1, x2);
+    auto item2 = op::Transpose<base::Tensor<f64>>::op(item1, -2, -1);
+    auto item3 = op::Mmul<base::Tensor<f64>>::op(item2, x2);
+    auto item = op::Sum<base::Tensor<f64>, base::Shape>::op(item3);
     auto c = calc::Calculator<base::Tensor<f64>>(item);
     ASSERT_TRUE(c.call() == base::Tensor<f64>(base::Shape({1}), {73.5}));
     c.deriv();
@@ -334,20 +334,20 @@ TEST(Test_tensor, test) {
 
 TEST(Test_grad_descent, test) {
     auto t1 = base::Tensor<f64>(base::Shape({2}), {1, 2});
-    auto x = std::make_shared<op::DataOp<base::Tensor<f64>>>(t1, true);
+    auto x = op::DataOp<base::Tensor<f64>>::op(t1, true);
 
     auto cost_func = [](const std::vector<std::shared_ptr<op::Op<base::Tensor<f64>>>>& args) {
         auto t2 = base::Tensor<f64>(base::Shape({2}), {2, 3});
         auto t3 = base::Tensor<f64>(base::Shape({2}), {4, 5});
-        auto ct1 = std::make_shared<op::DataOp<base::Tensor<f64>>>(t2);
-        auto ct2 = std::make_shared<op::DataOp<base::Tensor<f64>>>(t3);
-        auto item1 = std::make_shared<op::Mul<base::Tensor<f64>>>(args[0], args[0]);
-        auto item2 = std::make_shared<op::Mul<base::Tensor<f64>>>(ct1, args[0]);
-        auto item3 = std::make_shared<op::Add<base::Tensor<f64>>>(item1, item2);
-        auto item4 = std::make_shared<op::Add<base::Tensor<f64>>>(item3, ct2);
-        auto item5 = std::make_shared<op::Reshape<base::Tensor<f64>, base::Shape>>(item4, base::Shape({1, 2}));
-        auto item6 = std::make_shared<op::DataOp<base::Tensor<f64>>>(base::Tensor<f64>(base::Shape({2, 1}), 1));
-        auto item = std::make_shared<op::Mmul<base::Tensor<f64>>>(item5, item6);
+        auto ct1 = op::DataOp<base::Tensor<f64>>::op(t2);
+        auto ct2 = op::DataOp<base::Tensor<f64>>::op(t3);
+        auto item1 = op::Mul<base::Tensor<f64>>::op(args[0], args[0]);
+        auto item2 = op::Mul<base::Tensor<f64>>::op(ct1, args[0]);
+        auto item3 = op::Add<base::Tensor<f64>>::op(item1, item2);
+        auto item4 = op::Add<base::Tensor<f64>>::op(item3, ct2);
+        auto item5 = op::Reshape<base::Tensor<f64>, base::Shape>::op(item4, base::Shape({1, 2}));
+        auto item6 = op::DataOp<base::Tensor<f64>>::op(base::Tensor<f64>(base::Shape({2, 1}), 1));
+        auto item = op::Mmul<base::Tensor<f64>>::op(item5, item6);
         return item; 
     };
    

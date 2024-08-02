@@ -13,8 +13,12 @@ namespace op {
 
 template<typename T>
 class Inv: public UOP<T> {
-public:
+protected:
     Inv(std::shared_ptr<Op<T>> arg): UOP<T>(arg) {}
+public:
+    static std::shared_ptr<Op<T>> op(std::shared_ptr<Op<T>> arg) {
+        return std::shared_ptr<Inv<T>>(new Inv<T>(arg));
+    }
 
     T call(const T& arg) override {
         return inv(arg);
@@ -28,10 +32,10 @@ public:
     }
 
     std::shared_ptr<Op<T>> derivFunc(u32 _, std::shared_ptr<Op<T>> grad, std::shared_ptr<Op<T>> arg) override {
-        auto item1 = std::make_shared<Inv<T>>(arg);
-        auto item2 = std::make_shared<Transpose<T>>(item1, -2, -1);
-        auto item3 = std::make_shared<Mmul<T>>(std::make_shared<Mmul<T>>(item2, grad), item2);
-        return std::make_shared<Sub<T>>(std::make_shared<DataOp<T>>(zero(arg->template getOutput())), item3);
+        auto item1 = Inv<T>::op(arg);
+        auto item2 = Transpose<T>::op(item1, -2, -1);
+        auto item3 = Mmul<T>::op(Mmul<T>::op(item2, grad), item2);
+        return Sub<T>::op(DataOp<T>::op(zero(arg->template getOutput())), item3);
     }
 
     std::string name() const override {return "Inv";}

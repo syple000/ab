@@ -41,7 +41,7 @@ public:
         if (!this->arg()->template hasGradGraph()) {
             this->arg()->template setGradGraph(item);
         } else {
-            this->arg()->template setGradGraph(std::make_shared<Add<T>>(this->arg()->template getGradGraph(), item));
+            this->arg()->template setGradGraph(Add<T>::op(this->arg()->template getGradGraph(), item));
         }
     }
 };
