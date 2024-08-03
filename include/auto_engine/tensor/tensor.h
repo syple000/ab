@@ -777,7 +777,7 @@ Tensor<T> Tensor<T>::cat(const std::vector<std::reference_wrapper<Tensor<T>>>& t
         auto s = ts[i].get();
         ss.emplace_back(s._shape);
         srcs.emplace_back(s._data.data());
-        dim_cnt = s.dimCnt();
+        dim_cnt = s.shape().dimCnt();
     }
     if (d < 0) {d += dim_cnt;}
     Shape shape;
