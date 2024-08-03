@@ -59,11 +59,9 @@ public:
         }
         return _output;
     }
-    const std::vector<std::shared_ptr<Op<T>>>& getOutputs() const {
-    }
+    const std::vector<std::shared_ptr<Op<T>>>& getOutputs() const {return _outputs;}
     void setOutput(const T& data) {_output = data; _has_output = true;}
     void setOutput(T&& data) {_output = std::move(data); _has_output = true;}
-    void setOutputs(const std::vector<std::shared_ptr<Op<T>>>& outputs) {_outputs = outputs; _has_output = true;}
     bool hasOutput() const {return _has_output;}
     void clearOutput() {_has_output = false;}
 
