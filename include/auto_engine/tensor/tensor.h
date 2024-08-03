@@ -100,10 +100,10 @@ public:
     Tensor<T> sum(int d) const;
     Tensor<T> expand(const base::Shape&, int d) const;
     
-    static Tensor<T> cat(const std::vector<std::reference_wrapper<Tensor<T>>>& ts, u32 d);
-    static std::vector<Tensor<T>> split(const Tensor<T>&, const std::vector<u32>& sl, u32 d);
-    Tensor<T> cat(const Shape& dst_shape, u32 d, u32 d_offset);
-    Tensor<T> split(const Shape& dst_shape, u32 d, u32 d_offset);
+    static Tensor<T> cat(const std::vector<std::reference_wrapper<Tensor<T>>>& ts, int d);
+    static std::vector<Tensor<T>> split(const Tensor<T>&, const std::vector<u32>& sl, int d);
+    Tensor<T> cat(const Shape& dst_shape, int d, u32 d_offset);
+    Tensor<T> split(const Shape& dst_shape, int d, u32 d_offset);
 
     Tensor<T> oneHot(u32 classes) const;
 
@@ -695,7 +695,9 @@ Tensor<T> Tensor<T>::expand(const Shape& shape, int d) const {
 }
 
 template<typename T>
-Tensor<T> Tensor<T>::cat(const Shape& dst_shape, u32 d, u32 d_offset) {
+Tensor<T> Tensor<T>::cat(const Shape& dst_shape, int d, u32 d_offset) {
+    if (d < 0) {d += dst_shape.dimCnt();}
+
     if (!_shape.cat(dst_shape, d, d_offset)) {
         if (ENABLE_TENSOR_EXCEPTION) {
             throw std::runtime_error("cat src to dst fail");
@@ -730,7 +732,9 @@ Tensor<T> Tensor<T>::cat(const Shape& dst_shape, u32 d, u32 d_offset) {
 }
 
 template<typename T>    
-Tensor<T> Tensor<T>::split(const Shape& dst_shape, u32 d, u32 d_offset) {
+Tensor<T> Tensor<T>::split(const Shape& dst_shape, int d, u32 d_offset) {
+    if (d < 0) {d += dst_shape.dimCnt();}
+
     if (!_shape.split(dst_shape, d, d_offset)) {
         if (ENABLE_TENSOR_EXCEPTION) {
             throw std::runtime_error("split to dst fail");
@@ -765,13 +769,17 @@ Tensor<T> Tensor<T>::split(const Shape& dst_shape, u32 d, u32 d_offset) {
 }
 
 template<typename T>
-Tensor<T> Tensor<T>::cat(const std::vector<std::reference_wrapper<Tensor<T>>>& ts, u32 d) {
+Tensor<T> Tensor<T>::cat(const std::vector<std::reference_wrapper<Tensor<T>>>& ts, int d) {
     std::vector<std::reference_wrapper<Shape>> ss; ss.reserve(ts.size());
     std::vector<const f64*> srcs; srcs.reserve(ts.size());
+    int dim_cnt = 0;
     for (u32 i = 0; i < ts.size(); i++) {
-        ss.emplace_back(ts[i].get()._shape);
-        srcs.emplace_back(ts[i].get()._data.data());
+        auto s = ts[i].get();
+        ss.emplace_back(s._shape);
+        srcs.emplace_back(s._data.data());
+        dim_cnt = s.dimCnt();
     }
+    if (d < 0) {d += dim_cnt;}
     Shape shape;
     if (!Shape::cat(ss, d, shape)) {
         if (ENABLE_TENSOR_EXCEPTION) {
@@ -816,7 +824,9 @@ Tensor<T> Tensor<T>::cat(const std::vector<std::reference_wrapper<Tensor<T>>>& t
 }
 
 template<typename T>
-std::vector<Tensor<T>> Tensor<T>::split(const Tensor<T>& t, const std::vector<u32>& sl, u32 d) {
+std::vector<Tensor<T>> Tensor<T>::split(const Tensor<T>& t, const std::vector<u32>& sl, int d) {
+    if (d < 0) {d += t.shape().dimCnt();}
+
     std::vector<Shape> ss;
     if (!Shape::split(t._shape, sl, d, ss)) {
         if (ENABLE_TENSOR_EXCEPTION) {

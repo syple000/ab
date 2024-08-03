@@ -32,9 +32,9 @@ public:
     bool expand(const Shape&, int) const; // 仅检查
     bool sum(Shape&) const;
     bool expand(const Shape&) const; // 仅检查
-    static bool cat(const std::vector<std::reference_wrapper<Shape>>&, u32 d, Shape&);
+    static bool cat(const std::vector<std::reference_wrapper<Shape>>&, int d, Shape&);
     static bool split(const Shape&, const std::vector<u32>&, u32 d, std::vector<Shape>&);
-    bool cat(const Shape&, u32 d, u32 d_offset);
+    bool cat(const Shape&, int d, u32 d_offset);
     bool split(const Shape&, u32 d, u32 d_offset);
     bool permute(const std::vector<u32>&, Shape&) const;
     bool transpose(int, int, Shape&) const;

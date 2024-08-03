@@ -163,13 +163,13 @@ bool Shape::expand(const Shape& shape) const {
     return true;
 }
 
-bool Shape::cat(const std::vector<std::reference_wrapper<Shape>>& ss, u32 d, Shape& shape) {
+bool Shape::cat(const std::vector<std::reference_wrapper<Shape>>& ss, int d, Shape& shape) {
     if (ss.size() == 0) {
         LOG(ERROR) << "cat tensor list size 0";
         return false;
     }
     auto s = ss[0].get();
-    if (d >= s.dimCnt()) {
+    if (d < 0 || d >= s.dimCnt()) {
         LOG(ERROR) << fmt::format("cat tensor d: {} out of range: {}", d, s.dimCnt());
         return false;
     }
@@ -193,8 +193,8 @@ bool Shape::cat(const std::vector<std::reference_wrapper<Shape>>& ss, u32 d, Sha
 }
 
 
-bool Shape::cat(const Shape& dst, u32 d, u32 d_offset) {
-    if (d >= dst.dimCnt()) {
+bool Shape::cat(const Shape& dst, int d, u32 d_offset) {
+    if (d < 0 || d >= dst.dimCnt()) {
         LOG(ERROR) << fmt::format("cat d: {} out of range: {}", d, dst.dimCnt());
         return false;
     }
