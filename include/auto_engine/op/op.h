@@ -54,13 +54,16 @@ public:
 
     const T& getOutput() const {
         if (!_has_output) {
-            LOG(ERROR) << "[" << __FUNCTION__ << "]" << "touch unset output: ";
+            LOG(ERROR) << "[" << __FUNCTION__ << "]" << "touch unset output";
             exit(TOUCH_UNSET_OUTPUT);
         }
         return _output;
     }
+    const std::vector<std::shared_ptr<Op<T>>>& getOutputs() const {
+    }
     void setOutput(const T& data) {_output = data; _has_output = true;}
     void setOutput(T&& data) {_output = std::move(data); _has_output = true;}
+    void setOutputs(const std::vector<std::shared_ptr<Op<T>>>& outputs) {_outputs = outputs; _has_output = true;}
     bool hasOutput() const {return _has_output;}
     void clearOutput() {_has_output = false;}
 
@@ -118,7 +121,9 @@ public:
         return _exec_queue;
     }
 private: // 继承类仅关注方法，不直接操作数据
+    // output & outputs仅输出一个
     T _output;
+    std::vector<std::shared_ptr<Op<T>>> _outputs;
     bool _has_output = false;
     T _grad;
     bool _has_grad = false;

@@ -193,24 +193,24 @@ bool Shape::cat(const std::vector<std::reference_wrapper<Shape>>& ss, u32 d, Sha
 }
 
 
-bool Shape::cat(const Shape& src, const Shape& dst, u32 d, u32 d_offset) {
+bool Shape::cat(const Shape& dst, u32 d, u32 d_offset) {
     if (d >= dst.dimCnt()) {
         LOG(ERROR) << fmt::format("cat d: {} out of range: {}", d, dst.dimCnt());
         return false;
     }
-    if (src.dimCnt() != dst.dimCnt()) {
-        LOG(ERROR) << fmt::format("cat dim cnt ne: {}, {}", src.dimCnt(), dst.dimCnt());
+    if (dimCnt() != dst.dimCnt()) {
+        LOG(ERROR) << fmt::format("cat dim cnt ne: {}, {}", dimCnt(), dst.dimCnt());
         return false;
     }
     for (u32 i = 0; i < dst.dimCnt(); i++) {
         if (i == d) {
-            if (d_offset + src.getDim(d) > dst.getDim(d)) {
+            if (d_offset + getDim(d) > dst.getDim(d)) {
                 LOG(ERROR) << fmt::format("cat d: {} fail, dim limit", d);
                 return false;
             }
         } else {
-            if (src.getDim(i) != dst.getDim(i)) {
-                LOG(ERROR) << fmt::format("split dim: {} not eq: {}, {}", i, src.getDim(i), dst.getDim(i));
+            if (getDim(i) != dst.getDim(i)) {
+                LOG(ERROR) << fmt::format("split dim: {} not eq: {}, {}", i, getDim(i), dst.getDim(i));
                 return false;
             }               
         }
@@ -238,32 +238,30 @@ bool Shape::split(const Shape& shape, const std::vector<u32>& sl, u32 d, std::ve
     return true;
 }
 
-bool Shape::split(const Shape& src, const Shape& dst, u32 d, u32 d_offset) {
+bool Shape::split(const Shape& dst, u32 d, u32 d_offset) {
     if (d >= dst.dimCnt()) {
         LOG(ERROR) << fmt::format("split d: {} out of range: {}", d, dst.dimCnt());
         return false;
     }
-    if (src.dimCnt() != dst.dimCnt()) {
-        LOG(ERROR) << fmt::format("split dim cnt ne: {}, {}", src.dimCnt(), dst.dimCnt());
+    if (dimCnt() != dst.dimCnt()) {
+        LOG(ERROR) << fmt::format("split dim cnt ne: {}, {}", dimCnt(), dst.dimCnt());
         return false;
     }
     for (u32 i = 0; i < dst.dimCnt(); i++) {
         if (i == d) {
-            if (d_offset + dst.getDim(d) > src.getDim(d)) {
+            if (d_offset + dst.getDim(d) > getDim(d)) {
                 LOG(ERROR) << fmt::format("split d: {} fail, dim limit", d);
                 return false;
             }
         } else {
-            if (src.getDim(i) != dst.getDim(i)) {
-                LOG(ERROR) << fmt::format("split dim: {} not eq: {}, {}", i, src.getDim(i), dst.getDim(i));
+            if (getDim(i) != dst.getDim(i)) {
+                LOG(ERROR) << fmt::format("split dim: {} not eq: {}, {}", i, getDim(i), dst.getDim(i));
                 return false;
             }               
         }
     }
     return true;
 }
-
-
 
 bool Shape::permute(const std::vector<u32>& pl, Shape& shape) const {
     if (pl.size() != _dims.size()) {

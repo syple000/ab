@@ -101,9 +101,9 @@ public:
     Tensor<T> expand(const base::Shape&, int d) const;
     
     static Tensor<T> cat(const std::vector<std::reference_wrapper<Tensor<T>>>& ts, u32 d);
-    static bool cat(const Tensor<T>& src, Tensor<T>& dst, u32 d, u32 d_offset);
     static std::vector<Tensor<T>> split(const Tensor<T>&, const std::vector<u32>& sl, u32 d);
-    static bool split(const Tensor<T>& src, Tensor<T>& dst, u32 d, u32 d_offset);
+    Tensor<T> cat(const Shape& dst_shape, u32 d, u32 d_offset);
+    Tensor<T> split(const Shape& dst_shape, u32 d, u32 d_offset);
 
     Tensor<T> oneHot(u32 classes) const;
 
@@ -695,50 +695,53 @@ Tensor<T> Tensor<T>::expand(const Shape& shape, int d) const {
 }
 
 template<typename T>
-bool Tensor<T>::cat(const Tensor<T>& src, Tensor<T>& dst, u32 d, u32 d_offset) {
-    if (!Shape::cat(src.shape(), dst.shape(), d, d_offset)) {
+Tensor<T> Tensor<T>::cat(const Shape& dst_shape, u32 d, u32 d_offset) {
+    if (!_shape.cat(dst_shape, d, d_offset)) {
         if (ENABLE_TENSOR_EXCEPTION) {
             throw std::runtime_error("cat src to dst fail");
         }
         LOG(ERROR) << "cat src to dst fail";
-        return false;
+        return Tensor();
     }
-    if (src.shape().tensorSize() == 0) {return true;}
+    auto dst = Tensor<T>(dst_shape);
+    if (shape().tensorSize() == 0) {return std::move(dst);}
     if (std::is_same<T, f64>::value && ENABLE_CUDA) {
-        cuda::cat(src._data.data(), src.shape(), dst._data.data(), dst.shape(), d, d_offset);
+        cuda::cat(_data.data(), shape(), dst._data.data(), dst.shape(), d, d_offset);
     } else {
         std::vector<u32> indexs(dst.shape().dimCnt());
-        for (u32 i = 0; i < src._data.size(); i++) {
+        for (u32 i = 0; i < _data.size(); i++) {
             u32 ri = i;
             for (u32 j = 0; j < dst.shape().dimCnt(); j++) {
-                auto dim_index = ri / src.shape().getStrides()[j];
+                auto dim_index = ri / shape().getStrides()[j];
                 if (j == d) {
                     dim_index += d_offset;
                 }
-                ri = ri % src.shape().getStrides()[j];
+                ri = ri % shape().getStrides()[j];
                 indexs[j] = dim_index;
             }
             auto didx = 0;
             for (u32 j = 0; j < dst.shape().dimCnt(); j++) {
                 didx += indexs[j] * dst.shape().getStrides()[j];
             }
-            dst._data[didx] = src._data[i];
+            dst._data[didx] = _data[i];
         }
     }
-    return true;
+    return std::move(dst);
 }
 
 template<typename T>    
-bool Tensor<T>::split(const Tensor<T>& src, Tensor<T>& dst, u32 d, u32 d_offset) {
-    if (!Shape::split(src.shape(), dst.shape(), d, d_offset)) {
+Tensor<T> Tensor<T>::split(const Shape& dst_shape, u32 d, u32 d_offset) {
+    if (!_shape.split(dst_shape, d, d_offset)) {
         if (ENABLE_TENSOR_EXCEPTION) {
-            throw std::runtime_error("split src to dst fail");
+            throw std::runtime_error("split to dst fail");
         }
-        LOG(ERROR) << "split src to dst fail";
+        LOG(ERROR) << "split to dst fail";
+        return Tensor();
     }
-    if (dst.shape().tensorSize() == 0) {return true;}
+    auto dst = Tensor(dst_shape);
+    if (dst.shape().tensorSize() == 0) {return std::move(dst);}
     if (std::is_same<T, f64>::value && ENABLE_CUDA) {
-        cuda::split(src._data.data(), src.shape(), dst._data.data(), dst.shape(), d, d_offset);
+        cuda::split(_data.data(), shape(), dst._data.data(), dst.shape(), d, d_offset);
     } else {
         std::vector<u32> indexs(dst.shape().dimCnt());
         for (u32 i = 0; i < dst._data.size(); i++) {
@@ -752,13 +755,13 @@ bool Tensor<T>::split(const Tensor<T>& src, Tensor<T>& dst, u32 d, u32 d_offset)
                 indexs[j] = dim_index;
             }
             u32 sidx = 0;
-            for (u32 j = 0; j < src.shape().dimCnt(); j++) {
-                sidx += indexs[j] * src.shape().getStrides()[j];
+            for (u32 j = 0; j < shape().dimCnt(); j++) {
+                sidx += indexs[j] * shape().getStrides()[j];
             }
-            dst._data[i] = src._data[sidx];
+            dst._data[i] = _data[sidx];
         }
     }
-    return true;
+    return std::move(dst);
 }
 
 template<typename T>

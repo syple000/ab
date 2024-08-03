@@ -306,29 +306,24 @@ TEST(Test_tensor, test) {
     base::Tensor<f64> t13 = base::Tensor<f64>(base::Shape({2, 2, 2}), {11, 12, 13, 14, 15, 16, 17, 18});
     auto t14 = base::Tensor<f64>::cat({t10, t11, t12}, 0);
     auto t15 = base::Tensor<f64>::cat({t10, t11, t13}, 1);
-    std::cout << t14.toString() << std::endl;
     ASSERT_TRUE(t14 == base::Tensor<f64>(base::Tensor<f64>(base::Shape({5, 1, 2}), {1, 2, 3, 4, 5, 6, 7, 8, 9, 10})));
     ASSERT_TRUE(t15 == base::Tensor<f64>(base::Shape({2, 4, 2}), {1, 2, 5, 6, 11, 12, 13, 14, 3, 4, 7, 8, 15, 16, 17, 18}));
 
     auto v1 = base::Tensor<f64>::split(t14, {2, 2, 1}, 0);
-    std::vector<base::Tensor<f64>> v11;
-    for (u32 i = 0; i < v1.size(); i++) {
-        v11.emplace_back(base::Tensor<f64>(v1[i].shape()));
-    }
+    ASSERT_TRUE(t14.split(base::Shape({2, 1, 2}), 0, 0) == v1[0]);
+    ASSERT_TRUE(t14.split(base::Shape({2, 1, 2}), 0, 2) == v1[1]);
+    ASSERT_TRUE(t14.split(base::Shape({1, 1, 2}), 0, 4) == v1[2]);
     auto v2 = base::Tensor<f64>::split(t15, {1, 1, 2}, 1);
-    std::vector<base::Tensor<f64>> v22;
-    for (u32 i = 0; i < v2.size(); i++) {
-        v22.emplace_back(base::Tensor<f64>(v2[i].shape()));
-    }
+    ASSERT_TRUE(t15.split(base::Shape({2, 1, 2}), 1, 0) == v2[0]);
+    ASSERT_TRUE(t15.split(base::Shape({2, 1, 2}), 1, 1) == v2[1]);
+    ASSERT_TRUE(t15.split(base::Shape({2, 2, 2}), 1, 2) == v2[2]);
 
-    auto t16 = base::Tensor<f64>(t14.shape());
-    auto t17 = base::Tensor<f64>(t15.shape());
-    base::Tensor<f64>::cat(v1[1], t16, 0, 2);
-    base::Tensor<f64>::cat(v1[0], t16, 0, 0);
-    base::Tensor<f64>::cat(v1[2], t16, 0, 4);
-    base::Tensor<f64>::cat(v2[1], t17, 1, 1);
-    base::Tensor<f64>::cat(v2[0], t17, 1, 0);
-    base::Tensor<f64>::cat(v2[2], t17, 1, 2);
+    auto t16 = v1[1].cat(t14.shape(), 0, 2);
+    t16 = t16 + v1[0].cat(t14.shape(), 0, 0);
+    t16 = t16 + v1[2].cat(t14.shape(), 0, 4);
+    auto t17 = v2[1].cat(t15.shape(), 1, 1);
+    t17 = t17 + v2[0].cat(t15.shape(), 1, 0);
+    t17 = t17 + v2[2].cat(t15.shape(), 1, 2);
     ASSERT_TRUE(t16 == base::Tensor<f64>(base::Tensor<f64>(base::Shape({5, 1, 2}), {1, 2, 3, 4, 5, 6, 7, 8, 9, 10})));
     ASSERT_TRUE(t17 == base::Tensor<f64>(base::Shape({2, 4, 2}), {1, 2, 5, 6, 11, 12, 13, 14, 3, 4, 7, 8, 15, 16, 17, 18}));
 }

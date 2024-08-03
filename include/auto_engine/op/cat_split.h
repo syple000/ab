@@ -5,7 +5,7 @@
 
 namespace op {
 
-template<typename T, typename SHAPE>
+template<typename T>
 class Cat: public Op<T> {
 public:
     void forward() override {}
