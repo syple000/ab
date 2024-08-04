@@ -100,7 +100,7 @@ public:
     Tensor<T> sum(int d) const;
     Tensor<T> expand(const base::Shape&, int d) const;
     
-    static Tensor<T> cat(const std::vector<std::reference_wrapper<Tensor<T>>>& ts, int d);
+    static Tensor<T> cat(const std::vector<std::reference_wrapper<const Tensor<T>>>& ts, int d);
     static std::vector<Tensor<T>> split(const Tensor<T>&, const std::vector<u32>& sl, int d);
     Tensor<T> cat(const Shape& dst_shape, int d, u32 d_offset);
     Tensor<T> split(const Shape& dst_shape, int d, u32 d_offset);
@@ -769,14 +769,14 @@ Tensor<T> Tensor<T>::split(const Shape& dst_shape, int d, u32 d_offset) {
 }
 
 template<typename T>
-Tensor<T> Tensor<T>::cat(const std::vector<std::reference_wrapper<Tensor<T>>>& ts, int d) {
-    std::vector<std::reference_wrapper<Shape>> ss; ss.reserve(ts.size());
+Tensor<T> Tensor<T>::cat(const std::vector<std::reference_wrapper<const Tensor<T>>>& ts, int d) {
+    std::vector<std::reference_wrapper<const Shape>> ss; ss.reserve(ts.size());
     std::vector<const f64*> srcs; srcs.reserve(ts.size());
     int dim_cnt = 0;
     for (u32 i = 0; i < ts.size(); i++) {
-        auto s = ts[i].get();
-        ss.emplace_back(s._shape);
-        srcs.emplace_back(s._data.data());
+        const auto& s = ts[i].get();
+        ss.push_back(std::cref(s.shape()));
+        srcs.push_back(s._data.data());
         dim_cnt = s.shape().dimCnt();
     }
     if (d < 0) {d += dim_cnt;}
@@ -802,8 +802,9 @@ Tensor<T> Tensor<T>::cat(const std::vector<std::reference_wrapper<Tensor<T>>>& t
                 auto dim_index = ri / res._shape.getStrides()[j];
                 if (j == d) {
                     for (u32 k = 0; k < ts.size(); k++) {
-                        if (dim_index >= ts[k].get()._shape.getDim(d)) {
-                            dim_index -= ts[k].get()._shape.getDim(d);
+                        const auto& t = ts[k].get();
+                        if (dim_index >= t.shape().getDim(d)) {
+                            dim_index -= t.shape().getDim(d);
                         } else {
                             src_index = k;
                             break;
@@ -814,10 +815,11 @@ Tensor<T> Tensor<T>::cat(const std::vector<std::reference_wrapper<Tensor<T>>>& t
                 ri = ri % res._shape.getStrides()[j];
             }
             u32 sidx = 0;
+            const auto& t = ts[src_index].get();
             for (u32 j = 0; j < res._shape.dimCnt(); j++) {
-                sidx += indexs[j] * ts[src_index].get()._shape.getStrides()[j];
+                sidx += indexs[j] * t.shape().getStrides()[j];
             }
-            res._data[i] = ts[src_index].get()._data[sidx];
+            res._data[i] = t.data()[sidx];
         }
     }
     return std::move(res);
@@ -837,11 +839,11 @@ std::vector<Tensor<T>> Tensor<T>::split(const Tensor<T>& t, const std::vector<u3
     }
     std::vector<Tensor<T>> dts; dts.reserve(ss.size());
     std::vector<f64*> dsts; dsts.reserve(ss.size());
-    std::vector<std::reference_wrapper<Shape>> dtss; dtss.reserve(ss.size());
+    std::vector<std::reference_wrapper<const Shape>> dtss; dtss.reserve(ss.size());
     for (u32 i = 0; i < ss.size(); i++) {
         dts.emplace_back(Tensor(ss[i]));
-        dsts.emplace_back(dts[i]._data.data());
-        dtss.emplace_back(ss[i]);
+        dsts.push_back(dts[i]._data.data());
+        dtss.push_back(std::cref(ss[i]));
     }
     if (t.shape().tensorSize() == 0) {return std::move(dts);}
 

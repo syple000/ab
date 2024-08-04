@@ -4,6 +4,7 @@
 #include "glog/logging.h"
 #include <cstdlib>
 #include <fmt/core.h>
+#include <limits>
 #include <sstream>
 #include <string>
 #include <unordered_set>
@@ -19,14 +20,14 @@ void Shape::calcStrides() {
     _strides = std::vector<u32>(_dims.size());
     _strides[_dims.size()-1] = 1;
     for (int i = _dims.size() - 2; i >= 0; i--) {
-        _strides[i] = _strides[i+1] * _dims[i+1];
-        if (_strides[i] < _strides[i+1] || _strides[i] < _dims[i+1]) {
+        if (_strides[i+1] > std::numeric_limits<u32>::max() / _dims[i+1]) {
             LOG(ERROR) << __FUNCTION__ << "shape size overflow";
             exit(SHAPE_SIZE_OVERFLOW);
         }
+        _strides[i] = _strides[i+1] * _dims[i+1];
     }
     _size = _strides[0] * _dims[0];
-    if (_size < _strides[0] || _size < _dims[0]) {
+    if (_strides[0] > std::numeric_limits<u32>::max() / _dims[0]) {
         LOG(ERROR) << __FUNCTION__ << "shape size overflow";
         exit(SHAPE_SIZE_OVERFLOW);
     }
@@ -163,19 +164,19 @@ bool Shape::expand(const Shape& shape) const {
     return true;
 }
 
-bool Shape::cat(const std::vector<std::reference_wrapper<Shape>>& ss, int d, Shape& shape) {
+bool Shape::cat(const std::vector<std::reference_wrapper<const Shape>>& ss, int d, Shape& shape) {
     if (ss.size() == 0) {
         LOG(ERROR) << "cat tensor list size 0";
         return false;
     }
-    auto s = ss[0].get();
+    const auto& s = ss[0].get();
     if (d < 0 || d >= s.dimCnt()) {
         LOG(ERROR) << fmt::format("cat tensor d: {} out of range: {}", d, s.dimCnt());
         return false;
     }
     auto dims = s.getDims();
     for (u32 i = 1; i < ss.size(); i++) {
-        auto e = ss[i].get();
+        const auto& e = ss[i].get();
         if (e.dimCnt() != s.dimCnt()) {
             LOG(ERROR) << fmt::format("cat {}th tensor dim cnt: {} not matched, target: {}", i, e.dimCnt(), s.dimCnt());
             return false;

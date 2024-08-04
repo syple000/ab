@@ -212,12 +212,13 @@ void cat(const f64* src, const base::Shape& src_shape, f64* dst, const base::Sha
     CHECK_CUDA_CALL(cudaMemcpy(dst, mdst, sizeof(f64) * dst_shape.tensorSize(), cudaMemcpyDeviceToHost), "cuda_memcpy_d2h");
 }
 
-void cat(const std::vector<const f64*>& srcs, const std::vector<std::reference_wrapper<base::Shape>>& srcs_shapes, f64* dst, const base::Shape& dst_shape, u32 d) {
+void cat(const std::vector<const f64*>& srcs, const std::vector<std::reference_wrapper<const base::Shape>>& srcs_shapes, f64* dst, const base::Shape& dst_shape, u32 d) {
     // 先全部赋值到内存中，后进行一次拷贝，最后进行index梳理
     u32 total_size = 0;
     for (u32 i = 0; i < srcs_shapes.size(); i++) {
-        total_size += srcs_shapes[i].get().tensorSize() * sizeof(f64);
-        total_size += 2 * srcs_shapes[i].get().dimCnt() * sizeof(u32);
+        const auto& s = srcs_shapes[i].get();
+        total_size += s.tensorSize() * sizeof(f64);
+        total_size += 2 * s.dimCnt() * sizeof(u32);
     }
     total_size += dst_shape.tensorSize() * sizeof(f64);
     total_size += 2 * dst_shape.dimCnt() * sizeof(u32);
@@ -226,7 +227,7 @@ void cat(const std::vector<const f64*>& srcs, const std::vector<std::reference_w
     utils::Defer free_lm([&lm] {free(lm);});
     auto rlm = lm;
     for (u32 i = 0; i < srcs_shapes.size(); i++) {
-        auto shape = srcs_shapes[i].get();
+        const auto& shape = srcs_shapes[i].get();
         memcpy(rlm, srcs[i], shape.tensorSize() * sizeof(f64));
         rlm = ((f64*)rlm) + shape.tensorSize();
         memcpy(rlm, shape.getDims().data(), shape.dimCnt() * sizeof(u32));
@@ -248,7 +249,7 @@ void cat(const std::vector<const f64*>& srcs, const std::vector<std::reference_w
     utils::Defer free_lm_index([&lm_index] {free(lm_index);});
     auto rm = m;
     for (u32 i = 0; i < srcs_shapes.size(); i++) {
-        auto shape = srcs_shapes[i].get();
+        const auto& shape = srcs_shapes[i].get();
         lm_index[i] = rm;
         rm = ((f64*)rm) + shape.tensorSize();
         lm_index[i + srcs_shapes.size()] = rm;
@@ -296,12 +297,13 @@ void split(const f64* src, const base::Shape& src_shape, f64* dst, const base::S
     CHECK_CUDA_CALL(cudaMemcpy(dst, mdst, sizeof(f64) * dst_shape.tensorSize(), cudaMemcpyDeviceToHost), "cuda_memcpy_d2h");
 }
 
-void split(const f64* src, const base::Shape& src_shape, const std::vector<f64*>& dst, const std::vector<std::reference_wrapper<base::Shape>>& dsts_shapes, u32 d) {
+void split(const f64* src, const base::Shape& src_shape, const std::vector<f64*>& dst, const std::vector<std::reference_wrapper<const base::Shape>>& dsts_shapes, u32 d) {
     // 先全部赋值到内存中，后进行一次拷贝，最后进行index梳理
     u32 total_size = 0;
     for (u32 i = 0; i < dsts_shapes.size(); i++) {
-        total_size += dsts_shapes[i].get().tensorSize() * sizeof(f64);
-        total_size += 2 * dsts_shapes[i].get().dimCnt() * sizeof(u32);
+        const auto& s = dsts_shapes[i].get();
+        total_size += s.tensorSize() * sizeof(f64);
+        total_size += 2 * s.dimCnt() * sizeof(u32);
     }
     total_size += src_shape.tensorSize() * sizeof(f64);
     total_size += 2 * src_shape.dimCnt() * sizeof(u32);
@@ -310,7 +312,7 @@ void split(const f64* src, const base::Shape& src_shape, const std::vector<f64*>
     utils::Defer free_lm([&lm] {free(lm);});
     auto rlm = lm;
     for (u32 i = 0; i < dsts_shapes.size(); i++) {
-        auto shape = dsts_shapes[i].get();
+        const auto& shape = dsts_shapes[i].get();
         // memcpy(rlm, dst[i], shape.tensorSize() * sizeof(f64));
         rlm = ((f64*)rlm) + shape.tensorSize();
         memcpy(rlm, shape.getDims().data(), shape.dimCnt() * sizeof(u32));
@@ -333,7 +335,7 @@ void split(const f64* src, const base::Shape& src_shape, const std::vector<f64*>
     utils::Defer free_lm_index([&lm_index] {free(lm_index);});
     auto rm = m;
     for (u32 i = 0; i < dsts_shapes.size(); i++) {
-        auto shape = dsts_shapes[i].get();
+        const auto& shape = dsts_shapes[i].get();
         lm_index[i] = rm;
         rm = ((f64*)rm) + shape.tensorSize();
         lm_index[i + dsts_shapes.size()] = rm;
@@ -358,7 +360,7 @@ void split(const f64* src, const base::Shape& src_shape, const std::vector<f64*>
     CHECK_CUDA_CALL(cudaMemcpy(lm, m, total_size - src_shape.tensorSize() * sizeof(f64) - src_shape.dimCnt() * sizeof(u32) * 2, cudaMemcpyDeviceToHost), "cuda_memcpy_d2h");
     rlm = lm;
     for (u32 i = 0; i < dsts_shapes.size(); i++) {
-        auto shape = dsts_shapes[i].get();
+        const auto& shape = dsts_shapes[i].get();
         memcpy(dst[i], rlm, shape.tensorSize() * sizeof(f64));
         rlm = ((f64*)rlm) + shape.tensorSize();
         rlm = ((u32*)rlm) + shape.dimCnt() * 2;
