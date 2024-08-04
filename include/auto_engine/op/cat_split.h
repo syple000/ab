@@ -1,7 +1,7 @@
 #ifndef OP_CAT_SPLIT_H
 #define OP_CAT_SPLIT_H
 
-#include "auto_engine/op/add.h"
+#include "auto_engine/op/bop.h"
 #include "auto_engine/op/data_op.h"
 #include "auto_engine/op/link_op.h"
 #include "auto_engine/op/methods.h"

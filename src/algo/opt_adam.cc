@@ -69,9 +69,7 @@ void Optimizer::adam() {
         }
         updateVars(step, grads);
         
-        if (!_fix_cost_graph) {
-            cost = _cost_func(_vars);
-        }
+        cost = _cost_func(_vars);
         f64 cur_cost = calcCost(cost);
         if (!checkCostDiff(pre_cost, cur_cost)) {
             return;

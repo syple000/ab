@@ -1,11 +1,12 @@
 // 对python仅暴露op，并将op作为数据
 // 在每一次数据读取时进行计算
 
+#include "auto_engine/algo/loss.h"
 #include "auto_engine/algo/opt.h"
 #include "auto_engine/base/basic_types.h"
 #include "auto_engine/calc/calc.h"
 #include "auto_engine/cuda/info.h"
-#include "auto_engine/op/add.h"
+#include "auto_engine/op/bop.h"
 #include "auto_engine/op/add_n.h"
 #include "auto_engine/op/cat_split.h"
 #include "auto_engine/op/data_op.h"
@@ -233,13 +234,18 @@ PYBIND11_MODULE(ae, m) {
 
     py::class_<algo::Optimizer, std::shared_ptr<algo::Optimizer>>(m, "opt_algo")
         .def(py::init<std::function<std::shared_ptr<op::Op<base::Tensor<f64>>>(const std::vector<std::shared_ptr<op::Op<base::Tensor<f64>>>>&)>,
-            const std::vector<std::shared_ptr<op::Op<base::Tensor<f64>>>>&,
-            bool>(),
-            py::arg("cost_func"), py::arg("vars"), py::arg("fix_cost_graph") = false
+            const std::vector<std::shared_ptr<op::Op<base::Tensor<f64>>>>&>(),
+            py::arg("cost_func"), py::arg("vars")
         )
         .def("algo_hyper_params", &algo::Optimizer::algoHyperParams, py::arg("algo"), py::arg("hyper_params"))
         .def("run", &algo::Optimizer::run);
 
+    m.def("mse_loss", [](std::shared_ptr<op::Op<base::Tensor<f64>>> outputs, std::shared_ptr<op::Op<base::Tensor<f64>>> targets) -> std::shared_ptr<op::Op<base::Tensor<f64>>> {
+        return algo::Loss::mseLoss(outputs, targets);
+    });
+    m.def("cross_entropy_loss", [](std::shared_ptr<op::Op<base::Tensor<f64>>> outputs, std::shared_ptr<op::Op<base::Tensor<f64>>> targets, u32 classes) -> std::shared_ptr<op::Op<base::Tensor<f64>>> {
+        return algo::Loss::crossEntropyLoss(outputs, targets, classes);
+    });
 
     m.def("tensor", [](py::list lst, bool requires_grad=false) -> std::shared_ptr<op::Op<base::Tensor<f64>>> {
         std::vector<u32> dims;

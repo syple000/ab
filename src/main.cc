@@ -4,7 +4,6 @@
 #include "auto_engine/cuda/info.h"
 #include "auto_engine/op/add_n.h"
 #include "auto_engine/op/bop.h"
-#include "auto_engine/op/add.h"
 #include "auto_engine/op/cat_split.h"
 #include "auto_engine/op/div_n.h"
 #include "auto_engine/op/inv.h"
@@ -410,7 +409,7 @@ TEST(Test_grad_descent, test) {
     d1->run();
     std::cout << x->getOutput().toString() << std::endl;
 
-    auto d2 = std::make_shared<algo::Optimizer>(cost_func, std::vector<std::shared_ptr<op::Op<base::Tensor<f64>>>>{x}, true);
+    auto d2 = std::make_shared<algo::Optimizer>(cost_func, std::vector<std::shared_ptr<op::Op<base::Tensor<f64>>>>{x});
     d2->algoHyperParams("adam", {
         {"step", 0.001},
         // {"enable_yogi", 1}

@@ -18,8 +18,7 @@ namespace algo {
 class Optimizer {
 public:
     Optimizer(std::function<std::shared_ptr<op::Op<base::Tensor<f64>>>(const std::vector<std::shared_ptr<op::Op<base::Tensor<f64>>>>&)> cost_func,
-        const std::vector<std::shared_ptr<op::Op<base::Tensor<f64>>>>& vars,
-        bool fix_cost_graph = false) : _cost_func(cost_func), _vars(vars), _fix_cost_graph(fix_cost_graph) {}
+        const std::vector<std::shared_ptr<op::Op<base::Tensor<f64>>>>& vars) : _cost_func(cost_func), _vars(vars) {}
     
     void algoHyperParams(const std::string& algo, const std::unordered_map<std::string, f64>& hyper_params) {
         _algo = algo;
@@ -39,7 +38,6 @@ public:
 private:
     std::function<std::shared_ptr<op::Op<base::Tensor<f64>>>(const std::vector<std::shared_ptr<op::Op<base::Tensor<f64>>>>&)> _cost_func;
     std::vector<std::shared_ptr<op::Op<base::Tensor<f64>>>> _vars;
-    bool _fix_cost_graph = false; // 是否固定计算图（算子如果经过if等逻辑，就是非固定）
     
     std::string _algo;
     std::unordered_map<std::string, f64> _hyper_params;
@@ -63,7 +61,6 @@ private: // 参数获取方法
 private: // 通用方法
     f64 calcCost(std::shared_ptr<op::Op<base::Tensor<f64>>> cost) {
         calc::Calculator<base::Tensor<f64>> c(cost);
-        c.clearOutput();
         c.call();
         const auto& t = cost->getOutput();
         if (t.shape().tensorSize() != 1) {
@@ -74,7 +71,6 @@ private: // 通用方法
 
     void calcGrad(std::shared_ptr<op::Op<base::Tensor<f64>>> cost) {
         calc::Calculator<base::Tensor<f64>> c(cost);
-        if (!cost->hasOutput()) {calcCost(cost);}
         c.clearGrad();
         c.deriv();
     }
@@ -100,16 +96,6 @@ private: // 通用方法
     void updateVars(const std::vector<base::Tensor<f64>>& vars, f64 step) {
         for (int i = 0; i < _vars.size(); i++) {
             _vars[i]->setOutput(vars[i] - base::Tensor<f64>(vars[i].shape(), step) * _vars[i]->getGrad());
-        }
-    }
-    void updateVars(const std::vector<base::Tensor<f64>>& vars, f64 step, const std::vector<base::Tensor<f64>>& direct) {
-        for (int i = 0; i < _vars.size(); i++) {
-            _vars[i]->setOutput(vars[i] - base::Tensor<f64>(vars[i].shape(), step) * direct[i]);
-        }
-    }
-    void updateVars(f64 step) {
-        for (int i = 0; i < _vars.size(); i++) {
-            _vars[i]->setOutput(_vars[i]->getOutput() - base::Tensor<f64>(_vars[i]->getOutput().shape(), step) * _vars[i]->getGrad());
         }
     }
     void updateVars(f64 step, const std::vector<base::Tensor<f64>>& direct) {

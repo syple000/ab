@@ -3,7 +3,7 @@ auto engine
 """
 from __future__ import annotations
 import typing
-__all__ = ['invalid_argument', 'op', 'opt_algo', 'runtime_err', 'tensor']
+__all__ = ['cross_entropy_loss', 'invalid_argument', 'mse_loss', 'op', 'opt_algo', 'runtime_err', 'tensor']
 class invalid_argument(Exception):
     pass
 class op:
@@ -105,7 +105,7 @@ class op:
     def update(self, arg0: op) -> None:
         ...
 class opt_algo:
-    def __init__(self, cost_func: typing.Callable[[list[op]], op], vars: list[op], fix_cost_graph: bool = False) -> None:
+    def __init__(self, cost_func: typing.Callable[[list[op]], op], vars: list[op]) -> None:
         ...
     def algo_hyper_params(self, algo: str, hyper_params: dict[str, float]) -> None:
         ...
@@ -113,5 +113,9 @@ class opt_algo:
         ...
 class runtime_err(Exception):
     pass
+def cross_entropy_loss(arg0: op, arg1: op, arg2: int) -> op:
+    ...
+def mse_loss(arg0: op, arg1: op) -> op:
+    ...
 def tensor(lst: list, requires_grad: bool = False) -> op:
     ...
