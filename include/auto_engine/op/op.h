@@ -59,7 +59,6 @@ public:
         }
         return _output;
     }
-    const std::vector<std::shared_ptr<Op<T>>>& getOutputs() const {return _outputs;}
     void setOutput(const T& data) {_output = data; _has_output = true;}
     void setOutput(T&& data) {_output = std::move(data); _has_output = true;}
     bool hasOutput() const {return _has_output;}
@@ -91,6 +90,9 @@ public:
     bool getRequiresGrad() const {return _requires_grad;}
     void setRequiresGrad(bool requires_grad) {_requires_grad = requires_grad;}
 
+    const std::vector<std::weak_ptr<Op<T>>>& getOutputs() const {return _outputs;}
+    void setOutputs(const std::vector<std::weak_ptr<Op<T>>>& outputs) {_outputs = outputs;}
+
     const std::vector<std::shared_ptr<Op<T>>>& args() const {return _args;}
     std::shared_ptr<Op<T>> arg() const {return _args[0];}
     std::shared_ptr<Op<T>> arg1() const {return _args[0];}
@@ -121,13 +123,14 @@ public:
 private: // 继承类仅关注方法，不直接操作数据
     // output & outputs仅输出一个
     T _output;
-    std::vector<std::shared_ptr<Op<T>>> _outputs;
     bool _has_output = false;
     T _grad;
     bool _has_grad = false;
     std::shared_ptr<Op<T>> _grad_graph;
     bool _requires_grad = false;
     std::vector<std::shared_ptr<Op<T>>> _args;
+
+    std::vector<std::weak_ptr<Op<T>>> _outputs;
 
     // 执行图，懒执行
     bool _gen_exec_queue = false;

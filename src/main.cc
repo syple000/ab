@@ -5,6 +5,7 @@
 #include "auto_engine/op/add_n.h"
 #include "auto_engine/op/bop.h"
 #include "auto_engine/op/add.h"
+#include "auto_engine/op/cat_split.h"
 #include "auto_engine/op/div_n.h"
 #include "auto_engine/op/inv.h"
 #include "auto_engine/op/mmul.h"
@@ -220,6 +221,56 @@ TEST(Test_grad_test4, test) {
         4047.548400000, 5488.614000000, 6702.901200000,
         5399.017200000, 6872.137200000, 8118.478800000,
         6595.311600000, 8100.486000000, 9378.882000000,
+    }));
+    cx1.clearGrad();
+}
+
+TEST(Test_grad_tensor5, test) {
+    auto t1 = base::Tensor<f64>(base::Shape({5, 2, 2}), {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20});
+    auto x1 = op::DataOp<base::Tensor<f64>>::op(t1, true);
+    auto v0_3 = op::Split<base::Tensor<f64>>::op(x1, {2, 2, 1}, 0);
+    auto v2_2 = op::Split<base::Tensor<f64>>::op(x1, {1, 1}, 2);
+    auto item1 = op::Add<base::Tensor<f64>>::op(v0_3[0], v0_3[1]);
+    auto item2 = op::Transpose<base::Tensor<f64>>::op(item1, -1, 0);
+    auto item3 = op::Cat<base::Tensor<f64>>::op({item2, v0_3[2]}, 0); // 3 * 2 * 2
+    auto item4 = op::Mul<base::Tensor<f64>>::op(v2_2[0], v2_2[1]);
+    auto item5 = op::Div<base::Tensor<f64>>::op(v2_2[0], v2_2[1]);
+    auto item6 = op::Cat<base::Tensor<f64>>::op({item4, item5}, 2); // 5 * 2 * 2
+    auto v0_3_1 = op::Split<base::Tensor<f64>>::op(item6, {3, 2}, 0)[0];
+    auto item7 = op::Mmul<base::Tensor<f64>>::op(v0_3_1, item3);
+    auto item8 = op::Inv<base::Tensor<f64>>::op(item7);
+    auto item = op::Sum<base::Tensor<f64>, base::Shape>::op(item8);
+    calc::Calculator<base::Tensor<f64>> c(item);
+    c.deriv();
+    auto xgrad = x1->getGrad();
+    ASSERT_TRUE(xgrad == base::Tensor<f64>(base::Shape({5, 2, 2}), {
+        -0.386284722, 0.632232615,
+        -0.275752315, -0.280380763,
+        -0.318973214, 0.010641399,
+        0.233623360, 0.061661808,
+        0.118625491, 0.397573698,
+        -0.208224419, -0.316348220,
+        -0.179687500, -0.119642857,
+        0.179687500, 0.119642857,
+        5.208907254, -4.919536272,
+        -5.208907254, 4.919536272,
+    }));
+    c.clearGrad();
+    c.createGradGraph();
+    calc::Calculator<base::Tensor<f64>> cx1(x1->getGradGraph());
+    ASSERT_TRUE(xgrad == cx1.call());
+    cx1.deriv();
+    ASSERT_TRUE(x1->getGrad() == base::Tensor<f64>(base::Shape({5, 2, 2}), {
+        0.823495370, -0.374829358,
+        0.144097222, 0.027607136,
+        0.082348356, -0.029297298,
+        -0.063116786, 0.015117789,
+        -0.132096604, 0.003271449,
+        0.142764239, -0.012139030,
+        0.064236111, -0.015006378,
+        -0.064236111, 0.015006378,
+        0.213942686, -0.218129411,
+        -0.213942687, 0.218129412,
     }));
     cx1.clearGrad();
 }

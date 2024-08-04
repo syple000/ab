@@ -174,7 +174,15 @@ base::Tensor<f64> pow_n(const base::Tensor<f64>& t1, const base::Tensor<f64>& t2
     return t1.pow(t2.data()[0]);
 }
 
+template<>
+base::Tensor<f64> cat(const std::vector<std::reference_wrapper<const base::Tensor<f64>>>& ts, int d) {
+    return base::Tensor<f64>::cat(ts, d);
+}
 
+template<>
+std::vector<base::Tensor<f64>> split(const base::Tensor<f64>& t, const std::vector<u32>& sl, int d) {
+    return base::Tensor<f64>::split(t, sl, d);
+}
 
 
 }

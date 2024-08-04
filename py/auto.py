@@ -176,9 +176,51 @@ def ft5():
     print("cat 1/2/3 on 0: {}".format(torch.cat((x1, x2, x3), 0)))
     print("cat 1/2/4 on 1: {}".format(torch.cat((x1, x2, x4), 1)))
 
+def ft6():
+    x = torch.tensor([
+        [
+            [1, 2],
+            [3, 4]
+        ],
+        [
+            [5, 6],
+            [7, 8]
+        ],
+        [
+            [9, 10],
+            [11, 12]
+        ],
+        [
+            [13, 14],
+            [15, 16]
+        ],
+        [
+            [17, 18],
+            [19, 20]
+        ],
+    ], dtype=float, requires_grad=True)
+    v0_3 = x.split([2, 2, 1], 0)
+    v2_2 = x.split([1, 1], 2)
+    item1 = v0_3[0] + v0_3[1]
+    item2 = item1.transpose(-1, 0)
+    item3 = torch.cat((item2, v0_3[2]), 0)
+    item4 = v2_2[0] * v2_2[1]
+    item5 = v2_2[0] / v2_2[1]
+    item6 = torch.cat((item4, item5), 2)
+    v0_3_1 = item6.split([3, 2], 0)
+    item7 = v0_3_1[0].matmul(item3)
+    item8 = item7.inverse()
+    item = item8.sum()
+    xgrad = torch.autograd.grad(outputs=item, inputs=[x], create_graph=True)
+    print(x.grad)
+    xgrad_x1_2rd = torch.autograd.grad(outputs=xgrad[0].sum(), inputs=[x], create_graph=True)
+    print(xgrad_x1_2rd)
+
+
 if __name__ == "__main__":
     # ft()
     # ft2()
     # ft3()
     # ft4()
-    ft5()
+    # ft5()
+    ft6()

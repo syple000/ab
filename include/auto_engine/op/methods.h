@@ -69,7 +69,7 @@ template<typename T>
 T pow_n(const T&, const T&);
 
 template<typename T>
-T cat(const std::vector<std::reference_wrapper<T>>&, int);
+T cat(const std::vector<std::reference_wrapper<const T>>&, int);
 
 template<typename T>
 std::vector<T> split(const T&, const std::vector<u32>&, int);

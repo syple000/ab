@@ -7,6 +7,7 @@
 #include "auto_engine/cuda/info.h"
 #include "auto_engine/op/add.h"
 #include "auto_engine/op/add_n.h"
+#include "auto_engine/op/cat_split.h"
 #include "auto_engine/op/data_op.h"
 #include "auto_engine/op/div.h"
 #include "auto_engine/op/div_n.h"
@@ -16,6 +17,7 @@
 #include "auto_engine/op/mul.h"
 #include "auto_engine/op/mul_n.h"
 #include "auto_engine/op/op.h"
+#include "auto_engine/op/permute.h"
 #include "auto_engine/op/pow.h"
 #include "auto_engine/op/pow_n.h"
 #include "auto_engine/op/reshape.h"
@@ -215,6 +217,15 @@ PYBIND11_MODULE(ae, m) {
         }, py::arg("d1")=-2, py::arg("d2")=-1)
         .def("inverse", [](std::shared_ptr<op::Op<base::Tensor<f64>>> op) -> std::shared_ptr<op::Op<base::Tensor<f64>>> {
             return op::Inv<base::Tensor<f64>>::op(op);
+        })
+        .def("permute", [](std::shared_ptr<op::Op<base::Tensor<f64>>> op, const std::vector<u32>& pl) -> std::shared_ptr<op::Op<base::Tensor<f64>>> {
+            return op::Permute<base::Tensor<f64>>::op(op, pl);
+        })
+        .def_static("cat", [](const std::vector<std::shared_ptr<op::Op<base::Tensor<f64>>>>& args, int d) {
+            return op::Cat<base::Tensor<f64>>::op(args, d);
+        })
+        .def("split", [](std::shared_ptr<op::Op<base::Tensor<f64>>> op, const std::vector<u32>& sl, int d) -> std::vector<std::shared_ptr<op::Op<base::Tensor<f64>>>> {
+            return op::Split<base::Tensor<f64>>::op(op, sl, d);
         })
         .def("reshape", [](std::shared_ptr<op::Op<base::Tensor<f64>>> op, const std::vector<u32>& dims) -> std::shared_ptr<op::Op<base::Tensor<f64>>> {
             return op::Reshape<base::Tensor<f64>, base::Shape>::op(op, base::Shape(dims));
