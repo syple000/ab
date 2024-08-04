@@ -258,6 +258,7 @@ TEST(Test_grad_tensor5, test) {
     c.clearGrad();
     c.createGradGraph();
     calc::Calculator<base::Tensor<f64>> cx1(x1->getGradGraph());
+    c.clearGradGraph();
     ASSERT_TRUE(xgrad == cx1.call());
     cx1.deriv();
     ASSERT_TRUE(x1->getGrad() == base::Tensor<f64>(base::Shape({5, 2, 2}), {
