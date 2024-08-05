@@ -13,7 +13,9 @@ protected:
     SumD(std::shared_ptr<Op<T>> arg, int d): UOP<T>(arg), _d(d) {}
 public:
     static std::shared_ptr<Op<T>> op(std::shared_ptr<Op<T>> arg, int d) {
-        return std::shared_ptr<SumD<T, SHAPE>>(new SumD<T, SHAPE>(arg, d));
+        auto op = std::shared_ptr<SumD<T, SHAPE>>(new SumD<T, SHAPE>(arg, d));
+        op->template forward();
+        return op;
     }
 
     T call(const T& arg) override {
@@ -37,7 +39,9 @@ protected:
     ExpandD(std::shared_ptr<Op<T>> arg, const SHAPE& shape, int d): UOP<T>(arg), _shape(shape), _d(d) {}
 public:
     static std::shared_ptr<Op<T>> op(std::shared_ptr<Op<T>> arg, const SHAPE& shape, int d) {
-        return std::shared_ptr<ExpandD<T, SHAPE>>(new ExpandD<T, SHAPE>(arg, shape, d));
+        auto op = std::shared_ptr<ExpandD<T, SHAPE>>(new ExpandD<T, SHAPE>(arg, shape, d));
+        op->template forward();
+        return op;
     }
 
     T call(const T& arg) override {

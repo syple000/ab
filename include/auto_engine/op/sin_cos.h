@@ -17,7 +17,9 @@ protected:
     Sin(std::shared_ptr<Op<T>> arg): UOP<T>(arg) {}
 public:
     static std::shared_ptr<Op<T>> op(std::shared_ptr<Op<T>> arg) {
-        return std::shared_ptr<Sin<T>>(new Sin<T>(arg));
+        auto op = std::shared_ptr<Sin<T>>(new Sin<T>(arg));
+        op->template forward();
+        return op;
     }
 
     T call(const T& arg) override {
@@ -39,7 +41,9 @@ protected:
     Cos(std::shared_ptr<Op<T>> arg): UOP<T>(arg) {}
 public:
     static std::shared_ptr<Op<T>> op(std::shared_ptr<Op<T>> arg) {
-        return std::shared_ptr<Cos<T>>(new Cos<T>(arg));
+        auto op = std::shared_ptr<Cos<T>>(new Cos<T>(arg));
+        op->template forward();
+        return op;
     }
 
     T call(const T& arg) override {

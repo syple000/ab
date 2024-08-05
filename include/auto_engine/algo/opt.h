@@ -59,9 +59,7 @@ private: // 参数获取方法
     }
 
 private: // 通用方法
-    f64 calcCost(std::shared_ptr<op::Op<base::Tensor<f64>>> cost) {
-        calc::Calculator<base::Tensor<f64>> c(cost);
-        c.call();
+    f64 getCost(std::shared_ptr<op::Op<base::Tensor<f64>>> cost) {
         const auto& t = cost->getOutput();
         if (t.shape().tensorSize() != 1) {
             throw std::runtime_error("cost tensor size != 1");

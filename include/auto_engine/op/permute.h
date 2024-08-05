@@ -17,7 +17,9 @@ protected:
     }
 public:
     static std::shared_ptr<Op<T>> op(std::shared_ptr<Op<T>> arg, const std::vector<u32>& pl) {
-        return std::shared_ptr<Permute<T>>(new Permute<T>(arg, pl));
+        auto op = std::shared_ptr<Permute<T>>(new Permute<T>(arg, pl));
+        op->template forward();
+        return op;
     }
 
     T call(const T& arg) override {

@@ -17,7 +17,9 @@ protected:
     Inv(std::shared_ptr<Op<T>> arg): UOP<T>(arg) {}
 public:
     static std::shared_ptr<Op<T>> op(std::shared_ptr<Op<T>> arg) {
-        return std::shared_ptr<Inv<T>>(new Inv<T>(arg));
+        auto op = std::shared_ptr<Inv<T>>(new Inv<T>(arg));
+        op->template forward();
+        return op;
     }
 
     T call(const T& arg) override {

@@ -21,7 +21,9 @@ protected:
     Cat(const std::vector<std::shared_ptr<Op<T>>>& args, int d): Op<T>(args), _d(d) {}
 public:
     static std::shared_ptr<Op<T>> op(const std::vector<std::shared_ptr<Op<T>>>& args, int d) {
-        return std::shared_ptr<Op<T>>(new Cat(args, d));
+        auto op = std::shared_ptr<Op<T>>(new Cat(args, d));
+        op->template forward();
+        return op;
     }
 
     void forward() override {
@@ -91,6 +93,7 @@ public:
             weak_ops.emplace_back(ops[i]);
         }
         op->template setOutputs(weak_ops);
+        op->template forward();
         return ops;
     }
 

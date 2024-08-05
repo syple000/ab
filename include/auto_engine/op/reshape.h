@@ -13,7 +13,9 @@ protected:
     Reshape(std::shared_ptr<Op<T>> arg, const SHAPE& shape): UOP<T>(arg), _shape(shape) {}
 public:
     static std::shared_ptr<Op<T>> op(std::shared_ptr<Op<T>> arg, const SHAPE& shape) {
-        return std::shared_ptr<Reshape<T, SHAPE>>(new Reshape<T, SHAPE>(arg, shape));
+        auto op = std::shared_ptr<Reshape<T, SHAPE>>(new Reshape<T, SHAPE>(arg, shape));
+        op->template forward();
+        return op;
     }
 
     T call(const T& arg) override {

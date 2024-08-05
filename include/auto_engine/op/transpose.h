@@ -13,7 +13,9 @@ protected:
     Transpose(std::shared_ptr<Op<T>> arg, int d1, int d2): UOP<T>(arg), _d1(d1), _d2(d2) {}
 public:
     static std::shared_ptr<Op<T>> op(std::shared_ptr<Op<T>> arg, int d1, int d2) {
-        return std::shared_ptr<Transpose<T>>(new Transpose<T>(arg, d1, d2));
+        auto op = std::shared_ptr<Transpose<T>>(new Transpose<T>(arg, d1, d2));
+        op->template forward();
+        return op;
     }
 
     T call(const T& arg) override {

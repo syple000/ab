@@ -75,18 +75,20 @@ TEST(Test_grad_f64, Test){
 
     auto item = op::Add<f64>::op(item12, item16);
 
+    ASSERT_TRUE(isEq(item->getOutput(), 65530.39539744));
     auto c = calc::Calculator<f64>(item);
-    ASSERT_TRUE(isEq(c.call(), 65530.39539744));
     c.deriv();
     ASSERT_TRUE(isEq(x1->getGrad(), 90860.14165895));
     ASSERT_TRUE(isEq(x2->getGrad(), 221915.35278516));
     c.clearGrad();
     c.createGradGraph();
-    auto cx1 = calc::Calculator<f64>(x1->getGradGraph());
-    auto cx2 = calc::Calculator<f64>(x2->getGradGraph());
+    auto x1_grad  = x1->getGradGraph();
+    auto x2_grad = x2->getGradGraph();
     c.clearGradGraph();
-    ASSERT_TRUE(isEq(cx1.call(), 90860.14165895));
-    ASSERT_TRUE(isEq(cx2.call(), 221915.35278516));
+    ASSERT_TRUE(isEq(x1_grad->getOutput(), 90860.14165895));
+    ASSERT_TRUE(isEq(x2_grad->getOutput(), 221915.35278516));
+    auto cx1 = calc::Calculator<f64>(x1_grad);
+    auto cx2 = calc::Calculator<f64>(x2_grad);
     cx1.deriv();
     ASSERT_TRUE(isEq(x1->getGrad(), 125952.59694293));
     ASSERT_TRUE(isEq(x2->getGrad(), 324039.04543274));
@@ -129,18 +131,20 @@ TEST(Test_grad_tensor, Test){
 
     auto item = op::Add<base::Tensor<f64>>::op(item12, item16);
 
+    ASSERT_TRUE(isEq(item->getOutput(), base::Tensor<f64>(base::Shape({2}), {65530.39539744, 14.24863515})));
     auto c = calc::Calculator<base::Tensor<f64>>(item);
-    ASSERT_TRUE(isEq(c.call(), base::Tensor<f64>(base::Shape({2}), {65530.39539744, 14.24863515})));
     c.deriv();
     ASSERT_TRUE(isEq(x1->getGrad(), base::Tensor<f64>(base::Shape({2}), {90860.14165895, 12.09061357})));
     ASSERT_TRUE(isEq(x2->getGrad(), base::Tensor<f64>(base::Shape({2}), {221915.35278516, 38.99908548})));
     c.clearGrad();
     c.createGradGraph();
-    auto cx1 = calc::Calculator<base::Tensor<f64>>(x1->getGradGraph());
-    auto cx2 = calc::Calculator<base::Tensor<f64>>(x2->getGradGraph());
+    auto x1_grad = x1->getGradGraph();
+    auto x2_grad = x2->getGradGraph();
     c.clearGradGraph();
-    ASSERT_TRUE(isEq(cx1.call(), base::Tensor<f64>(base::Shape({2}), {90860.14165895, 12.09061357})));
-    ASSERT_TRUE(isEq(cx2.call(), base::Tensor<f64>(base::Shape({2}), {221915.35278516, 38.99908548})));
+    ASSERT_TRUE(isEq(x1_grad->getOutput(), base::Tensor<f64>(base::Shape({2}), {90860.14165895, 12.09061357})));
+    ASSERT_TRUE(isEq(x2_grad->getOutput(), base::Tensor<f64>(base::Shape({2}), {221915.35278516, 38.99908548})));
+    auto cx1 = calc::Calculator<base::Tensor<f64>>(x1_grad);
+    auto cx2 = calc::Calculator<base::Tensor<f64>>(x2_grad);
     cx1.deriv();
     ASSERT_TRUE(isEq(x1->getGrad(), base::Tensor<f64>(base::Shape({2}), {125952.59694293, 15.38600131})));
     ASSERT_TRUE(isEq(x2->getGrad(), base::Tensor<f64>(base::Shape({2}), {324039.04543274, 34.02235037})));
@@ -161,18 +165,20 @@ TEST(Test_grad_tensor3, test) {
     auto item3 = op::PowN<base::Tensor<f64>, base::Shape>::op(item2, x2);
     auto item4 = op::DivN<base::Tensor<f64>, base::Shape>::op(item3, x2);
     auto item = op::SubN<base::Tensor<f64>, base::Shape>::op(item4, x2);
+    ASSERT_TRUE(item->getOutput() == base::Tensor<f64>(base::Shape({2, 2}), {16, 30, 48, 70}));
     auto c = calc::Calculator<base::Tensor<f64>>(item);
-    ASSERT_TRUE(c.call() == base::Tensor<f64>(base::Shape({2, 2}), {16, 30, 48, 70}));
     c.deriv();
     ASSERT_TRUE(x1->getGrad() == base::Tensor<f64>(base::Shape({2, 2}), {12, 16, 20, 24}));
     ASSERT_TRUE(x2->getGrad() == base::Tensor<f64>(base::Shape({1, 1}), {546.836333214}));
     c.clearGrad();
     c.createGradGraph();
-    auto cx1 = calc::Calculator<base::Tensor<f64>>(x1->getGradGraph());
-    auto cx2 = calc::Calculator<base::Tensor<f64>>(x2->getGradGraph());
+    auto x1_grad = x1->getGradGraph();
+    auto x2_grad = x2->getGradGraph();
     c.clearGradGraph();
-    ASSERT_TRUE(cx1.call() == base::Tensor<f64>(base::Shape({2, 2}), {12, 16, 20, 24}));
-    ASSERT_TRUE(cx2.call() == base::Tensor<f64>(base::Shape({1, 1}), {546.836333214}));
+    ASSERT_TRUE(x1_grad->getOutput() == base::Tensor<f64>(base::Shape({2, 2}), {12, 16, 20, 24}));
+    ASSERT_TRUE(x2_grad->getOutput() == base::Tensor<f64>(base::Shape({1, 1}), {546.836333214}));
+    auto cx1 = calc::Calculator<base::Tensor<f64>>(x1_grad);
+    auto cx2 = calc::Calculator<base::Tensor<f64>>(x2_grad);
     cx1.deriv();
     ASSERT_TRUE(x1->getGrad() == base::Tensor<f64>(base::Shape({2, 2}), {4, 4, 4, 4}));
     ASSERT_TRUE(x2->getGrad() == base::Tensor<f64>(base::Shape({1, 1}), {248.461639752}));
@@ -195,11 +201,11 @@ TEST(Test_grad_test4, test) {
     auto item5_ = op::Mmul<base::Tensor<f64>>::op(item1, item4);
     auto item5 = op::Permute<base::Tensor<f64>>::op(item5_, std::vector<u32>{1, 0});
     auto item = op::Sum<base::Tensor<f64>, base::Shape>::op(op::Mul<base::Tensor<f64>>::op(item5, item5));
+    ASSERT_TRUE(item->getOutput() == base::Tensor<f64>(base::Shape({1}), {1062.682578000}));
     auto c = calc::Calculator<base::Tensor<f64>>(item);
-    ASSERT_TRUE(c.call() == base::Tensor<f64>(base::Shape({1}), {1062.682578000}));
     c.deriv();
-    auto xgrad = x1->getGrad();
-    ASSERT_TRUE(xgrad == base::Tensor<f64>(base::Shape({2, 3, 3}), {
+    auto grad = x1->getGrad();
+    ASSERT_TRUE(grad == base::Tensor<f64>(base::Shape({2, 3, 3}), {
         374.643360000, 597.470040000, 782.094420000,
         576.224280000, 804.431520000, 994.436460000,
         754.919460000, 988.507260000, 1183.892760000,
@@ -209,9 +215,10 @@ TEST(Test_grad_test4, test) {
     }));
     c.clearGrad();
     c.createGradGraph();
-    auto cx1 = calc::Calculator<base::Tensor<f64>>(x1->getGradGraph());
+    auto xgrad = x1->getGradGraph();
     c.clearGradGraph();
-    ASSERT_TRUE(cx1.call() == xgrad);
+    ASSERT_TRUE(xgrad->getOutput() == grad);
+    auto cx1 = calc::Calculator<base::Tensor<f64>>(xgrad);
     cx1.deriv();
     ASSERT_TRUE(x1->getGrad() == base::Tensor<f64>(base::Shape({2, 3, 3}), {
         4685.720400000, 6424.606800000, 7880.857200000,
@@ -241,8 +248,8 @@ TEST(Test_grad_tensor5, test) {
     auto item = op::Sum<base::Tensor<f64>, base::Shape>::op(item8);
     calc::Calculator<base::Tensor<f64>> c(item);
     c.deriv();
-    auto xgrad = x1->getGrad();
-    ASSERT_TRUE(xgrad == base::Tensor<f64>(base::Shape({5, 2, 2}), {
+    auto grad = x1->getGrad();
+    ASSERT_TRUE(grad == base::Tensor<f64>(base::Shape({5, 2, 2}), {
         -0.386284722, 0.632232615,
         -0.275752315, -0.280380763,
         -0.318973214, 0.010641399,
@@ -256,9 +263,10 @@ TEST(Test_grad_tensor5, test) {
     }));
     c.clearGrad();
     c.createGradGraph();
-    calc::Calculator<base::Tensor<f64>> cx1(x1->getGradGraph());
+    auto xgrad = x1->getGradGraph();
     c.clearGradGraph();
-    ASSERT_TRUE(xgrad == cx1.call());
+    ASSERT_TRUE(grad == xgrad->getOutput());
+    calc::Calculator<base::Tensor<f64>> cx1(xgrad);
     cx1.deriv();
     ASSERT_TRUE(x1->getGrad() == base::Tensor<f64>(base::Shape({5, 2, 2}), {
         0.823495370, -0.374829358,
@@ -290,18 +298,20 @@ TEST(Test_grad_tensor2, test) {
     auto item2 = op::Transpose<base::Tensor<f64>>::op(item1, -2, -1);
     auto item3 = op::Mmul<base::Tensor<f64>>::op(item2, x2);
     auto item = op::Sum<base::Tensor<f64>, base::Shape>::op(item3);
+    ASSERT_TRUE(item->getOutput() == base::Tensor<f64>(base::Shape({1}), {73.5}));
     auto c = calc::Calculator<base::Tensor<f64>>(item);
-    ASSERT_TRUE(c.call() == base::Tensor<f64>(base::Shape({1}), {73.5}));
     c.deriv();
     ASSERT_TRUE(x1_->getGrad() == base::Tensor<f64>(base::Shape({2, 2, 2}), {-31.5, -15.75, 4.5, 2.25, -1, 8, 8, -64}));
     ASSERT_TRUE(x2_->getGrad() == base::Tensor<f64>(base::Shape({2, 3, 2}), {13.5, 13.5, 13.5, 0, 0, 0, -2, -2, -2, 16, 16, 16}));
     c.clearGrad();
     c.createGradGraph();
-    auto cx1 = calc::Calculator<base::Tensor<f64>>(x1_->getGradGraph());
-    auto cx2 = calc::Calculator<base::Tensor<f64>>(x2_->getGradGraph());
+    auto x1_grad = x1_->getGradGraph();
+    auto x2_grad = x2_->getGradGraph();
     c.clearGradGraph();
-    ASSERT_TRUE(cx1.call() == base::Tensor<f64>(base::Shape({2, 2, 2}), {-31.5, -15.75, 4.5, 2.25, -1, 8, 8, -64}));
-    ASSERT_TRUE(cx2.call() == base::Tensor<f64>(base::Shape({2, 3, 2}), {13.5, 13.5, 13.5, 0, 0, 0, -2, -2, -2, 16, 16, 16}));
+    ASSERT_TRUE(x1_grad->getOutput() == base::Tensor<f64>(base::Shape({2, 2, 2}), {-31.5, -15.75, 4.5, 2.25, -1, 8, 8, -64}));
+    ASSERT_TRUE(x2_grad->getOutput() == base::Tensor<f64>(base::Shape({2, 3, 2}), {13.5, 13.5, 13.5, 0, 0, 0, -2, -2, -2, 16, 16, 16}));
+    auto cx1 = calc::Calculator<base::Tensor<f64>>(x1_grad);
+    auto cx2 = calc::Calculator<base::Tensor<f64>>(x2_grad);
     cx1.deriv();
     ASSERT_TRUE(x1_->getGrad() == base::Tensor<f64>(base::Shape({2, 2, 2}), {-60.75, 40.5, 20.25, 0, -4-2.0/3, 16+1.0/3, 16+1.0/3, 37+1.0/3}));
     ASSERT_TRUE(x2_->getGrad() == base::Tensor<f64>(base::Shape({2, 3, 2}), {9, 9, 9, -9, -9, -9, -4-2.0/3, -4-2.0/3, -4-2.0/3, -4-2.0/3, -4-2.0/3, -4-2.0/3}));

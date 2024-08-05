@@ -37,7 +37,7 @@ void Optimizer::adam() {
 
     // 循环
     auto cost = _cost_func(_vars);
-    f64 pre_cost = calcCost(cost);
+    f64 pre_cost = getCost(cost);
     u32 iter_cnt = 0;
     while (iter_cnt < max_iter_cnt) {
         calcGrad(cost);
@@ -70,7 +70,7 @@ void Optimizer::adam() {
         updateVars(step, grads);
         
         cost = _cost_func(_vars);
-        f64 cur_cost = calcCost(cost);
+        f64 cur_cost = getCost(cost);
         if (!checkCostDiff(pre_cost, cur_cost)) {
             return;
         }

@@ -1,6 +1,5 @@
 #include "auto_engine/algo/loss.h"
 #include "auto_engine/base/basic_types.h"
-#include "auto_engine/calc/calc.h"
 #include "auto_engine/op/add_n.h"
 #include "auto_engine/op/data_op.h"
 #include "auto_engine/op/div.h"
@@ -27,8 +26,6 @@ std::shared_ptr<op::Op<base::Tensor<f64>>> Loss::mseLoss(std::shared_ptr<op::Op<
 std::shared_ptr<op::Op<base::Tensor<f64>>> Loss::crossEntropyLoss(std::shared_ptr<op::Op<base::Tensor<f64>>> outputs, std::shared_ptr<op::Op<base::Tensor<f64>>> targets, u32 classes) {
     // targets.size = outputs.size & outputs[1].size = classes
     
-    calc::Calculator<base::Tensor<f64>> c(outputs);
-    c.call();
     auto outputs_shape = outputs->getOutput().shape(); // 计算一次。可后续优化
 
     auto neg_one_hot = targets->getOutput().oneHot(classes).neg(); // targets.size * classes

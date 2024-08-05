@@ -22,7 +22,7 @@ void Optimizer::gradDescent() {
         step, step_decay_ratio, tangent_slope_coef, max_probe_retries, max_iter_cnt);
 
     auto cost = _cost_func(_vars);
-    f64 pre = calcCost(cost);
+    f64 pre = getCost(cost);
     auto find_update_step = [&step, &step_decay_ratio, &tangent_slope_coef, &max_probe_retries, &cost, this](f64 base, bool& terminate) -> f64 {
         calcGrad(cost);
 
@@ -38,7 +38,7 @@ void Optimizer::gradDescent() {
             f64 target = base - tangent_slope_coef * probe_step * grad_2rd_norm;
             updateVars(org_outs, probe_step);
             cost = _cost_func(_vars);
-            f64 cost_val = calcCost(cost);
+            f64 cost_val = getCost(cost);
 
             LOG(INFO) << "retries: " << retries << ", base: " << base << ", cost: " << cost_val;
             if (cost_val < target) {
@@ -56,7 +56,7 @@ void Optimizer::gradDescent() {
 
         restoreVars(std::move(org_outs));
         cost = _cost_func(_vars);
-        calcCost(cost);
+        getCost(cost);
 
         terminate = true;
         return -1;

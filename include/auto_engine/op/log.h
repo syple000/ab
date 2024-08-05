@@ -14,7 +14,9 @@ protected:
     Log(std::shared_ptr<Op<T>> arg): UOP<T>(arg) {}
 public:
     static std::shared_ptr<Op<T>> op(std::shared_ptr<Op<T>> arg) {
-        return std::shared_ptr<Log<T>>(new Log<T>(arg));
+        auto op = std::shared_ptr<Log<T>>(new Log<T>(arg));
+        op->template forward();
+        return op;
     }
 
     T call(const T& arg) override {

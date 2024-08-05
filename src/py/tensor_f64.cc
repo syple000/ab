@@ -66,18 +66,12 @@ PYBIND11_MODULE(ae, m) {
 
     py::class_<op::Op<base::Tensor<f64>>, std::shared_ptr<op::Op<base::Tensor<f64>>>>(m, "op")
         .def("__repr__", [](std::shared_ptr<op::Op<base::Tensor<f64>>> op) -> std::string {
-            calc::Calculator<base::Tensor<f64>> c(op);
-            c.call();
             return fmt::format("{{\"shape\": {0}, \"data\": {1}}}", op->getOutput().shape().toString(), op->getOutput().toString(true));
         })
         .def("update", [](std::shared_ptr<op::Op<base::Tensor<f64>>> op1, std::shared_ptr<op::Op<base::Tensor<f64>>> op2) {
-            calc::Calculator<base::Tensor<f64>> c(op2);
-            c.call();
             op1->setOutput(op2->getOutput());
         })
         .def("item", [](std::shared_ptr<op::Op<base::Tensor<f64>>> op) -> f64 {
-            calc::Calculator<base::Tensor<f64>> c(op);
-            c.call();
             auto data = op->getOutput().data();
             if (data.size() != 1) {
                 throw std::runtime_error(fmt::format("tensor size = {}", data.size()));
@@ -85,13 +79,9 @@ PYBIND11_MODULE(ae, m) {
             return data[0];
         })
         .def("shape", [](std::shared_ptr<op::Op<base::Tensor<f64>>> op) -> const std::vector<u32>& {
-            calc::Calculator<base::Tensor<f64>> c(op);
-            c.call();
             return op->getOutput().shape().getDims();
         })
         .def("tolist", [](std::shared_ptr<op::Op<base::Tensor<f64>>> op) -> py::list {
-            calc::Calculator<base::Tensor<f64>> c(op);
-            c.call();
             auto data = op->getOutput();
             if (data.shape().dimCnt() == 0) {return py::none();}
 
@@ -125,10 +115,6 @@ PYBIND11_MODULE(ae, m) {
         .def("create_grad_graph", [](std::shared_ptr<op::Op<base::Tensor<f64>>> op) {
             calc::Calculator<base::Tensor<f64>> c(op);
             c.createGradGraph();
-        })
-        .def("clear_output", [](std::shared_ptr<op::Op<base::Tensor<f64>>> op) {
-            calc::Calculator<base::Tensor<f64>> c(op);
-            c.clearOutput();
         })
         .def("clear_grad", [](std::shared_ptr<op::Op<base::Tensor<f64>>> op) {
             calc::Calculator<base::Tensor<f64>> c(op);
