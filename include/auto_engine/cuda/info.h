@@ -9,10 +9,10 @@ namespace cuda {
 
 #ifdef GPU_DEBUG_MODE
 #define GRID_CNT_X 1024
-#define GRID_CNT_Y 128
-#define GRID_CNT_Z 128
-#define THREAD_CNT_PER_BLOCK 4
-#define SQRT_THREAD_CNT_PER_BLOCK 2
+#define GRID_CNT_Y 4
+#define GRID_CNT_Z 4
+#define THREAD_CNT_PER_BLOCK 1
+#define SQRT_THREAD_CNT_PER_BLOCK 1
 #else
 #define GRID_CNT_X 2147483647
 #define GRID_CNT_Y 65535

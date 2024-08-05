@@ -162,13 +162,13 @@ __global__ void apply_pow(T* data, T n, u32 size) {return apply<T>(data, n, size
 
 // 最后一个维度被改变
 template<typename T>
-__global__ void permute_l(const T* src, T* dst, const u32* strides, const u32* permute_strides, u32 dim_cnt, u32 tsize, const u32* pl) {
+__global__ void permute_l(const T* src, T* dst, const u32* strides, const u32* permute_strides, u32 dim_cnt, u32 tsize, const u32* pl, u32 pl_index) {
     __shared__ T shared_mem[cuda::sqrt_tcnt_per_block()][cuda::sqrt_tcnt_per_block() + 1];
 
-    u32 d = pl[dim_cnt - 1];
+    u32 d = pl[pl_index];
 
     u32 lindex = threadIdx.x + blockDim.x * blockIdx.x;
-    u32 uindex = threadIdx.y + blockDim.y * blockIdx.y;
+    u32 uindex = (threadIdx.y + blockDim.y * blockIdx.y) + blockIdx.z * (blockDim.y * gridDim.y);
     if (lindex < strides[d] && uindex < tsize / strides[d]) {
         u32 index = 0;
         for (u32 i = 0; i <= d; i++) {
@@ -190,7 +190,7 @@ __global__ void permute_l(const T* src, T* dst, const u32* strides, const u32* p
     __syncthreads();
 
     lindex = threadIdx.y + blockDim.x * blockIdx.x;
-    uindex = threadIdx.x + blockDim.y * blockIdx.y;
+    uindex = (threadIdx.x + blockDim.y * blockIdx.y) + blockIdx.z * (blockDim.y * gridDim.y);
     if (lindex >= strides[d]) {return;}
     if (uindex >= tsize / strides[d]) {return;}
 

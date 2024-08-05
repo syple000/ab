@@ -192,7 +192,8 @@ TEST(Test_grad_tensor3, test) {
 TEST(Test_grad_test4, test) {
     auto t1 = base::Tensor<f64>(base::Shape({2, 3, 3}), {0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.7, 0.6, 0.5});
     auto x1 = op::DataOp<base::Tensor<f64>>::op(t1, true);
-    auto item1_1 = op::Permute<base::Tensor<f64>>::op(x1, std::vector<u32>{2, 0, 1});
+    auto x1_ = op::Reshape<base::Tensor<f64>, base::Shape>::op(x1, base::Shape({2, 3, 3, 1, 1}));
+    auto item1_1 = op::Reshape<base::Tensor<f64>, base::Shape>::op(op::Permute<base::Tensor<f64>>::op(x1_, std::vector<u32>{2, 0, 3, 1, 4}), base::Shape({3, 2, 3}));
     auto item1_2 = op::Permute<base::Tensor<f64>>::op(item1_1, std::vector<u32>{1, 0, 2});
     auto item1 = op::SumD<base::Tensor<f64>, base::Shape>::op(item1_2, 0);
     auto item2 = op::SumD<base::Tensor<f64>, base::Shape>::op(x1, 1);

@@ -368,7 +368,6 @@ void split(const f64* src, const base::Shape& src_shape, const std::vector<f64*>
 }
 
 void permute(const f64* src, const base::Shape& src_shape, f64* dst, const base::Shape& dst_shape, const std::vector<u32>& pl) {
-// permute_l(const T* src, T* dst, const u32* strides, const u32* transpose_strides, u32 dim_cnt, u32 tsize, const u32* pl)
     f64 *msrc, *mdst;
     u32 *mds;
     CHECK_MALLOC(Mem::malloc((void**)&msrc, sizeof(f64) * src_shape.tensorSize()));
@@ -383,11 +382,23 @@ void permute(const f64* src, const base::Shape& src_shape, f64* dst, const base:
     CHECK_CUDA_CALL(cudaMemcpy(mds + pl.size(), dst_shape.getStrides().data(), sizeof(u32) * pl.size(), cudaMemcpyHostToDevice), "cuda_memcpy_h2d");
     CHECK_CUDA_CALL(cudaMemcpy(mds + pl.size() * 2, pl.data(), sizeof(u32) * pl.size(), cudaMemcpyHostToDevice), "cuda_memcpy_h2d");
 
-    if (pl[pl.size() - 1] != pl.size() - 1) {
-        auto stride = src_shape.getStrides()[pl[pl.size() - 1]];
+    int pl_index = pl.size() - 1;
+    int index = src_shape.dimCnt() - 1;
+    while (pl_index >= 0 && src_shape.getDim(pl[pl_index]) == 1) {pl_index -= 1;} 
+    while (index >= 0 && src_shape.getDim(index) == 1) {index -= 1;}
+
+    if (pl_index >= 0 && index >= 0 && pl[pl_index] != index) {
+        auto stride = src_shape.getStrides()[pl[pl_index]];
         u32 gridx_dim = (stride + sqrt_tcnt_per_block() - 1) / sqrt_tcnt_per_block();
-        u32 gridy_dim = (src_shape.tensorSize() / stride + sqrt_tcnt_per_block() - 1) / sqrt_tcnt_per_block();
-        cuda_kernel::permute_l<<<dim3(gridx_dim, gridy_dim), dim3(sqrt_tcnt_per_block(), sqrt_tcnt_per_block())>>>(msrc, mdst, mds, mds + pl.size(), src_shape.dimCnt(), src_shape.tensorSize(), mds + 2 * pl.size());
+
+        u32 gridz_dim = (src_shape.tensorSize() / stride + grid_cnt_y() * sqrt_tcnt_per_block() - 1) / (grid_cnt_y() * sqrt_tcnt_per_block());
+        u32 gridy_dim;
+        if (gridz_dim > 1) {
+            gridy_dim = grid_cnt_y();
+        } else {
+            gridy_dim = (src_shape.tensorSize() / stride + sqrt_tcnt_per_block() - 1) / sqrt_tcnt_per_block();
+        }
+        cuda_kernel::permute_l<<<dim3(gridx_dim, gridy_dim, gridz_dim), dim3(sqrt_tcnt_per_block(), sqrt_tcnt_per_block())>>>(msrc, mdst, mds, mds + pl.size(), src_shape.dimCnt(), src_shape.tensorSize(), mds + 2 * pl.size(), pl_index);
         CHECK_CUDA_CALL(cudaPeekAtLastError(), "permute_l");
     } else {
         u32 gridx_dim = (src_shape.tensorSize() + sqrt_tcnt_per_block() - 1) / sqrt_tcnt_per_block();
